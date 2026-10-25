@@ -1,0 +1,38 @@
+# Spain region layer. Read by coach/regions.py and the /menu skill.
+code: es
+name: España
+default_language: es
+emergency_number: "112"  # also the EU-wide number
+units:
+  mass: kg
+  energy: kcal
+  decimal_separator: ","
+food_sources:
+  - fdc_sr_legacy  # regions/es/foods.csv; BEDCA returned no values through its public endpoint
+# Supermarket chains and their own brands. products_verified counts rows in products.csv; a chain
+# with 0 rows blocked automated reads of its product pages on 2026-10-24 (see README.md).
+chains:
+  - name: Mercadona
+    website: https://tienda.mercadona.es
+    own_brands: [Hacendado, Deliplus, Bosque Verde]
+    products_verified: 0
+  - name: Lidl
+    website: https://www.lidl.es
+    own_brands: [Milbona, Golden Sun, Realvalle, Nixe, Combino]
+    products_verified: 0
+  - name: Carrefour
+    website: https://www.carrefour.es
+    own_brands: [Carrefour, Carrefour Classic, Carrefour El Mercado, Carrefour Bio]
+    products_verified: 0
+  - name: Dia
+    website: https://www.dia.es
+    own_brands: [Dia, Selección de Dia]
+    products_verified: 0
+  - name: Alcampo
+    website: https://www.compraonline.alcampo.es
+    own_brands: [Auchan, Producto Alcampo]
+    products_verified: 0
+  - name: Eroski
+    website: https://supermercado.eroski.es
+    own_brands: [Eroski, Eroski Basic, Eroski Natur, Sannia]
+    products_verified: 0

@@ -1,0 +1,7 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Using a private copy? Read this first
+    url: https://github.com/matgarfer499/ai-personal-coach/blob/main/CONTRIBUTING.md#never-share-personal-data
+    about: >-
+      Issues here are public. Never paste anything from your data/ folder; describe the problem
+      with an invented client.

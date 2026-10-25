@@ -1,0 +1,22 @@
+sex: female
+birth_date: 1992-03-14
+height_cm: 168.0
+weight_kg: 66.0
+goal: fat_loss
+experience: intermediate
+activity_level: desk
+language: es
+region: es
+medications:
+- beta_blocker
+conditions:
+- hypertension
+screening:
+  scoff_positive: false
+  parq_any_yes: true
+  parq_followup_yes: false
+  cardiac_symptoms: false
+  menstrual: normal
+  bp_systolic: 132
+  bp_diastolic: 84
+research_reminder_months: 6

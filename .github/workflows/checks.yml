@@ -1,0 +1,48 @@
+name: checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --all-extras --locked
+
+      # tests/sessions/test_importers.py::test_month_names_do_not_follow_a_spanish_locale skips
+      # itself when es_ES.UTF-8 is missing, so install it and fail loudly if it still is.
+      - name: Install the es_ES.UTF-8 locale
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y locales
+          sudo locale-gen es_ES.UTF-8
+          sudo update-locale
+          uv run python -c "import locale; locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')"
+
+      - name: Tests
+        run: uv run pytest -rs
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Format
+        run: uv run ruff format --check .
+
+      - name: Knowledge checks
+        run: uv run python scripts/check_knowledge.py
+
+      - name: Index and README counts are fresh
+        run: |
+          uv run python scripts/build_knowledge_index.py
+          git diff --exit-code

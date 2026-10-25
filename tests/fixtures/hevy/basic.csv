@@ -1,0 +1,10 @@
+"title","start_time","end_time","description","exercise_title","superset_id","exercise_notes","set_index","set_type","weight_kg","reps","distance_km","duration_seconds","rpe"
+"Push A","24 Jul 2025, 11:25","24 Jul 2025, 12:30","Synthetic test session","Bench Press (Barbell)",,"",0,"warmup",40,10,,,
+"Push A","24 Jul 2025, 11:25","24 Jul 2025, 12:30","Synthetic test session","Bench Press (Barbell)",,"Paused reps, slow",1,"normal",62.5,8,,,8
+"Push A","24 Jul 2025, 11:25","24 Jul 2025, 12:30","Synthetic test session","Bench Press (Barbell)",,"",2,"failure",62.5,7,,,10
+"Push A","24 Jul 2025, 11:25","24 Jul 2025, 12:30","Synthetic test session","Bench Press (Barbell)",,"",3,"dropset",50,9,,,
+"Push A","24 Jul 2025, 11:25","24 Jul 2025, 12:30","Synthetic test session","Pull Up",1,"Line one
+line two, with a comma",0,"normal",,9,,,7.5
+"Push A","24 Jul 2025, 11:25","24 Jul 2025, 12:30","Synthetic test session","Pull Up",1,"",1,"Normal",,8,,,
+"Push A","24 Jul 2025, 11:25","24 Jul 2025, 12:30","Synthetic test session","Lateral Raise (Dumbbell)",,"",0,"mystery",8.25,15,,,
+"Easy Run","26 Jul 2025, 7:05","26 Jul 2025, 7:35","","Running",,"",0,"normal",,,5.2,1800,

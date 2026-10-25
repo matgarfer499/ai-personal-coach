@@ -1,0 +1,129 @@
+# Fractional set credit per muscle, by exercise (lower-case name; a trailing "(Equipment)" as in
+# Hevy exports is ignored when looking up). Rules: strength-hypertrophy.md "Default counting rule:
+# direct 1, indirect 0.5" (main mover 1, clear synergist 0.5; the exercise classifications are the
+# coach's own, as that rule says), "Pressing: chest 1, triceps and front delts 0.5", "Rows and
+# pulldowns for the biceps", "Squats, leg press and hip thrusts barely train the hamstrings".
+# Credits not covered by a specific rule follow the default rule and are conventions.
+# aliases are other names for the same lift (Spanish names, for clients who log in Spanish).
+# lower_body marks big lower-body lifts, which take larger load jumps ("Double progression").
+# An entry with `muscles: {}` is a known exercise that credits none of the 12 muscles below (it
+# does not show up as unmapped, and adds no weekly sets).
+
+bench press:
+  muscles: {chest: 1, triceps: 0.5, front_delts: 0.5}
+  aliases: [press banca, press de banca]
+incline bench press:
+  muscles: {chest: 1, triceps: 0.5, front_delts: 0.5}
+  aliases: [press inclinado, press banca inclinado]
+decline bench press:
+  muscles: {chest: 1, triceps: 0.5, front_delts: 0.5}
+chest press:
+  muscles: {chest: 1, triceps: 0.5, front_delts: 0.5}
+  aliases: [press de pecho en máquina]
+push up:
+  muscles: {chest: 1, triceps: 0.5, front_delts: 0.5}
+  aliases: [flexiones]
+chest fly:
+  muscles: {chest: 1}
+  aliases: [aperturas]
+overhead press:
+  muscles: {front_delts: 1, triceps: 0.5}
+  aliases: [press militar]
+shoulder press:
+  muscles: {front_delts: 1, triceps: 0.5}
+  aliases: [press de hombro]
+lateral raise:
+  muscles: {side_delts: 1}
+  aliases: [elevaciones laterales]
+bent over row:
+  muscles: {back: 1, biceps: 0.5, rear_delts: 0.5}
+  aliases: [remo con barra]
+seated cable row:
+  muscles: {back: 1, biceps: 0.5, rear_delts: 0.5}
+  aliases: [remo en polea, remo sentado en polea]
+dumbbell row:
+  muscles: {back: 1, biceps: 0.5, rear_delts: 0.5}
+  aliases: [remo con mancuerna]
+lat pulldown:
+  muscles: {back: 1, biceps: 0.5, rear_delts: 0.5}
+  aliases: [jalón al pecho, jalón dorsal]
+pull up:
+  muscles: {back: 1, biceps: 0.5, rear_delts: 0.5}
+  aliases: [dominadas]
+chin up:
+  muscles: {back: 1, biceps: 0.5, rear_delts: 0.5}
+  aliases: [dominadas supinas]
+face pull:
+  muscles: {rear_delts: 1}
+  aliases: [face pull en polea]
+bicep curl:
+  muscles: {biceps: 1}
+  aliases: [curl de bíceps, ez bar biceps curl]  # Hevy's name for the EZ-bar curl
+hammer curl:
+  muscles: {biceps: 1}
+  aliases: [curl martillo]
+triceps pushdown:
+  muscles: {triceps: 1}
+  aliases: [extensión de tríceps en polea]
+triceps extension:
+  muscles: {triceps: 1}
+skullcrusher:
+  muscles: {triceps: 1}
+squat:
+  muscles: {quads: 1, glutes: 0.5, adductors: 0.5}
+  aliases: [sentadilla]
+  lower_body: true
+front squat:
+  muscles: {quads: 1, glutes: 0.5, adductors: 0.5}
+  aliases: [sentadilla frontal]
+  lower_body: true
+leg press:
+  muscles: {quads: 1, glutes: 0.5, adductors: 0.5}
+  aliases: [prensa de piernas, prensa]
+  lower_body: true
+hip thrust:
+  muscles: {glutes: 1}
+  aliases: [empuje de cadera]
+  lower_body: true
+bulgarian split squat:
+  muscles: {quads: 1, glutes: 0.5, adductors: 0.5}
+  aliases: [sentadilla búlgara]
+  lower_body: true
+lunge:
+  muscles: {quads: 1, glutes: 0.5, adductors: 0.5}
+  aliases: [zancadas]
+  lower_body: true
+romanian deadlift:
+  muscles: {hamstrings: 1, glutes: 0.5}
+  aliases: [peso muerto rumano]
+  lower_body: true
+deadlift:
+  muscles: {glutes: 1, hamstrings: 0.5, back: 0.5}
+  aliases: [peso muerto]
+  lower_body: true
+leg curl:
+  muscles: {hamstrings: 1}
+  aliases: [curl femoral]
+seated leg curl:
+  muscles: {hamstrings: 1}
+lying leg curl:
+  muscles: {hamstrings: 1}
+leg extension:
+  muscles: {quads: 1}
+  aliases: [extensión de cuádriceps]
+calf raise:
+  muscles: {calves: 1}
+  aliases: [elevación de gemelos]
+standing calf raise:
+  muscles: {calves: 1}
+  aliases: [single leg standing calf raise]  # one logged set counts once, whichever the leg
+seated calf raise:
+  muscles: {calves: 1}
+# A suitcase carry (one-sided loaded carry) works the trunk and grip, and the 12 muscles above have
+# neither, so it credits nothing. No rule says how many sets of a muscle a carry is worth:
+# "Compound free-weight lifts load the trunk" is acute EMG evidence on squats, deadlifts and hip
+# thrusts, and "Trunk (core) training: an add-on for trunk endurance and balance" says reviews do
+# not compare loaded carries and the work is chosen for preference. Crediting the back or glutes
+# would be a number with no rule behind it, so it is known (not "unmapped") but counts nowhere.
+suitcase carry:
+  muscles: {}

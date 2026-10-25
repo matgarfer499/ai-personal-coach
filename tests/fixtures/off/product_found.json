@@ -1,0 +1,25 @@
+{
+  "code": "8400000000017",
+  "errors": [],
+  "result": {"id": "product_found", "lc_name": "Product found", "name": "Product found"},
+  "status": "success",
+  "warnings": [],
+  "product": {
+    "code": "8400000000017",
+    "product_name": "Salteado campestre",
+    "product_name_es": "Salteado campestre",
+    "brands": "Marca Prueba",
+    "stores": "Super Prueba",
+    "product_quantity_unit": "g",
+    "allergens_tags": [],
+    "nutriments": {
+      "energy-kcal_100g": 81,
+      "energy-kcal_unit": "kcal",
+      "proteins_100g": 1.7,
+      "carbohydrates_100g": 15.5,
+      "fat_100g": 0.5,
+      "fiber_100g": 2.4,
+      "salt_100g": 0.02
+    }
+  }
+}

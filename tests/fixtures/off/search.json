@@ -1,0 +1,42 @@
+{
+  "aggregations": null,
+  "facets": {},
+  "charts": {},
+  "page": 1,
+  "page_size": 10,
+  "page_count": 1,
+  "count": 2,
+  "is_count_exact": true,
+  "took": 8,
+  "timed_out": false,
+  "warnings": null,
+  "hits": [
+    {
+      "code": "8400000000017",
+      "product_name": "Salteado campestre",
+      "brands": ["Marca Prueba"],
+      "stores": "Super Prueba",
+      "product_quantity_unit": "g",
+      "allergens_tags": [],
+      "nutriments": {
+        "energy-kcal_100g": 81,
+        "proteins_100g": 1.7,
+        "carbohydrates_100g": 15.5,
+        "fat_100g": 0.5,
+        "fiber_100g": 2.4
+      }
+    },
+    {
+      "code": "8400000000024",
+      "product_name": "Gajos especiados",
+      "brands": ["Marca Prueba"],
+      "product_quantity_unit": "g",
+      "nutriments": {
+        "energy-kcal_100g": 150,
+        "proteins_100g": 2.5,
+        "carbohydrates_100g": 20,
+        "fat_100g": 6.1
+      }
+    }
+  ]
+}

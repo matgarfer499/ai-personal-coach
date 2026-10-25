@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.env
+# Personal Claude Code settings (env vars such as COACH_OFF_CONTACT).
+.claude/settings.local.json
+# Personal data lives in your private copy (Use this template) or in COACH_DATA_DIR; never
+# commit it.
+data/*
+!data/.gitkeep
+.ruff_cache/
+# Official forms are downloaded by each user (see forms/README.md), not redistributed.
+forms/*.pdf

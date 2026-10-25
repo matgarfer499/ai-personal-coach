@@ -1,0 +1,154 @@
+name_en	name_es	fdc_id	fdc_description	form_note
+chicken breast, raw	pechuga de pollo, cruda	171077	Chicken, broiler or fryers, breast, skinless, boneless, meat only, raw	
+chicken breast, roasted	pechuga de pollo, asada	171477	Chicken, broilers or fryers, breast, meat only, cooked, roasted	
+chicken thigh, raw	contramuslo de pollo, crudo	173627	Chicken, broilers or fryers, dark meat, thigh, meat only, raw	
+turkey breast, raw	pechuga de pavo, cruda	171098	Turkey, whole, breast, meat only, raw	
+beef, lean mince 5% fat, raw	carne picada de ternera magra, cruda	171790	Beef, ground, 95% lean meat / 5% fat, raw	
+beef, mince 15% fat, raw	carne picada de ternera, cruda	171796	Beef, ground, 85% lean meat / 15% fat, raw (Includes foods for USDA's Food Distribution Program)	
+beef sirloin steak, raw	lomo bajo de ternera, crudo	174055	"Beef, top sirloin, steak, separable lean only, trimmed to 1/8"" fat, all grades, raw"	"top sirloin steak, lean only, trimmed 1/8"" fat, all grades"
+pork loin, raw	lomo de cerdo, crudo	168230	Pork, fresh, loin, whole, separable lean only, raw	loin whole, lean only
+pork tenderloin, raw	solomillo de cerdo, crudo	168249	Pork, fresh, loin, tenderloin, separable lean only, raw	
+cured ham	jamón curado	167875	Pork, cured, ham, whole, separable lean and fat, unheated	wet-cured ham (no dry-cured jamon in SR Legacy), lean and fat
+cooked ham	jamón cocido	173864	Ham, sliced, regular (approximately 11% fat)	
+bacon, raw	beicon, crudo	168277	Pork, cured, bacon, unprepared	cured bacon, unprepared; not fresh panceta
+lamb leg, raw	pierna de cordero, cruda	174313	"Lamb, leg, whole (shank and sirloin), separable lean only, trimmed to 1/4"" fat, choice, raw"	"leg whole, lean only, trimmed 1/4"" fat, choice"
+rabbit, raw	conejo, crudo	172521	Game meat, rabbit, domesticated, composite of cuts, raw	
+salmon, raw	salmón, crudo	175167	Fish, salmon, Atlantic, farmed, raw	
+hake, raw	merluza, cruda	173713	Fish, whiting, mixed species, raw	whiting used for hake
+cod, raw	bacalao fresco, crudo	171955	Fish, cod, Atlantic, raw	
+tuna, canned in water, drained	atún en conserva al natural, escurrido	171986	Fish, tuna, light, canned in water, without salt, drained solids	without salt
+tuna, canned in oil, drained	atún en aceite, escurrido	174227	Fish, tuna, light, canned in oil, without salt, drained solids	without salt
+sardines, canned in oil, drained	sardinas en aceite, escurridas	175139	Fish, sardine, Atlantic, canned in oil, drained solids with bone	
+mackerel, raw	caballa, cruda	175119	Fish, mackerel, Atlantic, raw	
+prawns, raw	gambas, crudas	175179	Crustaceans, shrimp, raw	
+squid, raw	calamar, crudo	174223	Mollusks, squid, mixed species, raw	
+mussels, raw	mejillones, crudos	174216	Mollusks, mussel, blue, raw	
+egg, whole, raw	huevo entero, crudo	171287	Egg, whole, raw, fresh	
+egg white, raw	clara de huevo, cruda	172183	Egg, white, raw, fresh	
+egg, whole, boiled	huevo cocido	173424	Egg, whole, cooked, hard-boiled	
+whole milk	leche entera	171265	Milk, whole, 3.25% milkfat, with added vitamin D	with added vitamin D
+semi-skimmed milk	leche semidesnatada	171267	Milk, reduced fat, fluid, 2% milkfat, with added vitamin A and vitamin D	2% milkfat, with added vitamin A and D
+skimmed milk	leche desnatada	171269	Milk, nonfat, fluid, with added vitamin A and vitamin D (fat free or skim)	
+plain yogurt, whole milk	yogur natural	171284	Yogurt, plain, whole milk	
+plain greek yogurt, nonfat	yogur griego desnatado	170894	Yogurt, Greek, plain, nonfat (Includes foods for USDA's Food Distribution Program)	
+greek yogurt, whole milk	yogur griego	171304	Yogurt, Greek, plain, whole milk	
+cottage cheese	queso cottage	172182	Cheese, cottage, lowfat, 2% milkfat	lowfat 2% milkfat (not creamed)
+fresh cheese	queso fresco	172223	Cheese, fresh, queso fresco	
+cured sheep cheese	queso curado	171249	Cheese, romano	romano used for cured sheep cheese (no manchego in SR Legacy)
+mozzarella	mozzarella	170845	Cheese, mozzarella, whole milk	
+parmesan	queso parmesano	170848	Cheese, parmesan, hard	
+cheddar	queso cheddar	173414	Cheese, cheddar (Includes foods for USDA's Food Distribution Program)	
+butter	mantequilla	173430	Butter, without salt	unsalted butter (without salt)
+whey protein powder	proteína de suero en polvo	173177	Beverages, Whey protein powder isolate	isolate
+tofu, firm	tofu firme	172475	Tofu, raw, firm, prepared with calcium sulfate	
+tempeh	tempeh	174272	Tempeh	
+kefir	kéfir	170904	Kefir, lowfat, plain, LIFEWAY	branded (Lifeway) lowfat plain kefir; closest available
+chorizo	chorizo	173859	Sausage, pork, chorizo, link or ground, raw	fresh US/Mexican-style chorizo; Spanish cured chorizo is drier and richer in energy
+turkey slices	pechuga de pavo en lonchas	172941	Turkey breast, sliced, prepackaged	
+chicken eggs, fried	huevo frito	173423	Egg, whole, cooked, fried	
+cream, whipping	nata para montar	170859	Cream, fluid, heavy whipping	
+white rice, raw	arroz blanco, crudo	168877	Rice, white, long-grain, regular, raw, enriched	
+white rice, cooked	arroz blanco, cocido	168878	Rice, white, long-grain, regular, enriched, cooked	
+brown rice, raw	arroz integral, crudo	169703	Rice, brown, long-grain, raw (Includes foods for USDA's Food Distribution Program)	
+brown rice, cooked	arroz integral, cocido	169704	Rice, brown, long-grain, cooked (Includes foods for USDA's Food Distribution Program)	
+pasta, dry	pasta, cruda	169736	Pasta, dry, enriched	
+pasta, cooked	pasta, cocida	169737	Pasta, cooked, enriched, without added salt	
+wholewheat pasta, dry	pasta integral, cruda	169738	Pasta, whole-wheat, dry (Includes foods for USDA's Food Distribution Program)	
+oats, rolled	copos de avena	173904	Cereals, oats, regular and quick, not fortified, dry	
+white bread	pan blanco	174924	Bread, white, commercially prepared (includes soft bread crumbs)	commercially prepared white bread
+wholemeal bread	pan integral	172688	Bread, whole-wheat, commercially prepared	
+baguette	barra de pan	172675	Bread, french or vienna (includes sourdough)	french or vienna bread
+quinoa, raw	quinoa, cruda	168874	Quinoa, uncooked	
+quinoa, cooked	quinoa, cocida	168917	Quinoa, cooked	
+couscous, cooked	cuscús, cocido	169700	Couscous, cooked	
+corn tortilla	tortilla de maíz	173241	Tortillas, ready-to-bake or -fry, corn, without added salt	corn tortilla ready-to-bake, without added salt (alt 175036 with salt)
+wheat flour	harina de trigo	168894	Wheat flour, white, all-purpose, enriched, bleached	bleached (unbleached alt 168936)
+cornflakes	copos de maíz	174648	Cereals ready-to-eat, RALSTON Corn Flakes	only corn flakes entry in SR Legacy (Ralston brand)
+rice cakes	tortitas de arroz	170250	Snacks, rice cakes, brown rice, plain, unsalted	unsalted plain brown rice cakes
+lentils, dry	lentejas, crudas	172420	Lentils, raw	
+lentils, cooked	lentejas, cocidas	172421	Lentils, mature seeds, cooked, boiled, without salt	
+chickpeas, dry	garbanzos, crudos	173756	Chickpeas (garbanzo beans, bengal gram), mature seeds, raw	
+chickpeas, cooked	garbanzos, cocidos	173757	Chickpeas (garbanzo beans, bengal gram), mature seeds, cooked, boiled, without salt	
+chickpeas, canned, drained	garbanzos de bote, escurridos	173800	Chickpeas (garbanzo beans, bengal gram), mature seeds, canned, drained solids	
+white beans, cooked	alubias blancas, cocidas	175203	Beans, white, mature seeds, cooked, boiled, without salt	
+kidney beans, cooked	alubias rojas, cocidas	175194	Beans, kidney, red, mature seeds, cooked, boiled, without salt	red kidney
+black beans, cooked	judías negras, cocidas	173735	Beans, black, mature seeds, cooked, boiled, without salt	
+peas, frozen	guisantes congelados	170016	Peas, green, frozen, unprepared (Includes foods for USDA's Food Distribution Program)	
+soybeans, edamame	edamame	168410	Edamame, frozen, unprepared	frozen, unprepared
+almonds	almendras	170567	Nuts, almonds	
+walnuts	nueces	170187	Nuts, walnuts, english	english walnuts
+peanuts	cacahuetes	173806	Peanuts, all types, dry-roasted, without salt	dry-roasted, without salt
+peanut butter	crema de cacahuete	172470	Peanut butter, smooth style, without salt	
+hazelnuts	avellanas	170581	Nuts, hazelnuts or filberts	
+pistachios	pistachos	170184	Nuts, pistachio nuts, raw	
+cashews	anacardos	170162	Nuts, cashew nuts, raw	
+sunflower seeds	pipas de girasol	170562	Seeds, sunflower seed kernels, dried	
+chia seeds	semillas de chía	170554	Seeds, chia seeds, dried	
+flaxseed	semillas de lino	169414	Seeds, flaxseed	
+olive oil	aceite de oliva	171413	Oil, olive, salad or cooking	
+sunflower oil	aceite de girasol	171025	Oil, sunflower, linoleic, (approx. 65%)	sunflower linoleic approx 65% (alt 171017 less than 60%)
+honey	miel	169640	Honey	
+sugar	azúcar	169655	Sugars, granulated	
+dark chocolate 70-85%	chocolate negro 70-85%	170273	Chocolate, dark, 70-85% cacao solids	
+jam	mermelada	169641	Jams and preserves	
+olives, green	aceitunas verdes	169096	Olives, pickled, canned or bottled, green	
+hummus	hummus	174289	Hummus, commercial	
+potato chips	patatas fritas de bolsa	169677	Snacks, potato chips, plain, salted	
+popcorn, air-popped	palomitas sin aceite	170246	Snacks, popcorn, air-popped (Unsalted)	air-popped, unsalted
+mayonnaise	mayonesa	171009	Salad dressing, mayonnaise, regular	closest: regular mayonnaise salad dressing
+tomato sauce, canned	salsa de tomate	170054	Tomato products, canned, sauce	canned tomato sauce with salt; not tomate frito, which is cooked in oil
+potato, raw	patata, cruda	170026	Potatoes, flesh and skin, raw	
+potato, boiled	patata, cocida	170438	Potatoes, boiled, cooked in skin, flesh, without salt	boiled in skin, flesh only (no skin)
+sweet potato, raw	boniato, crudo	168482	Sweet potato, raw, unprepared (Includes foods for USDA's Food Distribution Program)	
+sweet potato, baked	boniato, asado	168483	Sweet potato, cooked, baked in skin, flesh, without salt	baked in skin, flesh only
+tomato	tomate	170457	Tomatoes, red, ripe, raw, year round average	
+lettuce	lechuga	169247	Lettuce, cos or romaine, raw	romaine lettuce
+spinach, raw	espinacas, crudas	168462	Spinach, raw	
+broccoli, raw	brócoli, crudo	170379	Broccoli, raw	
+broccoli, boiled	brócoli, cocido	169967	Broccoli, cooked, boiled, drained, without salt	
+cauliflower	coliflor	169986	Cauliflower, raw	
+carrot	zanahoria	170393	Carrots, raw	
+onion	cebolla	170000	Onions, raw	
+garlic	ajo	169230	Garlic, raw	
+green pepper	pimiento verde	170427	Peppers, sweet, green, raw	
+red pepper	pimiento rojo	170108	Peppers, sweet, red, raw	
+courgette	calabacín	169291	Squash, summer, zucchini, includes skin, raw	
+aubergine	berenjena	169228	Eggplant, raw	
+cucumber	pepino	168409	Cucumber, with peel, raw	
+green beans	judías verdes	169961	Beans, snap, green, raw	
+mushrooms	champiñones	169251	Mushrooms, white, raw	
+asparagus	espárragos	168389	Asparagus, raw	
+artichoke	alcachofa	169205	Artichokes, (globe or french), raw	
+cabbage	repollo	169975	Cabbage, raw	
+leek	puerro	169246	Leeks, (bulb and lower leaf-portion), raw	
+pumpkin	calabaza	168448	Pumpkin, raw	
+beetroot	remolacha	169145	Beets, raw	
+avocado	aguacate	171705	Avocados, raw, all commercial varieties	
+sweetcorn, canned	maíz dulce en lata	169214	Corn, sweet, yellow, canned, whole kernel, drained solids	
+celery	apio	169988	Celery, raw	
+rocket	rúcula	169387	Arugula, raw	
+apple	manzana	171688	Apples, raw, with skin (Includes foods for USDA's Food Distribution Program)	
+banana	plátano	173944	Bananas, raw	
+orange	naranja	169097	Oranges, raw, all commercial varieties	
+mandarin	mandarina	169105	Tangerines, (mandarin oranges), raw	
+pear	pera	169118	Pears, raw	
+grapes	uvas	174683	Grapes, red or green (European type, such as Thompson seedless), raw	
+strawberries	fresas	167762	Strawberries, raw	
+blueberries	arándanos	171711	Blueberries, raw	
+raspberries	frambuesas	167755	Raspberries, raw	
+watermelon	sandía	167765	Watermelon, raw	
+melon	melón	169911	Melons, honeydew, raw	honeydew, the closest to Spanish piel de sapo
+pineapple	piña	169124	Pineapple, raw, all varieties	
+peach	melocotón	169928	Peaches, yellow, raw	yellow peach
+kiwi	kiwi	168153	Kiwifruit, green, raw	
+mango	mango	169910	Mangos, raw	
+cherries	cerezas	171719	Cherries, sweet, raw	
+plums	ciruelas	169949	Plums, raw	
+figs	higos	173021	Figs, raw	
+dates, dried	dátiles	168191	Dates, medjool	Medjool dates
+raisins	pasas	168165	Raisins, dark, seedless (Includes foods for USDA's Food Distribution Program)	dark seedless raisins
+soy sauce	salsa de soja	174277	Soy sauce made from soy and wheat (shoyu)	sold by volume; weigh it in grams (the coach has no densities)
+coconut milk, canned	leche de coco, en lata	170173	Nuts, coconut milk, canned (liquid expressed from grated meat and water)	sold by volume; weigh it in grams (the coach has no densities)
+yeast, baker's, active dry	levadura de panadero, seca	175043	Leavening agents, yeast, baker's, active dry	
+yeast, baker's, compressed	levadura de panadero, fresca	175042	Leavening agents, yeast, baker's, compressed	
+mustard, prepared	mostaza	172234	Mustard, prepared, yellow	yellow mustard; Dijon and old-style mustard differ a little

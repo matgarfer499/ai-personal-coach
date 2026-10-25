@@ -1,0 +1,19 @@
+{
+  "code": "8400000000048",
+  "errors": [],
+  "result": {"id": "product_found", "lc_name": "Product found", "name": "Product found"},
+  "status": "success",
+  "warnings": [],
+  "product": {
+    "code": "8400000000048",
+    "brands": "Marca Prueba",
+    "allergens_tags": [],
+    "nutriments": {
+      "energy-kcal_100g": 70,
+      "proteins_100g": 1.7,
+      "carbohydrates_100g": 15.7,
+      "fat_100g": 0.1,
+      "fiber_100g": 2.4
+    }
+  }
+}

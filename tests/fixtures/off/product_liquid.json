@@ -1,0 +1,22 @@
+{
+  "code": "8400000000031",
+  "errors": [],
+  "result": {"id": "product_found", "lc_name": "Product found", "name": "Product found"},
+  "status": "success",
+  "warnings": [],
+  "product": {
+    "code": "8400000000031",
+    "product_name": "Bebida de avena de prueba",
+    "brands": "Marca Prueba",
+    "product_quantity": 1000,
+    "product_quantity_unit": "ml",
+    "allergens_tags": ["en:gluten"],
+    "nutriments": {
+      "energy-kcal_100g": 45,
+      "proteins_100g": 0.6,
+      "carbohydrates_100g": 7.4,
+      "fat_100g": 1.4,
+      "fiber_100g": 0.8
+    }
+  }
+}
