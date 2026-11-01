@@ -12,7 +12,7 @@ def test_append_and_read_round_trip(tmp_path):
     append_checkin(first, path)
     append_checkin(second, path)
     assert read_checkins(path) == [first, second]
-    assert path.read_text().splitlines()[0].startswith("date,weight_kg")
+    assert path.read_text(encoding="utf-8").splitlines()[0].startswith("date,weight_kg")
 
 
 def test_missing_file_reads_empty(tmp_path):
@@ -41,13 +41,16 @@ def test_rejects_implausible_weight(tmp_path):
 
 def test_reads_a_file_saved_with_a_bom(tmp_path):
     path = tmp_path / "checkins.csv"
-    path.write_text("﻿date,weight_kg,waist_cm,intake_kcal,sleep_hours,notes\n2026-03-02,80,,,,\n")
+    path.write_text(
+        "﻿date,weight_kg,waist_cm,intake_kcal,sleep_hours,notes\n2026-03-02,80,,,,\n",
+        encoding="utf-8",
+    )
     assert read_checkins(path)[0].weight_kg == 80
 
 
 def test_a_file_without_a_date_column_is_a_clear_error(tmp_path):
     path = tmp_path / "checkins.csv"
-    path.write_text("day,weight\n2026-03-02,80\n")
+    path.write_text("day,weight\n2026-03-02,80\n", encoding="utf-8")
     with pytest.raises(ValueError, match="date"):
         read_checkins(path)
 

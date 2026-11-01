@@ -100,7 +100,7 @@ def test_macros_follow_the_target(capsys, data_dir):
 
 
 def test_incomplete_profile_is_a_clear_error(capsys, data_dir):
-    (data_dir / "profile.yaml").write_text("language: es\n")
+    (data_dir / "profile.yaml").write_text("language: es\n", encoding="utf-8")
     code, out = run(capsys, data_dir, "energy")
     assert code == 2
     assert out == {"error": "profile_incomplete", "field": "sex"}
@@ -294,7 +294,7 @@ def test_import_skips_and_reports_template_leftovers(capsys, data_dir):
     warning = out["warnings"][0]
     assert "Bench Press (Barbell)" in warning and "Lateral Raise (Dumbbell)" in warning
     assert "Plank" not in warning and "2026-01-02" in warning
-    stored = (data_dir / "sessions.csv").read_text()
+    stored = (data_dir / "sessions.csv").read_text(encoding="utf-8")
     assert "Plank" in stored and "Lateral Raise" not in stored
     _, again = run(capsys, data_dir, "import", str(HEVY_LEFTOVERS))
     assert (again["added"], again["duplicates"], again["skipped_empty"]) == (0, 3, 3)
@@ -309,7 +309,9 @@ def test_import_unknown_file_is_a_clear_error(capsys, data_dir, tmp_path):
 
 def test_import_warns_when_another_source_has_the_session(capsys, data_dir, tmp_path):
     export = tmp_path / "manual.csv"
-    export.write_text("date,exercise,weight_kg,reps\n2025-07-24 11:25,Bench Press,62.5,8\n")
+    export.write_text(
+        "date,exercise,weight_kg,reps\n2025-07-24 11:25,Bench Press,62.5,8\n", encoding="utf-8"
+    )
     run(capsys, data_dir, "import", str(export))
     _, out = run(capsys, data_dir, "import", str(HEVY_EXPORT))
     assert out["warnings"] and "2025-07-24T11:25:00" in out["warnings"][0]

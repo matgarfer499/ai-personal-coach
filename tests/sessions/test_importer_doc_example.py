@@ -23,7 +23,8 @@ def test_worked_example_runs(tmp_path, monkeypatch):
         "Day,Lift,Set,Kg,Reps,Warmup\n"
         "2025-08-20,Squat,1,40,10,yes\n"
         "2025-08-20,Squat,2,80,6,no\n"
-        "2025-08-20,Pull Up,1,,8,no\n"
+        "2025-08-20,Pull Up,1,,8,no\n",
+        encoding="utf-8",
     )
     importer = base.detect(export)
     assert importer.name == "liftlog_csv"
@@ -36,7 +37,7 @@ def test_worked_example_runs(tmp_path, monkeypatch):
     assert sets[0].start_time == datetime(2025, 8, 20)
     assert sets[2].weight_kg is None
     bad = tmp_path / "bad.csv"
-    bad.write_text("Day,Lift,Set,Kg,Reps,Warmup\nmonday,Squat,1,40,10,no\n")
+    bad.write_text("Day,Lift,Set,Kg,Reps,Warmup\nmonday,Squat,1,40,10,no\n", encoding="utf-8")
     with pytest.raises(base.ImporterError):
         importer.read(bad)
     code_lines = [line for line in example.strip().splitlines() if line.strip()]

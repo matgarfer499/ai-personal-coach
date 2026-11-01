@@ -19,10 +19,14 @@ def test_build_index_lists_every_rule_with_section_grade_sources_and_line():
 
 def test_build_index_does_not_depend_on_file_creation_order_or_location(tmp_path):
     names = ["widgets.md", "sources.md"]
-    (tmp_path / "zeta.md").write_text("# Z\n\n> Evidence checked on 2026-01-01.\n")
+    (tmp_path / "zeta.md").write_text(
+        "# Z\n\n> Evidence checked on 2026-01-01.\n", encoding="utf-8"
+    )
     for name in reversed(names):
-        (tmp_path / name).write_text((GOOD / name).read_text())
-    (tmp_path / "alpha.md").write_text("# A\n\n> Evidence checked on 2026-01-01.\n")
+        (tmp_path / name).write_text((GOOD / name).read_text(encoding="utf-8"), encoding="utf-8")
+    (tmp_path / "alpha.md").write_text(
+        "# A\n\n> Evidence checked on 2026-01-01.\n", encoding="utf-8"
+    )
     text = bki.build_index(tmp_path)
     assert text.index("## alpha.md") < text.index("## widgets.md") < text.index("## zeta.md")
     assert str(tmp_path) not in text
@@ -32,7 +36,8 @@ def test_build_index_does_not_depend_on_file_creation_order_or_location(tmp_path
 
 def test_build_index_escapes_pipes(tmp_path):
     (tmp_path / "x.md").write_text(
-        "# X\n\n> Evidence checked on 2026-01-01.\n\n## A | B\n\n### C | D\n**Grade:** strong\n"
+        "# X\n\n> Evidence checked on 2026-01-01.\n\n## A | B\n\n### C | D\n**Grade:** strong\n",
+        encoding="utf-8",
     )
     assert "| 7 | A \\| B | C \\| D | strong |  |" in bki.build_index(tmp_path)
 
@@ -43,7 +48,10 @@ def test_main_writes_index_and_check_detects_staleness(tmp_path):
     assert bki.main(["--knowledge-dir", str(kdir)]) == 0
     assert ck.check_index_fresh(kdir) == []
     rules = kdir / "widgets.md"
-    rules.write_text(rules.read_text().replace("Polish widgets weekly", "Polish widgets often"))
+    rules.write_text(
+        rules.read_text(encoding="utf-8").replace("Polish widgets weekly", "Polish widgets often"),
+        encoding="utf-8",
+    )
     errors = ck.check_index_fresh(kdir)
     assert errors and "stale" in errors[0]
 
@@ -57,7 +65,7 @@ README_LINE = (
 def copy_with_readme(tmp_path, readme):
     kdir = tmp_path / "k"
     shutil.copytree(GOOD, kdir)
-    (tmp_path / "README.md").write_text(readme)
+    (tmp_path / "README.md").write_text(readme, encoding="utf-8")
     return kdir
 
 
@@ -74,7 +82,7 @@ def test_counts_cover_rules_and_sources():
 def test_main_rewrites_the_counts_line_in_the_readme_beside_the_knowledge_dir(tmp_path):
     kdir = copy_with_readme(tmp_path, f"# Title\n\n{README_LINE}\nUntouched text.\n")
     assert bki.main(["--knowledge-dir", str(kdir)]) == 0
-    text = (tmp_path / "README.md").read_text()
+    text = (tmp_path / "README.md").read_text(encoding="utf-8")
     assert "1 rule files (widgets and more), 3 graded rules, 2 sources;" in text
     assert text.startswith("# Title\n\n| `knowledge/` |") and text.endswith("Untouched text.\n")
 
@@ -84,7 +92,11 @@ def test_check_flags_stale_readme_counts_until_the_index_is_rebuilt(tmp_path):
     bki.main(["--knowledge-dir", str(kdir)])
     assert ck.check_readme_counts(kdir) == []
     rules = kdir / "widgets.md"  # a research merge adds a rule: the README is now behind
-    rules.write_text(rules.read_text() + "\n### One more rule\n**Grade:** strong\n\nText [S001].\n")
+    rules.write_text(
+        rules.read_text(encoding="utf-8")
+        + "\n### One more rule\n**Grade:** strong\n\nText [S001].\n",
+        encoding="utf-8",
+    )
     errors = ck.check_readme_counts(kdir)
     assert len(errors) == 1 and "4 graded rules" in errors[0]
     assert "build_knowledge_index" in errors[0]
@@ -108,7 +120,9 @@ def test_no_readme_beside_the_knowledge_dir_means_nothing_to_check(tmp_path):
 
 def test_check_main_fails_on_stale_readme_counts(tmp_path, capsys):
     kdir = copy_with_readme(tmp_path, README_LINE)
-    (kdir / "index.md").write_text(bki.build_index(kdir))  # index fresh, README stale
+    (kdir / "index.md").write_text(
+        bki.build_index(kdir), encoding="utf-8"
+    )  # index fresh, README stale
     assert ck.main(["--knowledge-dir", str(kdir)]) == 1
     assert "README.md" in capsys.readouterr().out
 

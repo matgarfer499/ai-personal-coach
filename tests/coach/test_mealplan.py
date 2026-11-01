@@ -566,7 +566,9 @@ def test_tastes_set_pantry(capsys, data_dir):
 
 
 def with_tastes(data_dir, **fields):
-    (data_dir / "tastes.yaml").write_text(yaml.safe_dump(fields, allow_unicode=True))
+    (data_dir / "tastes.yaml").write_text(
+        yaml.safe_dump(fields, allow_unicode=True), encoding="utf-8"
+    )
 
 
 def tomato_day(*extra_items, dish="Plato A", seasoning=None, when=date(2026, 10, 26)):
@@ -639,7 +641,8 @@ def test_a_never_again_dish_is_flagged(capsys, data_dir):
     path = data_dir / "tastes.yaml"
     path.write_text(
         "ratings:\n- {dish: plato a, rating: never_again, date: 2026-10-20}\n"
-        "- {dish: Plato B, rating: loved, date: 2026-10-20}\n"
+        "- {dish: Plato B, rating: loved, date: 2026-10-20}\n",
+        encoding="utf-8",
     )
     _, out = check(capsys, data_dir, tomato_day())
     assert flags(out) == [("never_again", "dish", "plato a", "Plato A")]

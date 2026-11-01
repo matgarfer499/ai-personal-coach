@@ -28,7 +28,7 @@ def test_round_trip(tmp_path):
 
 def test_partial_profile_loads_and_require_names_the_missing_field(tmp_path):
     path = tmp_path / "profile.yaml"
-    path.write_text("language: es\nweight_kg: 80\n")
+    path.write_text("language: es\nweight_kg: 80\n", encoding="utf-8")
     profile = load_profile(path)
     assert profile.weight_kg == 80
     with pytest.raises(ProfileIncomplete) as err:
@@ -43,7 +43,7 @@ def test_missing_file_is_an_empty_profile(tmp_path):
 
 def test_unknown_key_is_rejected(tmp_path):
     path = tmp_path / "profile.yaml"
-    path.write_text("wieght_kg: 80\n")
+    path.write_text("wieght_kg: 80\n", encoding="utf-8")
     with pytest.raises(ValueError, match="wieght_kg"):
         load_profile(path)
 
@@ -54,7 +54,7 @@ def test_unknown_key_is_rejected(tmp_path):
 )
 def test_invalid_enum_values_are_rejected(tmp_path, field, value):
     path = tmp_path / "profile.yaml"
-    path.write_text(f"{field}: {value}\n")
+    path.write_text(f"{field}: {value}\n", encoding="utf-8")
     with pytest.raises(ValueError, match=field):
         load_profile(path)
 
@@ -93,7 +93,7 @@ def test_bmi():
 )
 def test_hand_edited_profile_errors_are_clear(tmp_path, text, message):
     path = tmp_path / "profile.yaml"
-    path.write_text(text)
+    path.write_text(text, encoding="utf-8")
     with pytest.raises(ValueError, match=message):
         load_profile(path)
 
@@ -155,7 +155,7 @@ def test_vigorous_review_is_a_screening_outcome(tmp_path):
 )
 def test_empty_lists_in_a_hand_edited_profile_are_empty(tmp_path, text):
     path = tmp_path / "profile.yaml"
-    path.write_text(text)
+    path.write_text(text, encoding="utf-8")
     profile = load_profile(path)
     assert profile.medications == []
     assert all(i.get("exercises", []) == [] for i in profile.injuries)
