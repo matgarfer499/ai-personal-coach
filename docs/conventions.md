@@ -88,7 +88,9 @@ Every one is labelled where it lives: `# convention:` in code, "convention", "he
   sessions per "Protein timing and the \"anabolic window\"" and "Carbohydrate around long or
   fasted sessions". The line format is a convention; the rules give no clock times, so the
   skill only places a protein meal within a few hours of a session and a carbohydrate snack
-  before fasted or long (over about 45 min) sessions.
+  before fasted or long (over about 45 min) sessions. `fri|sat 10:00` means one session on
+  either day: /menu treats both as possible training days and asks which one only when the
+  meals would differ.
 - /menu: a meal marked `tupper: true` is eaten away from home (cold or reheatable, no
   last-minute cooking); the CLI only records it.
 - /review: a calorie change is proposed only when the weight-change rate is outside the goal's

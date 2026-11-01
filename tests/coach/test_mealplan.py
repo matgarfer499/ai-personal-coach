@@ -779,3 +779,64 @@ def test_base_words_are_plain_words(data_dir):
         draft = lunches((26, based("Lentejas", bad)))
         with pytest.raises(ValueError, match=r"2026-10-26 Lentejas: `base:`.*no spaces"):
             mealplan.load_draft(write(data_dir, draft))
+
+
+# --- eat-out meals and people per meal ---
+
+
+def shop_for(capsys, data_dir, *meals):
+    draft = {"days": [meals_day(date(2026, 10, 26), *meals)]}
+    code, out = check(capsys, data_dir, draft, "save")
+    assert code == 0, out
+    return run(capsys, data_dir, "shopping")[1], out
+
+
+def test_eat_out_meal_counts_in_totals_but_is_not_bought(capsys, data_dir):
+    home = meal("Desayuno", ("A", ["Comida de prueba=1000"]))
+    bar = meal("Comida", ("Menú del bar", ["Comida de prueba=900", "lentejas, cocidas=100"]))
+    bar["eat_out"] = True
+    shop, out = shop_for(capsys, data_dir, home, bar)  # saves only if the bar food counts
+    assert out["ok"] is True
+    assert shop["chains"]["Mercadona"] == [{"name": "Comida de prueba", "grams": 1000}]
+    assert shop["eaten_out"] == ["Menú del bar"]
+
+
+def test_people_multiplies_the_shopping_amounts(capsys, data_dir):
+    cooked = meal("Comida", ("A", LENTILS), people=3)
+    shop, _ = shop_for(capsys, data_dir, cooked)
+    assert shop["chains"]["Mercadona"] == [{"name": "Comida de prueba", "grams": 5700}]
+    assert shop["eaten_out"] == []
+
+
+def test_a_batch_for_two_is_bought_at_servings_times_people(capsys, data_dir):
+    batch = {"servings": 2}
+
+    def lunch(d):
+        return meals_day(date(2026, 10, d), meal("Comida", ("Lentejas", LENTILS, batch), people=2))
+
+    assert check(capsys, data_dir, {"days": [lunch(26), lunch(27)]}, "save")[0] == 0
+    shop = run(capsys, data_dir, "shopping")[1]
+    assert shop["chains"]["any"] == [{"name": "lentejas, cocidas", "grams": 400}]
+    assert shop["chains"]["Mercadona"] == [{"name": "Comida de prueba", "grams": 7600}]
+
+
+def test_eat_out_and_tupper_together_is_an_error(data_dir):
+    day = meals_day(
+        date(2026, 10, 26),
+        meal("Comida", ("A", ["Comida de prueba=1000"]), tupper=True, eat_out=True),
+    )
+    with pytest.raises(ValueError, match="eat_out"):
+        mealplan.load_draft(write(data_dir, {"days": [day]}))
+
+
+def test_people_must_be_a_whole_number_and_shared_by_a_batch(data_dir):
+    bad = meals_day(date(2026, 10, 26), meal("Comida", ("A", ["Comida de prueba=1"]), people=0))
+    with pytest.raises(ValueError, match="people"):
+        mealplan.load_draft(write(data_dir, {"days": [bad]}))
+    dish = ("Lentejas", ["lentejas, cocidas=100"], {"servings": 2})
+    mixed = [
+        meals_day(date(2026, 10, 26), meal("Comida", dish)),
+        meals_day(date(2026, 10, 27), meal("Comida", dish, people=2)),
+    ]
+    with pytest.raises(ValueError, match="Lentejas.*people"):
+        mealplan.load_draft(write(data_dir, {"days": mixed}))
