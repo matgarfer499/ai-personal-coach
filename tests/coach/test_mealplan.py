@@ -546,7 +546,9 @@ def test_shopping_counts_a_plain_repeated_item_per_appearance(capsys, data_dir):
 
 
 def test_shopping_leaves_out_the_pantry(capsys, data_dir):
-    (data_dir / "tastes.yaml").write_text("pantry: [aceite de oliva, comida de prueba]\n")
+    (data_dir / "tastes.yaml").write_text(
+        "pantry: [aceite de oliva, comida de prueba]\n", encoding="utf-8"
+    )
     items = ["Comida de prueba=1800", "aceite de oliva=10", "lentejas, cocidas=100"]
     draft = {"days": [meals_day(date(2026, 10, 26), meal("Comida", ("A", items)))]}
     code, _ = check(capsys, data_dir, draft, "save")

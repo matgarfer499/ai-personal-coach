@@ -302,7 +302,7 @@ def test_import_skips_and_reports_template_leftovers(capsys, data_dir):
 
 def test_import_unknown_file_is_a_clear_error(capsys, data_dir, tmp_path):
     other = tmp_path / "other.csv"
-    other.write_text("foo,bar\n1,2\n")
+    other.write_text("foo,bar\n1,2\n", encoding="utf-8")
     code, out = run(capsys, data_dir, "import", str(other))
     assert code == 2 and "no importer" in out["message"]
 

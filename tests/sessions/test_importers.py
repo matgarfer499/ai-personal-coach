@@ -186,7 +186,7 @@ def test_registry_detects_and_refuses_unknown(tmp_path):
     assert detect(GENERIC / "basic.csv").name == "generic_csv"
     assert get("hevy_csv").name == "hevy_csv"
     other = tmp_path / "other.csv"
-    other.write_text("foo,bar\n1,2\n")
+    other.write_text("foo,bar\n1,2\n", encoding="utf-8")
     with pytest.raises(ImporterError, match="no importer"):
         detect(other)
 

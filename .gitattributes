@@ -2,3 +2,8 @@
 *.png binary
 *.gif binary
 *.pdf binary
+# coach and the build scripts write CSV/TSV with CRLF (csv.writer); keep those bytes as committed
+*.csv -text
+*.tsv -text
+# test fixtures must stay LF on Windows (multi-line quoted notes)
+tests/fixtures/**/*.csv text eol=lf
