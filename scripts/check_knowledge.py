@@ -66,7 +66,9 @@ BOILERPLATE = re.compile(
 # the sentences that carry the claim's numbers, at most about 500 characters).
 MAX_SUPPORTS_CHARS = 500
 # a heading may itself contain quotes, so the closing quote is the one followed by punctuation
-SEE_RE = re.compile(r'see "(.+?)"(?=[\s,;.:)]|$)')
+SEE_RE = re.compile(r'[Ss]ee(?: also)? "(.+?)"(?=[\s,;.:)]|$)')
+# `(see Some Heading)`: unquoted, so only a capitalised target counts ("(see next rule)" is prose)
+SEE_UNQUOTED_RE = re.compile(r"\([Ss]ee(?: also)? ([A-Z][^()\"]*)\)")
 
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 
@@ -157,7 +159,7 @@ def check_readme_counts(knowledge_dir: Path) -> list[str]:
 
 
 def check_references(knowledge_dir: Path) -> list[str]:
-    """Every `see "X"` in a rule file must name a `## X` or `### X` heading in some rule file."""
+    """Every `see "X"` or `(see X)` must name a `## X` or `### X` heading in some rule file."""
     texts = {path: read(path) for path in rule_files(knowledge_dir)}
     headings = {
         found[1]
@@ -169,7 +171,7 @@ def check_references(knowledge_dir: Path) -> list[str]:
         f'{path}:{lineno}: see "{target}" names no heading'
         for path, text in texts.items()
         for lineno, line in enumerate(text.splitlines(), start=1)
-        for target in SEE_RE.findall(line)
+        for target in SEE_RE.findall(line) + SEE_UNQUOTED_RE.findall(line)
         if target not in headings
     ]
 
