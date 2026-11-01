@@ -162,14 +162,22 @@ Every lunch and dinner dish, whatever its source:
      salsa de soja, kéfir and leche de coco can be written in millilitres (`leche semidesnatada=300ml`);
      the shopping list then shows it in ml. Caldo de pastilla is the made-up broth: ml or g of
      prepared broth, never the dry cube. All other foods stay in grams.
-   - No match: ask for the barcode on the pack and add it. Still not in OFF: use a generic food
-     from `coach foods search` and say so.
-   - Exit code 2 naming `COACH_OFF_CONTACT`: tell the person running the coach that Open Food
-     Facts asks for a contact email in that variable (set it under `env` in
-     `.claude/settings.local.json`, see the README, then restart Claude Code), and go on with the
-     foods the CLI knows.
+   - No match: ask for the barcode on the pack and add it. Still not in OFF, or
+     `COACH_OFF_CONTACT` is missing: add it from the label instead, no network needed:
+     `coach products add --label --name NAME --chain CHAIN --per "100 g" --kcal K --protein P
+     --carbs C --fat F --allergens "a, b"` (optional `--fibre FI`, `--barcode B`). Read each
+     value from the label with the client, per 100 g or per 100 ml, carbohydrate as printed;
+     never estimate one, and leave `--fibre` out when the label has none. Read the allergen
+     declaration on the pack too: `--allergens` is required, `"a, b"` for the declared ones,
+     `none` only if the pack declares none, `unknown` if the client cannot read it (the CLI then
+     warns). Say the product is "values from the label". If the CLI warns that kcal and macros
+     disagree, read the label again and fix the entry with `--replace`.
+   - Exit code 2 naming `COACH_OFF_CONTACT`: use `--label` as above, and tell the person running
+     the coach that Open Food Facts lookups need a contact email in that variable (set it under
+     `env` in `.claude/settings.local.json`, see the README, then restart Claude Code).
    - Never use a product whose `allergens` matches an allergy or intolerance, nor a disliked
-     food. Never fetch prices.
+     food. A product whose `allergens` contains `unknown` is never used for a client with any
+     allergy or intolerance. Never fetch prices.
 6. Seasoning. Dried herbs, spices, salt, pepper, vinegar and lemon juice are free; anything
    else with energy (oil, butter, sauces, honey, cheese) is an item with grams, or millilitres
    for a product per 100 ml (a convention, see docs/conventions.md).
@@ -269,8 +277,9 @@ In the profile language, one compact table per day: meal, dish, and the day's kc
 from `coach mealplan check` (or `coach menu`), then one line with any day that is not ok. Steps,
 items and seasoning only for a dish the client asks about. Name any value in `missing` as "sin
 dato", never as a number. Mark products from Open Food Facts as unverified data from a public
-database. After saving: the PDF path from `coach mealplan export`; the recipes and the shopping
-list are in the PDF (step 9 says what to do without the `pdf` extra).
+database, and products added with `--label` as "values from the label". After saving: the PDF
+path from `coach mealplan export`; the recipes and the shopping list are in the PDF (step 9
+says what to do without the `pdf` extra).
 
 ## Safety
 

@@ -1,7 +1,16 @@
 import pytest
 
 from coach import foods
-from coach.foods import Food, energy_exception, find, load_foods, menu_totals
+from coach.foods import (
+    GAP,
+    NO_MACROS,
+    Food,
+    energy_check,
+    energy_exception,
+    find,
+    load_foods,
+    menu_totals,
+)
 
 
 def row(**kw):
@@ -29,8 +38,13 @@ def test_energy_exception():
     assert energy_exception(row()) is None
     assert energy_exception(row(kcal=109)) is None
     assert "%" in energy_exception(row(kcal=120))
+    assert "source uses" in energy_exception(row(kcal=120))
+    assert "source uses" not in energy_exception(row(kcal=120), typed=True)
     assert energy_exception(row(kcal=0, protein_g=0, carbs_g=0, fat_g=0, fibre_g=0)) is None
     # Measured against the computed value: 89 is 11% below 100.
+    assert energy_check(row(kcal=120))[0] == GAP
+    zero = row(kcal=100, protein_g=0, carbs_g=0, fat_g=0, fibre_g=0)
+    assert energy_check(zero)[0] == NO_MACROS and energy_check(row()) is None
     assert energy_exception(row(kcal=89)) is not None
     assert energy_exception(row(fibre_g="")) is None  # blank fibre counts as 0 (98 vs 100)
 

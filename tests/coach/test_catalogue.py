@@ -276,3 +276,65 @@ def test_foods_search_lists_missing_values_for_every_entry(capsys, data_dir):
     assert out["products"][0]["missing"] == ["fibre_g"]
     _, out = run(capsys, data_dir, "foods", "search", "lentejas")
     assert all(f["missing"] == [] for f in out["foods"])
+
+
+def test_a_label_product_round_trips(tmp_path):
+    product = catalogue.CatalogueProduct(
+        barcode="label-proteina-chocolate",
+        product_name="Proteina chocolate",
+        brand="",
+        chain="Mercadona",
+        per="100 g",
+        kcal=380,
+        protein_g=30,
+        carbs_g=40,
+        fat_g=9.5,
+        fibre_g=None,
+        allergens=("soja",),
+        url="",
+        fetched_on=date(2026, 11, 1),
+        source=catalogue.LABEL_SOURCE,
+    )
+    catalogue.save([product], tmp_path)
+    assert catalogue.load(tmp_path) == [product]
+    assert catalogue.LABEL_SOURCE == "label (entered by hand)"
+
+
+def test_off_replace_never_overwrites_a_hand_entered_label_row(capsys, data_dir, off_returns):
+    code, _ = run(
+        capsys, data_dir, "products", "add", "--label", "--name", "Proteina choco",
+        "--chain", "X", "--per", "100 g", "--kcal", "380", "--protein", "30", "--carbs", "40",
+        "--fat", "9.5", "--allergens", "soja", "--barcode", "8400000000017",
+    )  # fmt: skip
+    assert code == 0
+    code, out = add(
+        capsys, data_dir, off_returns, "product_found.json", "8400000000017", "--replace"
+    )
+    assert code != 0 and "hand-entered label row" in out["message"]
+    assert (
+        "remove" not in out["message"]
+        and "giving every label value again: --label --barcode 8400000000017 --replace"
+        in out["message"]
+    )
+    assert catalogue.load(data_dir)[0].allergens == ("soja",)
+
+
+def test_off_add_with_energy_but_no_macros_warns_in_a_full_sentence(capsys, data_dir, monkeypatch):
+    raw = json.loads((FIXTURES / "product_found.json").read_text(encoding="utf-8"))
+    for key in ("proteins_100g", "carbohydrates_100g", "fat_100g", "fiber_100g"):
+        raw["product"]["nutriments"][key] = 0
+    monkeypatch.setattr(off, "_get_json", lambda url: raw)
+    _, out = run(capsys, data_dir, "products", "add", "8400000000017", "--chain", "X")
+    assert out["warnings"] == [
+        "kcal is stated but no energy-yielding macros are listed; check the pack"
+    ]
+
+
+def test_off_energy_gap_does_not_say_label(capsys, data_dir, monkeypatch):
+    raw = json.loads((FIXTURES / "product_found.json").read_text(encoding="utf-8"))
+    raw["product"]["nutriments"]["energy-kcal_100g"] = 400
+    monkeypatch.setattr(off, "_get_json", lambda url: raw)
+    _, out = run(capsys, data_dir, "products", "add", "8400000000017", "--chain", "X")
+    warning = out["warnings"][0]
+    assert warning.startswith("kcal is ") and "label" not in warning
+    assert warning.endswith("(source uses food-specific factors); check the pack")

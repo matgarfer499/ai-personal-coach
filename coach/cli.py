@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import hashlib
 import json
 import os
 import re
@@ -702,16 +703,199 @@ def _catalogue_entry(p: catalogue.CatalogueProduct) -> dict:
 PER_NAMES = {"100 g": "grams", "100 ml": "millilitres"}
 
 
+# convention: 8 hex digits (32 bits) tell apart the lossy slugs of one client's few products.
+LABEL_KEY_HASH_CHARS = 8
+LABEL_ONLY = ("kcal", "protein", "carbs", "fat", "fibre", "allergens", "label_barcode")
+
+
+# convention: kcal per 100 g is below 900, so a typed 1 or 2 digit prefix, one separator and
+# exactly 3 digits (1.674, 12.500) is a kJ value or a thousands grouping, not kcal. A leading 0
+# (0,125) is a plain decimal.
+KCAL_THOUSANDS = re.compile(r"[1-9][0-9]?[.,][0-9]{3}", re.ASCII)
+# Allergen entries are read by structure. Per item (a comma inside parentheses stays in its
+# item): an exact none phrase means none; an unknown marker adds `unknown`; a free-from or
+# negation claim is refused; text with a recognised allergen word is a declared allergen, stored
+# as typed; anything else is stored as typed and adds `unknown` too. Words match whole (never
+# "none" inside "piñones").
+# The 14 EU allergens in Spanish and English with common synonyms, accent-folded.
+ALLERGEN_WORDS = (
+    *"""gluten trigo cebada centeno avena espelta kamut wheat barley rye oats
+    crustaceos crustaceo gambas gamba langostino langostinos camarones cangrejo crustaceans
+    shrimp prawns huevo huevos egg eggs pescado pescados fish
+    cacahuete cacahuetes cacahuate cacahuates mani peanut peanuts
+    soja soya soy soybeans leche lactosa lacteos milk lactose dairy
+    almendra almendras avellana avellanas nuez nueces anacardo anacardos pistacho pistachos
+    pinon pinones macadamia pecana pecanas nuts nut almonds hazelnuts walnuts cashews
+    pistachios apio celery mostaza mustard sesamo sesame sulfito sulfitos sulphites sulfites
+    altramuz altramuces lupin lupino moluscos molusco molluscs mollusks""".split(),
+    "frutos de cascara", "frutos secos", "dioxido de azufre", "sulphur dioxide",
+)  # fmt: skip
+ALLERGEN_VOCAB = re.compile(
+    r"(?<!\w)(?:" + "|".join(sorted(ALLERGEN_WORDS, key=len, reverse=True)) + r")(?!\w)"
+)
+ALLERGEN_UNKNOWN = re.compile(
+    r"(?<!\w)(?:unknown|desconoc\w*|desconoz\w*|illegible|ilegible|no legible|not readable"
+    r"|no indicado"
+    r"|no consta|not sure|n/a|n\.a\.|nd|no data|no info|no informacion|sin informacion"
+    r"|no lo se|no se|ns/nc)(?!\w)|\?"
+)
+ALLERGEN_NONE = {
+    "none", "ninguno", "ninguna", "ningun alergeno", "sin alergenos", "sin alergeno",
+    "no alergenos", "no contiene", "no contiene alergenos", "no allergens", "nothing", "nada",
+}  # fmt: skip
+ALLERGEN_NEGATION = re.compile(
+    r"(?<!\w)(?:no|sin|without|not|exento|exenta|exentos|exentas|free|libre|libres|doesn|don"
+    r"|nunca|ningun\w*|none|nothing|nada)(?!\w)"
+)
+ALLERGEN_FILLER = re.compile(
+    r"(?<!\w)(?:s[ií]|lleva|tiene|contiene|if|it|has|contains)(?!\w)", re.I
+)
+UNRECOGNISED_WARNING = (
+    "unrecognised allergen text: do not use for anyone with an allergy or intolerance until checked"
+)
+
+
+def _split_items(text: str) -> list[str]:
+    """Split on commas and semicolons outside parentheses."""
+    items, depth, current = [], 0, ""
+    for char in text:
+        depth += (char in "([") - (char in ")]")
+        if char in ",;" and depth <= 0:
+            items.append(current)
+            current = ""
+        else:
+            current += char
+    return [c for piece in [*items, current] if (c := off._text(piece))]
+
+
+def _without_markers(piece: str) -> str:
+    """The piece minus its unknown markers and filler words, in the client's own spelling."""
+    keep, folded = [], ""
+    for char in piece:  # fold char by char so folded offsets map back to the original
+        part = fold(char) if char.strip() else " "
+        folded += part
+        keep += [char] * len(part)
+    drop = {i for m in ALLERGEN_UNKNOWN.finditer(folded) for i in range(m.start(), m.end())}
+    rest = "".join(c if i not in drop else " " for i, c in enumerate(keep))
+    rest = re.sub(r"[(\[]\s*[)\]]", " ", ALLERGEN_FILLER.sub(" ", rest))
+    return " ".join(rest.strip(" ,.:;-/").split())
+
+
+def _label_allergens(text: str) -> tuple[list[str], bool]:
+    """(allergens, unrecognised): `none` is [], `unknown` leads the list; unrecognised is True
+    when some text was kept that is not a known allergen."""
+    if not (pieces := _split_items(text)):
+        raise ValueError("--allergens is empty: list them, or say none or unknown")
+    unknown = none = unrecognised = False
+    declared: dict[str, str] = {}  # folded -> first spelling, in first-seen order
+    for piece in pieces:
+        if fold(piece) in ALLERGEN_NONE:
+            none = True
+            continue
+        marked = bool(ALLERGEN_UNKNOWN.search(fold(piece)))
+        if marked:
+            unknown = True
+            piece = _without_markers(piece)
+            if not piece:
+                continue
+        folded = fold(piece)
+        if ALLERGEN_NEGATION.search(folded):
+            raise ValueError(
+                f"--allergens {piece!r} is a free-from claim: write only the allergens the pack "
+                "declares, or exactly none (it declares none) or unknown (it cannot be read)"
+            )
+        if ALLERGEN_VOCAB.search(folded):
+            declared.setdefault(folded, piece)
+        elif not marked:  # text left beside a marker is not stored as an allergen
+            unknown = unrecognised = True
+            declared.setdefault(folded, piece)
+    if none and (declared or unknown):
+        raise ValueError(f"--allergens {text!r}: none cannot be combined with other allergens")
+    return (["unknown", *declared.values()] if unknown else list(declared.values())), unrecognised
+
+
+def _label_product(args: argparse.Namespace) -> dict:
+    """Values the client read off the pack: no network, same limits as Open Food Facts values."""
+    required = ("name", "per", "kcal", "protein", "carbs", "fat", "allergens")
+    if missing := [f"--{f}" for f in required if getattr(args, f) is None]:
+        raise ValueError(f"--label also needs {', '.join(missing)}")
+    values = {}
+    for column, flag, raw in (
+        ("kcal", "kcal", args.kcal),
+        ("protein_g", "protein", args.protein),
+        ("carbs_g", "carbs", args.carbs),
+        ("fat_g", "fat", args.fat),
+        ("fibre_g", "fibre", args.fibre),
+    ):
+        if raw is None:
+            values[column] = None
+            continue
+        limit = off.MAX_KCAL_PER_100G if column == "kcal" else off.MAX_G_PER_100G
+        text = raw.strip()
+        if column == "kcal" and KCAL_THOUSANDS.fullmatch(text):
+            raise ValueError(f"--kcal {raw!r} looks like kJ or a thousands number: type kcal")
+        # ASCII digits, at most one "." or "," ("9,5", ",5", "5.", grams "9.500"); no "1_0", "1e1".
+        # Limits are below 1000, so one separator is always a decimal point.
+        strict = re.fullmatch(r"(?=.*[0-9])[0-9]*(?:[.,][0-9]*)?", text, re.ASCII)
+        number = off._number(text.replace(",", ".") if strict else None, limit)
+        if number is None:
+            raise ValueError(f"--{flag} {raw!r} must be a number from 0 to {limit:g}")
+        values[column] = number
+    if args.label_barcode is not None and not off.BARCODE.fullmatch(args.label_barcode):
+        raise ValueError(f"a barcode is 8 to 14 digits, not {args.label_barcode!r}")
+    name = off._text(args.name)
+    if not name:
+        raise ValueError("--name is empty")
+    # The slug is lossy (cuts, drops non-Latin text): then the key also carries a hash of the
+    # folded name, so different names stay different keys.
+    stem = recipes.slug(name)
+    if fold(name) != stem.replace("-", " "):  # plain only when the name is exactly its slug
+        stem += "-" + hashlib.sha1(fold(name).encode()).hexdigest()[:LABEL_KEY_HASH_CHARS]
+    allergens, unrecognised = _label_allergens(args.allergens)
+    return {
+        # the slug keeps path and CSV structure out of the key
+        "barcode": args.label_barcode or f"label-{stem}",
+        "name": name,
+        "brand": None,
+        "per": args.per,
+        "values": values,
+        "allergens": allergens,
+        "unrecognised": unrecognised,
+        "url": "",
+    }
+
+
 def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
     if args.products_cmd == "list":
         return {"products": [_catalogue_entry(p) for p in catalogue.load(args.data_dir)]}
     if args.products_cmd == "search":
         hits = off.search(args.words, args.brand, args.limit, profile.language or "es")
         return {"source": catalogue.SOURCE, "hits": hits}
-    found = off.product(args.barcode)
-    if found is None:
-        raise ValueError(f"{args.barcode} is not in Open Food Facts; check the barcode on the pack")
-    name = " ".join((args.name or found["name"] or "").split())
+    if not args.label:
+        stray = [
+            "--" + f.replace("label_", "").replace("_", "-")
+            for f in LABEL_ONLY
+            if getattr(args, f) is not None
+        ]
+        if stray:
+            raise ValueError(f"{', '.join(stray)} only work with --label")
+    if args.label:
+        if args.confirm_per:
+            raise ValueError("--confirm-per does nothing with --label (there is no pack unit)")
+        if args.barcode:
+            raise ValueError("with --label, give the barcode as --barcode, not as an argument")
+        found = _label_product(args)
+    else:
+        if not args.barcode:
+            raise ValueError("give a BARCODE, or --label to type the values from the pack")
+        found = off.product(args.barcode)
+        if found is None:
+            raise ValueError(
+                f"{args.barcode} is not in Open Food Facts; check the barcode on the pack"
+            )
+        found["barcode"] = args.barcode
+    barcode = found["barcode"]
+    name = " ".join(((found["name"] if args.label else args.name or found["name"]) or "").split())
     if not name:
         raise ValueError(f"Open Food Facts has no name for {args.barcode}: give one with --name")
     per = args.per or found["per"]
@@ -727,14 +911,38 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
             'give --per "100 g" or --per "100 ml"'
         )
     products = catalogue.load(args.data_dir)
-    if any(p.barcode == args.barcode for p in products) and not args.replace:
-        raise ValueError(f"{args.barcode} is already in the catalogue: add --replace to refresh it")
-    others = [p for p in products if p.barcode != args.barcode]
+    stored = next((p for p in products if p.barcode == barcode), None)
+    if stored and not args.label and stored.source == catalogue.LABEL_SOURCE:
+        raise ValueError(
+            f"{barcode} is a hand-entered label row: "
+            "correct it by giving every label value again: "
+            f"--label --barcode {barcode} --replace --name ... (all values)"
+        )
+    if stored and args.label and stored.source != catalogue.LABEL_SOURCE:
+        raise ValueError(
+            f"{barcode} is an {stored.source} row: label values never overwrite it; "
+            "use a different --barcode, or omit --barcode, for a separate product"
+        )
+    # Only a generated key can be a lossy collision; an explicit barcode may rename its product.
+    if (
+        stored
+        and args.label
+        and not args.label_barcode
+        and (fold(stored.product_name) != fold(name))
+    ):
+        raise ValueError(
+            f"{barcode} is already in the catalogue as a DIFFERENT product "
+            f"({stored.product_name!r}, not {name!r}): pass --barcode with the pack's barcode, "
+            "or --name with a more specific name"
+        )
+    if stored and not args.replace:
+        raise ValueError(f"{barcode} is already in the catalogue: add --replace to refresh it")
+    others = [p for p in products if p.barcode != barcode]
     table = regions.menu_table(profile.region) + [p.as_food() for p in others]
     if foods.find(name, table) is not None:
         raise ValueError(f"{name!r} is already a food or product name: choose one with --name")
     product = catalogue.CatalogueProduct(
-        barcode=args.barcode,
+        barcode=barcode,
         product_name=name,
         brand=found["brand"] or "",
         chain=" ".join(args.chain.split()),
@@ -743,13 +951,24 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         allergens=tuple(found["allergens"]),
         url=found["url"],
         fetched_on=args.today or date.today(),
+        source=catalogue.LABEL_SOURCE if args.label else catalogue.SOURCE,
     )
     catalogue.save([*others, product], args.data_dir)
     warnings = []
+    if args.label and found["unrecognised"]:
+        warnings.append(UNRECOGNISED_WARNING)
+    elif args.label and "unknown" in product.allergens:
+        warnings.append("allergens unknown: do not use for anyone with an allergy or intolerance")
     if None not in (product.kcal, product.protein_g, product.carbs_g, product.fat_g):
-        gap = foods.energy_exception(product.to_row())
-        if gap:
-            warnings.append(f"label kcal is {gap}; check the pack")
+        kind, reason = foods.energy_check(product.to_row(), typed=args.label) or ("", "")
+        again = (
+            ": read the label again, fix it with --replace" if args.label else "; check the pack"
+        )
+        lead = "label kcal is" if args.label else "kcal is"
+        if kind == foods.NO_MACROS:
+            warnings.append(f"{lead} stated but no energy-yielding macros are listed{again}")
+        elif kind == foods.GAP:
+            warnings.append(f"{lead} {reason}{again}")
     return {"added": product, "missing": product.missing(), "warnings": warnings}
 
 
@@ -894,15 +1113,19 @@ def build_parser() -> argparse.ArgumentParser:
     search_cmd.add_argument("--region", default=None, help="default: the profile's region")
 
     products_cmd = add(
-        "products", cmd_products, "Open Food Facts products in data/catalogue.csv (unverified)"
+        "products",
+        cmd_products,
+        "products in data/catalogue.csv: Open Food Facts (unverified) or values from the label",
     )
     products_sub = products_cmd.add_subparsers(dest="products_cmd", required=True)
     off_search = products_sub.add_parser("search", parents=[json_flag], help="WORD [WORD...]")
     off_search.add_argument("words", nargs="+")
     off_search.add_argument("--brand", default=None, help='e.g. "Hacendado"')
     off_search.add_argument("--limit", type=int, default=off.SEARCH_LIMIT)
-    off_add = products_sub.add_parser("add", parents=[json_flag], help="BARCODE --chain CHAIN")
-    off_add.add_argument("barcode")
+    off_add = products_sub.add_parser(
+        "add", parents=[json_flag], help="BARCODE --chain CHAIN, or --label with the pack's values"
+    )
+    off_add.add_argument("barcode", nargs="?", default=None)
     off_add.add_argument("--chain", required=True, help="the supermarket the client buys it at")
     off_add.add_argument("--name", default=None, help="default: the Open Food Facts name")
     off_add.add_argument("--per", default=None, choices=sorted(off.UNITS.values()))
@@ -912,6 +1135,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="keep --per although the pack unit says otherwise (after reading the label)",
     )
     off_add.add_argument("--replace", action="store_true", help="refresh a product already added")
+    off_add.add_argument(
+        "--label", action="store_true", help="type the values from the pack: no Open Food Facts"
+    )
+    for flag in ("kcal", "protein", "carbs", "fat", "fibre"):
+        off_add.add_argument(f"--{flag}", default=None, help="--label: per 100 g or 100 ml")
+    off_add.add_argument("--barcode", dest="label_barcode", default=None, help="--label only")
+    off_add.add_argument(
+        "--allergens", default=None, help='--label (required): "soja, leche", none, or unknown'
+    )
     products_sub.add_parser("list", parents=[json_flag])
 
     profile_cmd = add("profile", cmd_profile, "show or set data/profile.yaml fields")

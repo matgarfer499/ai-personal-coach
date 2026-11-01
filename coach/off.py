@@ -35,7 +35,7 @@ OFF_TIMEOUT_S = 20
 # convention: search hits per call, enough to spot the product without paging.
 SEARCH_LIMIT = 10
 # convention: an input check, EAN-8 to GTIN-14 barcodes.
-BARCODE = re.compile(r"\d{8,14}")
+BARCODE = re.compile(r"[0-9]{8,14}")
 # Per-100 g values: our column -> OFF nutriment key.
 NUTRIMENTS = {
     "kcal": "energy-kcal_100g",

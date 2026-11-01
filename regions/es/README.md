@@ -26,10 +26,22 @@ These rules cover `products.csv` only. Products a client buys that are not liste
 personal catalogue in the data directory (`data/catalogue.csv`, gitignored), read from Open Food
 Facts by barcode with `coach products add BARCODE --chain CHAIN`. `coach products search WORD
 --brand BRAND` finds the barcode. Those rows are crowd-sourced, so each one says `Open Food Facts
-(unverified)` and keeps the OFF page URL and the fetch date. A value OFF lacks stays blank and the
+(unverified)` (label rows say `label (entered by hand)`: values from the label) and keeps the OFF page URL and the fetch date. A value OFF lacks stays blank and the
 menu shows it as missing; it is never filled with zero or an estimate. OFF requires a contact
 email in the User-Agent, so the commands need `COACH_OFF_CONTACT` set (under `env` in
 `.claude/settings.local.json`; the README's Settings section shows how). Prices are never fetched.
+A product OFF does not have, or any time `COACH_OFF_CONTACT` is not set, goes in by hand from its
+label: `coach products add --label --name NAME --chain CHAIN --per "100 g" --kcal K --protein P
+--carbs C --fat F --allergens "a, b"`, with optional `--fibre` and `--barcode`. It needs no
+network. `--allergens` is required: the declared allergens, `none` when the pack declares none, or
+`unknown` when the client cannot read it (the row then keeps `unknown` and the menu never uses it
+for anyone with an allergy or intolerance). The values are the ones printed on the pack, never
+estimated, and the row says `label (entered by hand)` with no URL. Without a barcode the key is
+`label-` plus the name's slug (`label-proteina-chocolate`), with `-` and 8 hex digits of a hash of
+the name appended when the slug is not an exact rendering of the name. `--replace` corrects a label row
+with or without `--barcode`; an explicit `--barcode` is the way to rename it. Label values never
+overwrite an Open Food Facts row, and an OFF add never overwrites a label row.
+
 Open Food Facts data is under the Open Database License (ODbL), and the row's URL is its
 attribution. Catalogue rows never move into `products.csv`.
 

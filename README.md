@@ -76,7 +76,8 @@ to the recipes and a shopping list grouped by shop:
 `/menu` can look up supermarket products in [Open Food Facts](https://world.openfoodfacts.org)
 (data under the Open Database License). Open Food Facts asks every app for a contact email, so
 set `COACH_OFF_CONTACT` to yours (see [Settings](#settings-environment-variables)) before you use
-it. Products added this way are marked unverified, and prices are never fetched. The PDF export
+it. Products added this way are marked unverified (a product typed from its label is marked
+"values from the label"), and prices are never fetched. The PDF export
 needs the optional extra: `uv sync --extra pdf`.
 
 [`docs/examples/`](docs/examples/) has dry runs of `/setup`, `/checkin`, `/import`, `/plan` and
@@ -226,7 +227,7 @@ How the original evidence base was built, and its limits:
   Spain-specific foods. No supermarket's own product table ships with the template: no chain's
   terms clearly allow redistributing its data, and some (Mercadona, Carrefour, Dia, Alcampo)
   cannot be read without impersonating a browser. Products come from Open Food Facts instead,
-  which is crowd-sourced and marked unverified.
+  which is crowd-sourced and marked unverified, or typed from the pack's label.
 - **One region, two languages, metric units:** Spain, Spanish and English, cm and kg (see
   "Using it outside Spain"). There is no seasonal produce calendar yet: the Spanish ministry's
   calendar is the intended source, but its reuse terms could not be confirmed.

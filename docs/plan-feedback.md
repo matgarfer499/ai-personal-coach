@@ -697,10 +697,14 @@ the client cannot say, it stores the region's number after saying so, so `missin
 
 **The command.**
 `coach products add --label --name NAME --chain CHAIN --per "100 g" --kcal K --protein P
---carbs C --fat F [--fibre FI] [--barcode B] [--allergens "a, b"]`.
+--carbs C --fat F --allergens "a, b" [--fibre FI] [--barcode B]`.
 - No network and no `COACH_OFF_CONTACT`.
 - `source` is `label (entered by hand)`.
-- Without a barcode the key is a slug of the name, e.g. `label-proteina-chocolate`.
+- `--allergens` is required: the declared allergens, `none`, or `unknown` (stored, with a
+  warning; the menu skill never uses such a product for a client with an allergy).
+- Without a barcode the key is a slug of the name, e.g. `label-proteina-chocolate`; when the
+  name is not exactly its slug (case aside) the key gets `-` and 8 hex digits of a hash of the
+  folded name.
 - Validate exactly like OFF values: the same `_number` limits, the 10% `energy_exception`
   warning, and the existing name-clash check.
 - Carbs are the label's carbohydrate (EU labels give available carbohydrate).
