@@ -94,7 +94,8 @@ def test_product_reads_the_five_values(monkeypatch):
     calls = []
     monkeypatch.setattr(off, "_get_json", fake_get(["product_found.json"], calls))
     product = off.product("8400000000017")
-    assert calls[0].startswith(off.PRODUCT_URL.format(barcode="8400000000017") + "?fields=")
+    # no `fields`: OFF's v3 filter drops nutrition_data_per (checked live on 2026-11-01)
+    assert calls[0] == off.PRODUCT_URL.format(barcode="8400000000017")
     assert product["name"] == "Salteado campestre"
     assert product["brand"] == "Marca Prueba" and product["stores"] == "Super Prueba"
     assert product["per"] == "100 g"
@@ -123,6 +124,32 @@ def test_product_volume_and_unknown_unit(monkeypatch):
     monkeypatch.setattr(off, "_get_json", fake_get(["product_no_unit.json"], []))
     product = off.product("8400000000048")
     assert product["per"] is None and product["name"] is None
+
+
+def test_product_nutrition_basis_beats_the_pack_unit(monkeypatch):
+    monkeypatch.setattr(off, "_get_json", fake_get(["product_label_g_sold_ml.json"], []))
+    assert off.product("8400000000079")["per"] == "100 g"
+    monkeypatch.setattr(off, "_get_json", fake_get(["product_label_ml_sold_ml.json"], []))
+    assert off.product("8400000000086")["per"] == "100 ml"
+
+
+def test_product_request_has_no_fields_parameter(monkeypatch):
+    # OFF's v3 `fields=` filter omits nutrition_data_per (live check 2026-11-01).
+    calls = []
+    monkeypatch.setattr(off, "_get_json", fake_get(["product_found.json"], calls))
+    off.product("8400000000017")
+    assert "fields" not in urllib.parse.parse_qs(urllib.parse.urlsplit(calls[0]).query)
+
+
+@pytest.mark.parametrize(
+    ("basis", "expected"),
+    [("serving", "100 ml"), (None, "100 ml"), ("100g", "100 g"), ("100ml", "100 ml")],
+)
+def test_product_basis_values_for_a_pack_sold_in_ml(basis, expected):
+    raw = {"code": "8400000000093", "product_quantity_unit": "ml"}
+    if basis:
+        raw["nutrition_data_per"] = basis
+    assert off._product(raw)["per"] == expected
 
 
 def test_product_impossible_values_are_missing_and_text_is_cleaned(monkeypatch):
