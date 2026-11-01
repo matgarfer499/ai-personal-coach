@@ -1,4 +1,4 @@
-"""Print a saved menu as a PDF: days, recipes with a QR code to each source, shopping list.
+"""Print a saved menu as a PDF: the week at a glance, each dish once, shopping list.
 
 Needs the optional `pdf` extra (reportlab): `uv sync --extra pdf`. The text comes from the saved
 menu and `coach shopping`; nothing is computed here. The file goes to the data directory, because
@@ -15,9 +15,9 @@ from xml.sax.saxutils import escape
 from coach.foods import Food, find
 
 INSTALL = "PDF export needs the optional reportlab package: run `uv sync --extra pdf`"
-# convention: the page and type sizes of the printout (A4, 10 pt text, 2.4 cm QR codes), chosen to
-# print on one sheet per day or two and to scan from a phone screen.
-QR_CM = 2.4
+# convention: the page and type sizes of the printout (A4, 9 pt text, 1.8 cm QR codes), chosen to
+# fit a week on a few sheets and to scan from paper or a phone screen.
+QR_CM = 1.8
 LABELS = {
     "es": {
         "menu": "Menú",
@@ -25,7 +25,6 @@ LABELS = {
         "tupper": "tupper",
         "free": "comida libre",
         "free_left": "quedan para llegar al objetivo",
-        "batch": "tanda de {n} raciones, se cocina una vez; los ingredientes son de una ración",
         "seasoning": "Para aliñar",
         "totals": "Total del día",
         "target": "objetivo",
@@ -42,6 +41,13 @@ LABELS = {
         "pantry": "En casa (no se compra)",
         "source": "Receta",
         "page": "Página",
+        "daily_target": "Objetivo diario",
+        "quick": "Platos rápidos",
+        "dish": "Plato",
+        "ingredients": "Ingredientes",
+        "on_days": "Días",
+        "recipes": "Recetas",
+        "batch_short": "tanda de {n} raciones; cantidades por ración",
         "days": ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"],
     },
     "en": {
@@ -50,7 +56,6 @@ LABELS = {
         "tupper": "lunchbox",
         "free": "free meal",
         "free_left": "left to reach the target",
-        "batch": "batch of {n} servings, cooked once; the ingredients are for one serving",
         "seasoning": "Seasoning",
         "totals": "Day total",
         "target": "target",
@@ -67,6 +72,13 @@ LABELS = {
         "pantry": "At home (not bought)",
         "source": "Recipe",
         "page": "Page",
+        "daily_target": "Daily target",
+        "quick": "Quick dishes",
+        "dish": "Dish",
+        "ingredients": "Ingredients",
+        "on_days": "Days",
+        "recipes": "Recipes",
+        "batch_short": "batch of {n} servings; amounts per serving",
         "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
     },
 }
@@ -83,11 +95,15 @@ def _number(value, comma: bool) -> str:
     return text.replace(".", ",") if comma else text
 
 
-def _amount(name: str, amount, table: list[Food], language: str, comma: bool) -> str:
+def _label(name: str, table: list[Food], language: str) -> str:
+    """The food's name in the client's language; a catalogue barcode becomes the product's name."""
     food = find(name, table)
-    label = (food.name_en if language == "en" else food.name_es) if food else name
+    return (food.name_en if language == "en" else food.name_es) if food else name
+
+
+def _amount(name: str, amount, table: list[Food], language: str, comma: bool) -> str:
     unit = getattr(amount, "unit", "g")
-    return f"{label}: {_number(amount, comma)} {unit}"
+    return f"{_label(name, table, language)} {_number(amount, comma)} {unit}"
 
 
 def web_link(source: str) -> str | None:
@@ -106,7 +122,12 @@ def write(
     language: str | None,
     qr: bool = True,
 ) -> None:
-    """Write the PDF; raises ValueError naming the extra to install when reportlab is missing."""
+    """Write the PDF; raises ValueError naming the extra to install when reportlab is missing.
+
+    Page one is the week at a glance; then each dish once, however many days it is eaten: quick
+    dishes (no steps, no source) in one table, recipes with their steps and source; then the
+    shopping list.
+    """
     try:
         from reportlab.graphics.barcode.qr import QrCodeWidget
         from reportlab.graphics.shapes import Drawing
@@ -130,16 +151,24 @@ def write(
     words = LABELS[language]
     comma = language == "es"
     sheet = getSampleStyleSheet()
-    body = ParagraphStyle("body", parent=sheet["BodyText"], fontSize=10, leading=13)
-    small = ParagraphStyle("small", parent=body, fontSize=9, leading=11, textColor=colors.grey)
-    day_style = ParagraphStyle(
-        "day", parent=sheet["Heading2"], spaceBefore=6, spaceAfter=4, keepWithNext=1
+    body = ParagraphStyle("body", parent=sheet["BodyText"], fontSize=9, leading=11.5)
+    cell = ParagraphStyle("cell", parent=body, fontSize=8, leading=10)
+    head = ParagraphStyle("head", parent=cell, fontName="Helvetica-Bold")
+    small = ParagraphStyle("small", parent=cell, textColor=colors.grey)
+    section = ParagraphStyle(
+        "section", parent=sheet["Heading2"], spaceBefore=10, spaceAfter=6, keepWithNext=1
     )
-    meal_style = ParagraphStyle(
-        "meal", parent=body, fontName="Helvetica-Bold", fontSize=11, keepWithNext=1
+    recipe_style = ParagraphStyle(
+        "recipe", parent=body, fontName="Helvetica-Bold", fontSize=10.5, spaceBefore=8
     )
-    dish_style = ParagraphStyle("dish", parent=body, fontName="Helvetica-Bold", leftIndent=8)
-    indent = ParagraphStyle("indent", parent=body, leftIndent=18)
+    width = A4[0] - 4 * cm - 12  # 2 cm margins, less the frame's 6 pt padding on each side
+    grid_style = [
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.lightgrey),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+    ]
+    header_style = [("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#EEEEEE"))]
 
     def qr_code(url: str):
         widget = QrCodeWidget(url)
@@ -149,105 +178,231 @@ def write(
         drawing.add(widget)
         return drawing
 
-    story = []
+    def short(day: date) -> str:
+        return f"{words['days'][day.weekday()][:3]} {day.day}"
+
     first, last = days[0].date, days[-1].date
-    story.append(Paragraph(f"{words['menu']} {first} {words['to']} {last}", sheet["Title"]))
     saved_days = document["days"]
+    targets = document.get("targets") or {}
+    story = [Paragraph(f"{words['menu']} {first} {words['to']} {last}", sheet["Title"])]
+
+    # Week at a glance: a row per day, a column per meal name in the order they first appear.
+    meal_names: list[str] = []
+    for day in days:
+        for meal in day.meals:
+            if meal.name not in meal_names:
+                meal_names.append(meal.name)
+    rows = [
+        [Paragraph("", head)]
+        + [Paragraph(_text(name), head) for name in meal_names]
+        + [Paragraph(words["totals"], head)]
+    ]
+    missing: dict[str, list[str]] = {}
     for day, entry in zip(days, saved_days, strict=True):
-        block = [
-            Paragraph(f"{words['days'][day.date.weekday()]} {day.date.isoformat()}", day_style)
-        ]
         free_left = (entry.get("free_meal") or {}).get("budget", {}).get("kcal")
-        for meal, raw_meal in zip(day.meals, entry["meals"], strict=True):
-            title = _text(meal.name)
-            if meal.tupper:
-                title += f" ({words['tupper']})"
-            if meal.free:
-                title += f": {words['free']}"
-                if free_left is not None:
-                    title += f", {_number(free_left, comma)} kcal {words['free_left']}"
-            heading = [Paragraph(title, meal_style)]
-            if meal.free:
-                block += heading
-            for dish, raw_dish in zip(meal.dishes, raw_meal.get("dishes") or [], strict=True):
-                # the meal's title stays with its first dish
-                parts = heading + [Paragraph(_text(dish.name), dish_style)]
-                heading = []
-                if dish.servings > 1:
-                    parts.append(Paragraph(words["batch"].format(n=dish.servings), small))
-                for name, amount in dish.items:
-                    line = _amount(name, amount, table, language, comma)
-                    parts.append(Paragraph("&bull; " + _text(line), indent))
-                if dish.seasoning:
-                    parts.append(
-                        Paragraph(
-                            f"{words['seasoning']}: {_text(', '.join(dish.seasoning))}", indent
-                        )
-                    )
-                for number, step in enumerate(raw_dish.get("steps") or [], 1):
-                    parts.append(Paragraph(f"{number}. {_text(step)}", indent))
-                source = str(raw_dish.get("source") or "").strip()
-                url = web_link(source)
-                if source and not url:  # not a web address: text only, no link or QR code
-                    parts.append(Paragraph(f"{words['source']}: {_text(source)}", small))
-                if url:
-                    link = Paragraph(
-                        f'{words["source"]}: <link href="{escape(url, {chr(34): "&quot;"})}" '
-                        f'color="blue">{_text(url)}</link>',
-                        small,
-                    )
-                    if qr:
-                        table_ = Table([[link, qr_code(url)]], colWidths=[12.5 * cm, 3.4 * cm])
-                        table_.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE")]))
-                        parts.append(table_)
-                    else:
-                        parts.append(link)
-                block.append(KeepTogether(parts))
-                block.append(Spacer(1, 4))
-        totals, targets = entry.get("totals"), document.get("targets") or {}
+        row = [Paragraph(f"<b>{short(day.date)}</b>", cell)]
+        for name in meal_names:
+            parts = []
+            for meal in (m for m in day.meals if m.name == name):
+                if meal.free:
+                    text = words["free"]
+                    if free_left is not None:
+                        text += f", {_number(free_left, comma)} kcal {words['free_left']}"
+                else:
+                    text = "<br/>".join(_text(dish.name) for dish in meal.dishes)
+                if meal.tupper:
+                    text += f' <font color="grey">({words["tupper"]})</font>'
+                parts.append(text)
+            row.append(Paragraph("<br/>".join(parts), cell))
+        totals = entry.get("totals")
         if totals:
-            fields = (
-                ("kcal", "kcal", "kcal"),
-                ("protein_g", words["protein"], "protein_g"),
-                ("carbs_g", words["carbs"], None),
-                ("fat_g", words["fat"], None),
-                ("fibre_g", words["fibre"], "fibre_g"),
+            row.append(
+                Paragraph(
+                    f"{_number(totals['kcal'], comma)} kcal<br/>"
+                    f"{words['protein']} {_number(totals['protein_g'], comma)} g<br/>"
+                    f"{words['fibre']} {_number(totals['fibre_g'], comma)} g",
+                    cell,
+                )
             )
-            cells = []
-            for key, label, target_key in fields:
-                text = f"{label} {_number(totals[key], comma)}"
-                if target_key and target_key in targets:
-                    text += f" / {words['target']} {_number(targets[target_key], comma)}"
-                missing = (totals.get("missing") or {}).get(key)
-                if missing:
-                    text += f" ({words['no_data']}: {', '.join(map(str, missing))})"
-                cells.append(text)
-            block.append(Paragraph(f"<b>{words['totals']}</b>: {_text('; '.join(cells))}", small))
-        story += block
+            for key, names in (totals.get("missing") or {}).items():
+                for name in names:
+                    label = _label(str(name), table, language)
+                    if label not in missing.setdefault(key, []):
+                        missing[key].append(label)
+        else:
+            row.append("")
+        rows.append(row)
+    side = 1.3 * cm, 2.8 * cm
+    meal_width = (width - sum(side)) / max(len(meal_names), 1)
+    week = Table(
+        rows, colWidths=[side[0]] + [meal_width] * len(meal_names) + [side[1]], repeatRows=1
+    )
+    week.setStyle(TableStyle(grid_style + header_style))
+    story.append(week)
+    goal = [
+        f"{label} {_number(targets[key], comma)}{unit}"
+        for key, label, unit in (
+            ("kcal", "kcal", ""),
+            ("protein_g", words["protein"], " g"),
+            ("fibre_g", words["fibre"], " g"),
+        )
+        if key in targets
+    ]
+    if goal:
+        story.append(Spacer(1, 4))
+        story.append(Paragraph(f"<b>{words['daily_target']}</b>: {' · '.join(goal)}", small))
+    nutrients = {
+        "protein_g": words["protein"],
+        "carbs_g": words["carbs"],
+        "fat_g": words["fat"],
+        "fibre_g": words["fibre"],
+    }
+    for key, labels in missing.items():
+        nutrient = nutrients.get(key, key)
+        story.append(
+            Paragraph(_text(f"{nutrient}, {words['no_data']}: {', '.join(labels)}"), small)
+        )
+
+    # Each dish once, with the days it is eaten.
+    groups: dict[tuple, dict] = {}
+    for day, entry in zip(days, saved_days, strict=True):
+        for meal, raw_meal in zip(day.meals, entry["meals"], strict=True):
+            for dish, raw in zip(meal.dishes, raw_meal.get("dishes") or [], strict=True):
+                steps = tuple(str(step) for step in raw.get("steps") or [])
+                source = str(raw.get("source") or "").strip()
+                key = (dish.name, tuple(dish.items), tuple(dish.seasoning), steps, source)
+                group = groups.setdefault(
+                    key, {"dish": dish, "steps": steps, "source": source, "dates": []}
+                )
+                if day.date not in group["dates"]:
+                    group["dates"].append(day.date)
+
+    def ingredients(dish, separator: str) -> str:
+        return separator.join(
+            _text(_amount(name, amount, table, language, comma)) for name, amount in dish.items
+        )
+
+    def on_days(group) -> str:
+        return ", ".join(short(d) for d in group["dates"])
+
+    quick = [g for g in groups.values() if not g["steps"] and not g["source"]]
+    if quick:
+        story.append(Paragraph(words["quick"], section))
+        rows = [
+            [
+                Paragraph(words["dish"], head),
+                Paragraph(words["ingredients"], head),
+                Paragraph(words["on_days"], head),
+            ]
+        ]
+        for group in quick:
+            dish = group["dish"]
+            name = f"<b>{_text(dish.name)}</b>"
+            if dish.seasoning:
+                name += f"<br/><font color='grey'>{words['seasoning']}: "
+                name += f"{_text(', '.join(dish.seasoning))}</font>"
+            rows.append(
+                [
+                    Paragraph(name, cell),
+                    Paragraph(ingredients(dish, " · "), cell),
+                    Paragraph(on_days(group), cell),
+                ]
+            )
+        grid = Table(rows, colWidths=[5.2 * cm, width - 8.2 * cm, 3 * cm], repeatRows=1)
+        grid.setStyle(TableStyle(grid_style + header_style))
+        story.append(grid)
+
+    recipes = [g for g in groups.values() if g["steps"] or g["source"]]
+    if recipes:
+        story.append(Paragraph(words["recipes"], section))
+    for group in recipes:
+        dish, source = group["dish"], group["source"]
+        meta = f"{words['on_days']}: {on_days(group)}"
+        if dish.servings > 1:
+            meta += " · " + words["batch_short"].format(n=dish.servings)
+        left = ingredients(dish, "<br/>")
+        if dish.seasoning:
+            left += f"<br/><font color='grey'>{words['seasoning']}: "
+            left += f"{_text(', '.join(dish.seasoning))}</font>"
+        steps = "<br/>".join(f"{n}. {_text(step)}" for n, step in enumerate(group["steps"], 1))
+        url = web_link(source)
+        show_qr = bool(qr and url)
+        qr_width = (QR_CM + 0.4) * cm if show_qr else 0
+        row = [Paragraph(left, cell), Paragraph(steps, cell)]
+        widths = [5.6 * cm, width - 5.6 * cm - qr_width]
+        if show_qr:
+            row.append(qr_code(url))
+            widths.append(qr_width)
+        layout = Table([row], colWidths=widths)
+        layout.setStyle(
+            TableStyle(
+                [
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("LEFTPADDING", (0, 0), (0, -1), 0),
+                    ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.lightgrey),
+                ]
+            )
+        )
+        parts = [
+            Paragraph(_text(dish.name), recipe_style),
+            Paragraph(meta, small),
+            layout,
+        ]
+        if source and not url:  # not a web address: text only, no link or QR code
+            parts.append(Paragraph(f"{words['source']}: {_text(source)}", small))
+        if url:
+            parts.append(
+                Paragraph(
+                    f'{words["source"]}: <link href="{escape(url, {chr(34): "&quot;"})}" '
+                    f'color="blue">{_text(url)}</link>',
+                    small,
+                )
+            )
+        story.append(KeepTogether(parts))
+
     story.append(PageBreak())
     story.append(Paragraph(words["shopping"], sheet["Title"]))
     for chain, lines in shopping["chains"].items():
-        story.append(Paragraph(_text(words["any_chain"] if chain == "any" else chain), day_style))
-        rows = [
-            [
-                Paragraph(_text(line["name"]), body),
+        story.append(Paragraph(_text(words["any_chain"] if chain == "any" else chain), section))
+        entries = [
+            (
+                Paragraph(_text(line["name"]), cell),
                 f"{_number(line.get('grams', line.get('ml')), comma)} "
                 f"{'g' if 'grams' in line else 'ml'}",
-            ]
+            )
             for line in lines
         ]
-        grid = Table(rows, colWidths=[11 * cm, 4 * cm])
-        grid.setStyle(TableStyle([("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.lightgrey)]))
+        half = (len(entries) + 1) // 2  # two columns: first half left, second half right
+        rows = [
+            [*entries[i], "", *(entries[i + half] if i + half < len(entries) else ("", ""))]
+            for i in range(half)
+        ]
+        grid = Table(rows, colWidths=[5.6 * cm, 2 * cm, 0.8 * cm, 5.6 * cm, 2 * cm])
+        grid.setStyle(
+            TableStyle(
+                [
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("TOPPADDING", (0, 0), (-1, -1), 2),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                    ("LINEBELOW", (0, 0), (1, -1), 0.25, colors.lightgrey),
+                    ("LINEBELOW", (3, 0), (4, -1), 0.25, colors.lightgrey),
+                ]
+            )
+        )
         story.append(grid)
-    if shopping["batches"]:
-        story.append(Paragraph(words["batches"], day_style))
-        for batch in shopping["batches"]:
+    # only dishes with a recipe are cooked; a fruit bowl or a shake eaten on several days is not
+    cooked = {group["dish"].name for group in recipes}
+    batches = [batch for batch in shopping["batches"] if batch["dish"] in cooked]
+    if batches:
+        story.append(Paragraph(words["batches"], section))
+        for batch in batches:
             line = f"{batch['dish']}: {batch['servings']} {words['servings']}"
             if batch["left_over"]:
                 line += f" ({words['left_over'].format(n=batch['left_over'])})"
             story.append(Paragraph("&bull; " + _text(line), body))
     if shopping["pantry_skipped"]:
-        story.append(Paragraph(words["pantry"], day_style))
+        story.append(Paragraph(words["pantry"], section))
         story.append(Paragraph(_text(", ".join(shopping["pantry_skipped"])), body))
 
     def footer(canvas, doc):
@@ -262,7 +417,7 @@ def write(
         pagesize=A4,
         leftMargin=2 * cm,
         rightMargin=2 * cm,
-        topMargin=1.8 * cm,
+        topMargin=1.6 * cm,
         bottomMargin=1.8 * cm,
         pageCompression=0,
         title=f"{words['menu']} {first} {words['to']} {last}",
