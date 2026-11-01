@@ -168,9 +168,9 @@ Spain is the only region so far, but most of the coach does not depend on the co
 
 What to do, in order:
 
-1. **Leave the region unset.** `/setup` asks your country; with no region for it, it uses the
-   general food table and asks which number you call in an emergency (the CLI refuses a region
-   that has no folder, so nothing breaks later).
+1. **Set the region to `none`.** `/setup` asks your country; with no region for it, it stores
+   `none`, uses the general food table and asks which number you call in an emergency (the CLI
+   refuses a region that has no folder, so nothing breaks later).
 2. **Add the products you buy from Open Food Facts.** In `/menu`, or with
    `coach products search WORD --brand BRAND` and `coach products add BARCODE --chain "YOUR SHOP"`.
    They go into your private catalogue and work in menus and shopping lists. Set

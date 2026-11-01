@@ -182,8 +182,17 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
         for name in names
     }
     # Every logged lift, not just the ones shown: --exercise and the lookback only filter output.
-    unmatched = strength.unmatched_rep_ranges(ranges, {s.exercise for s in logged}, muscle_map)
-    return {"lifts": lifts, "unmatched_rep_ranges": unmatched}
+    every = {s.exercise for s in logged}
+    unmatched = strength.unmatched_rep_ranges(ranges, every, muscle_map)
+    # Names that match only lifts last logged before the lookback window (not --exercise).
+    recent = today - timedelta(days=PROGRESS_LOOKBACK_DAYS)
+    in_window = {s.exercise for s in logged if s.date > recent}
+    outside = strength.unmatched_rep_ranges(ranges, in_window, muscle_map)
+    return {
+        "lifts": lifts,
+        "unmatched_rep_ranges": unmatched,
+        "rep_ranges_outside_lookback": [n for n in outside if n not in unmatched],
+    }
 
 
 def _leftover_warning(leftovers: list[ExerciseSet]) -> str:
@@ -468,12 +477,13 @@ def _parse_profile_value(field: str, raw: str) -> Any:
     if field == "injuries":
         raise ValueError("injuries are set with `coach injury add` and `coach injury clear`")
     if field == "region":
-        if raw.lower() == "none":
-            return None  # no region: the base food table only
+        if raw.lower() == foods.NO_REGION:
+            return foods.NO_REGION  # chosen: no region for this country, the base food table only
         if not (regions.ROOT / "regions" / raw / "region.yaml").exists():
             raise ValueError(
-                f"there is no region {raw!r} yet (no regions/{raw}/region.yaml): leave the region "
-                "unset, which uses the base food table, or add one as docs/adding-a-region.md says"
+                f"there is no region {raw!r} yet (no regions/{raw}/region.yaml): set the region "
+                "to none, which uses the base food table, or add one as docs/adding-a-region.md "
+                "says"
             )
     if field in ("medications", "conditions"):
         return [item.strip() for item in raw.split(",") if item.strip()]
@@ -642,7 +652,7 @@ def cmd_foods(profile: Profile, args: argparse.Namespace) -> dict:
         found = re.findall(r"\w+", fold(" ".join(names)))
         return all(any(f.startswith(w) for f in found) for w in words)
 
-    products = regions.load_products(region) if region else []
+    products = regions.load_products(region) if region and region != foods.NO_REGION else []
     return {
         "foods": [
             {"name_en": f.name_en, "name_es": f.name_es}

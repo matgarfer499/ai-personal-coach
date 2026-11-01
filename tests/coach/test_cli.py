@@ -311,6 +311,8 @@ def test_unmatched_rep_ranges_look_at_every_logged_lift(capsys, data_dir):
         "*=6-8",
     )
     assert out["unmatched_rep_ranges"] == ["sentadilla"]  # and `*` is never in the list
+    # logged, but not among the lifts shown: say so, so the skills need not infer it
+    assert out["rep_ranges_outside_lookback"] == ["barbell row"]
 
 
 def test_strength_progress_rejects_a_bad_rep_range(capsys, data_dir):
@@ -811,10 +813,27 @@ def test_a_region_without_its_folder_is_refused_with_a_hint(capsys, data_dir):
     assert shown["profile"]["region"] is None
 
 
-def test_region_none_clears_it(capsys, data_dir):
+def test_region_none_is_an_explicit_no_region(capsys, data_dir):
     run(capsys, data_dir, "profile", "set", "region", "es")
     code, out = run(capsys, data_dir, "profile", "set", "region", "none")
-    assert code == 0 and out["profile"]["region"] is None
+    assert code == 0 and out["profile"]["region"] == "none"
+
+
+def test_a_profile_with_no_region_chosen_is_complete_and_works_without_a_table(capsys, data_dir):
+    for field, value in [
+        ("experience", "novice"),
+        ("language", "es"),
+        ("emergency_number", "999"),
+    ]:
+        run(capsys, data_dir, "profile", "set", field, value)
+    assert run(capsys, data_dir, "profile", "show")[1]["missing"] == ["region"]  # never chosen
+    run(capsys, data_dir, "profile", "set", "region", "none")
+    assert run(capsys, data_dir, "profile", "show")[1]["missing"] == []
+    assert run(capsys, data_dir, "safety")[1]["emergency_number"] == "999"
+    code, out = run(capsys, data_dir, "menu", "--item", "arroz blanco, cocido=100")
+    assert code == 0 and out["unknown"] == [] and out["kcal"] > 0
+    assert run(capsys, data_dir, "foods", "search", "pollo")[0] == 0
+    assert run(capsys, data_dir, "foods", "search", "pollo", "--region", "none")[0] == 0
 
 
 def test_safety_prints_the_emergency_number(capsys, data_dir):

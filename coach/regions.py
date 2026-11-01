@@ -10,7 +10,7 @@ from pathlib import Path
 import yaml
 
 from coach import catalogue
-from coach.foods import PER_UNITS, ROOT, Food, check_unique, load_foods
+from coach.foods import NO_REGION, PER_UNITS, ROOT, Food, check_unique, load_foods
 
 PRODUCT_FIELDS = [
     "chain",
@@ -106,7 +106,7 @@ def load_region(code: str, root: Path = ROOT) -> dict:
 
 def emergency_number(code: str | None, root: Path = ROOT) -> str | None:
     """The region's emergency number, or None with no region."""
-    return str(load_region(code, root)["emergency_number"]) if code else None
+    return str(load_region(code, root)["emergency_number"]) if code and code != NO_REGION else None
 
 
 def load_products(code: str, root: Path = ROOT) -> list[Product]:
@@ -121,7 +121,7 @@ def menu_table(region: str | None, root: Path = ROOT, data_dir: Path | None = No
     """Foods plus the region's products per 100 g or 100 ml (and the client's catalogue in
     `data_dir`), with every name unique."""
     table = load_foods(region, root)
-    if region:
+    if region and region != NO_REGION:
         table += [p.as_food() for p in load_products(region, root) if p.per.strip() in PER_UNITS]
     if data_dir is not None:
         table += catalogue.menu_foods(data_dir)

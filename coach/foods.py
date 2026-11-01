@@ -130,9 +130,12 @@ def _read(path: Path) -> list[Food]:
         return [Food.from_row(r) for r in csv.DictReader(handle)]
 
 
+NO_REGION = "none"  # the profile's `region` for a country with no regions/<code>/ folder
+
+
 def load_foods(region: str | None = None, root: Path = ROOT) -> list[Food]:
     table = _read(root / "foods" / "base.csv")
-    if region:
+    if region and region != NO_REGION:
         table += _read(root / "regions" / region / "foods.csv")
     check_unique(table)
     return table
