@@ -181,14 +181,13 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
         )
         for name in names
     }
-    # Same matcher as rep_range_for, so a name is never reported unmatched yet applied.
+    # Every logged lift, not just the ones shown: --exercise and the lookback only filter output.
+    every = {s.exercise for s in logged}
     unmatched = [
         name
         for name, _ in ranges
         if name != strength.STAR
-        and not any(
-            strength.named_in(lift, [name], muscle_map, share_variants=False) for lift in names
-        )
+        and not any(strength.rep_range_matches(lift, name, muscle_map) for lift in every)
     ]
     return {"lifts": lifts, "unmatched_rep_ranges": list(dict.fromkeys(unmatched))}
 

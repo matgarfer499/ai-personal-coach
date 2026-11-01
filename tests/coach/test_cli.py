@@ -288,6 +288,29 @@ def test_progress_reports_rep_range_names_that_match_no_lift(capsys, data_dir):
     assert out["lifts"]["Lat Pulldown - Close Grip (Cable)"]["rep_range"] == [10, 12]
 
 
+def test_unmatched_rep_ranges_look_at_every_logged_lift(capsys, data_dir):
+    _log(data_dir)
+    old = ExerciseSet(
+        "hevy_csv", datetime(2026, 2, 20, 18, 0), "Barbell Row", 3, 0, weight_kg=50.0, reps=8
+    )
+    append([old], data_dir / "sessions.csv")  # last logged 5 weeks before TODAY
+    _, out = run(
+        capsys,
+        data_dir,
+        "strength",
+        "progress",
+        "--exercise",
+        "zercher carry",
+        "--rep-range",
+        "bench press=6-8",  # logged, only filtered out of this output
+        "--rep-range",
+        "barbell row=6-8",  # logged, but outside the 28-day window
+        "--rep-range",
+        "sentadilla=6-8",
+    )
+    assert out["unmatched_rep_ranges"] == ["sentadilla"]
+
+
 def test_strength_progress_rejects_a_bad_rep_range(capsys, data_dir):
     _log(data_dir)
     code, out = run(capsys, data_dir, "strength", "progress", "--rep-range", "bench press=12-8")

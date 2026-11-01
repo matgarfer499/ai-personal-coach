@@ -271,16 +271,17 @@ def parse_rep_range(text: str) -> tuple[str, tuple[int, int]]:
 STAR = "*"  # `*=LOW-HIGH` sets the range for every lift with no range of its own
 
 
+def rep_range_matches(exercise: str, name: str, muscle_map: dict[str, dict] | None) -> bool:
+    """Whether a `--rep-range` name applies to a logged lift; the one matcher for both uses."""
+    return name != STAR and named_in(exercise, [name], muscle_map, share_variants=False)
+
+
 def rep_range_for(
     exercise: str, ranges: list[tuple[str, tuple[int, int]]], default: tuple[int, int] = REP_RANGE
 ) -> tuple[int, int]:
     """The range given for a logged lift (the last one wins), else `*`, else the rule's default."""
     mapped = load_muscle_map()
-    named = [
-        r
-        for name, r in ranges
-        if name != STAR and named_in(exercise, [name], mapped, share_variants=False)
-    ]
+    named = [r for name, r in ranges if rep_range_matches(exercise, name, mapped)]
     stars = [r for name, r in ranges if name == STAR]
     return (named or stars or [default])[-1]
 

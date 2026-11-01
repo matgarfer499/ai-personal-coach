@@ -55,12 +55,13 @@ Ask about one step per message. Store each answer as soon as you have it with
    another). Ask the country. Set `region es` for Spain, including when they only name a Spanish
    city. For a country with no `regions/<code>/` folder (the CLI refuses it), leave the region
    unset and say: menus use the general food table and Open Food Facts products, and a region
-   can be added (docs/adding-a-region.md). Then run `coach safety`: with no `emergency_number`,
+   can be added (docs/adding-a-region.md). Then run `coach profile show`: when `emergency_number` is in `missing`,
    ask which number they call for an emergency where they live (112 across the EU, 911 in the
    US, Canada and Mexico, 999 in the UK, 000 in Australia) and store it with
-   `coach profile set emergency_number N`. If they cannot say, tell them you are storing their
-   region's number (`coach safety` shows it) and that they should check it, then store it so
-   `missing` clears.
+   `coach profile set emergency_number N`. If they cannot say and a region is set, tell them you are
+   storing their region's number (`coach safety` shows it) and that they should check it, then
+   store that number with the same command so `missing` clears. With no region set, say setup is
+   not complete until they find their local emergency number, and ask again at step 9.
 2. **Eating-disorder prompt, before any weight question.** Ask gently, in your own words, in one
    message, as a conversation and never a diagnosis: making yourself sick when uncomfortably full; worry about
    losing control over how much you eat; feeling fat when others say you are thin; food or weight
@@ -174,7 +175,7 @@ Ask about one step per message. Store each answer as soon as you have it with
    `desk`, per `coach knowledge section nutrition "Self-reported activity is noisy"` ("choose
    the lower plausible multiplier when unsure"). Say so in one line: the weight trend corrects
    it after 2-4 weeks.
-9. **Check.** `coach profile show`: `missing` must be empty (`emergency_number` included: go back to step 1 if it is listed); mention any `unrecognised` items.
+9. **Check.** `coach profile show`: `missing` must be empty (`emergency_number` included: if it is listed, ask for it as in step 1 and store it, then run `coach profile show` again); mention any `unrecognised` items.
 10. **Targets.** Run `coach safety`, then `coach energy`, `coach macros` and `coach zones`.
     Only when `use_rpe_not_hr` is false, ask for a morning resting pulse (`--hr-rest N`) and an
     observed all-out peak (`--hr-max N`); skip either if unknown.
