@@ -65,7 +65,8 @@ Every one is labelled where it lives: `# convention:` in code, "convention", "he
 
 ### In the skills (`.claude/skills/`)
 
-- /setup: `desk_training` means about 1 h of training on 4 or more days ("most days" read as 4+).
+- /setup: `desk_training` means about 1 h of training on 4 or more days ("most days" read as 4+);
+  a self-reported range such as "3-4" days takes the lower number, so it is `desk`.
 - /checkin: one row per day; weight is that morning's, intake the previous day's, sleep the
   night before; the weekly cycle and BP questions are asked when no note of the last 7 days
   records them.
