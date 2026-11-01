@@ -10,9 +10,10 @@ saves an accepted plan to data/menus/<first date>.yaml with each day's totals an
 simple breakfast made again each day): the repeats within its N servings are allowed, the shopping
 list buys it once at N servings, and an appearance beyond N is an accidental repeat again.
 
-`base: [PROTEIN, CARB]` on a dish names its main protein and carbohydrate base (one or two
-words, e.g. `[pollo, arroz]` or `[garbanzos]`): two different dishes on the same base within
-BASE_REPEAT_DAYS are a repeat too. A dish without `base` (a breakfast, a snack) is not checked.
+`base: [PROTEIN, CARB]` on a dish names its main protein and carbohydrate base (one or two plain
+words, e.g. `[pollo, arroz]` or `[garbanzos]`): two different dishes on the same base with a gap
+of BASE_REPEAT_DAYS days or fewer are a repeat too. A dish without `base` (a breakfast, a snack)
+is not checked.
 """
 
 from __future__ import annotations
@@ -32,8 +33,8 @@ MENUS_DIR = "menus"
 # convention: chosen when the coach was designed (2026-10-25): a dish does not come back
 # within 7 consecutive days; a longer plan may cycle its weeks.
 NO_REPEAT_DAYS = 7
-# convention: two dishes on the same protein and carb base are not served within 3 consecutive
-# days (see docs/conventions.md): enough variety, and a batch still counts once.
+# convention: two dishes on the same protein and carb base with a gap of 3 days or fewer are a
+# repeat, 4 or more passes (see docs/conventions.md): enough variety, a batch still counts once.
 BASE_REPEAT_DAYS = 3
 # A free meal is the client's choice, never a prescription; with a positive eating-disorder screen
 # the CLI refuses it (loss-of-control eating is the risk the rule names).
@@ -156,10 +157,11 @@ def parse(data) -> tuple[dict, list[Day]]:
                     or (
                         isinstance(base, list)
                         and len(base) in (1, 2)
-                        and all(isinstance(w, str) and w.strip() for w in base)
+                        and all(isinstance(w, str) and w.split() == [w] for w in base)
                     ),
-                    f"{when} {name.strip()}: `base:` must list one or two words, the main protein "
-                    f"then the carb base, e.g. [pollo, arroz], not {base!r}",
+                    f"{when} {name.strip()}: `base:` must list one or two plain words (no "
+                    f"spaces), the main protein then the carb base, e.g. [pollo, arroz], not "
+                    f"{base!r}",
                 )
                 dishes.append(
                     Dish(
@@ -250,7 +252,8 @@ def same_base(a: list[str], b: list[str]) -> bool:
 
 def repeats(days: list[Day]) -> list[dict]:
     """Dishes (case and accents ignored) served again within NO_REPEAT_DAYS (`kind: dish`), then
-    different dishes on the same `base` within BASE_REPEAT_DAYS (`kind: base`). Both count
+    different dishes on the same `base` with a gap of BASE_REPEAT_DAYS or fewer (`kind: base`;
+    a gap of 3 days flags, 4 passes). Both count
     between groups (see `batches`, so a batch is one appearance), from the last serving of one to
     the first of the next."""
     groups = batches(days)
@@ -274,7 +277,7 @@ def repeats(days: list[Day]) -> list[dict]:
             # the same dish again is already a dish repeat (NO_REPEAT_DAYS is longer)
             if fold(a.dish) == fold(b.dish) or not same_base(a.base, b.base):
                 continue
-            if (b.dates[0] - a.dates[-1]).days < BASE_REPEAT_DAYS:
+            if (b.dates[0] - a.dates[-1]).days <= BASE_REPEAT_DAYS:
                 entry = next((e for e in by_base if same_base(e[0], a.base)), None)
                 if entry is None:
                     entry = (a.base, set())

@@ -720,11 +720,22 @@ def test_same_protein_and_carb_base_within_3_days_is_a_repeat(capsys, data_dir, 
     assert [(r["kind"], r["dates"]) for r in out["repeats"]] == [("base", ["2026-10-26"])]
 
 
-@pytest.mark.parametrize("gap", [3, 4])
-def test_same_protein_and_carb_base_4_days_apart_is_fine(capsys, data_dir, gap):
+def test_same_protein_and_carb_base_3_days_apart_is_a_repeat(capsys, data_dir):
     draft = lunches(
         (26, based("Pollo al curry con arroz", ["pollo", "arroz"])),
-        (26 + gap, based("Arroz con pollo al ajillo", ["arroz", "pollo"])),
+        (29, based("Arroz con pollo al ajillo", ["arroz", "pollo"])),
+    )
+    _, out = check(capsys, data_dir, draft)
+    assert out["ok"] is False
+    assert [(r["kind"], r["dates"]) for r in out["repeats"]] == [
+        ("base", ["2026-10-26", "2026-10-29"])
+    ]
+
+
+def test_same_protein_and_carb_base_4_days_apart_is_fine(capsys, data_dir):
+    draft = lunches(
+        (26, based("Pollo al curry con arroz", ["pollo", "arroz"])),
+        (30, based("Arroz con pollo al ajillo", ["arroz", "pollo"])),
         (27, based("Merluza en salsa verde", ["merluza", "patata"])),
     )
     code, out = check(capsys, data_dir, draft)
@@ -743,7 +754,7 @@ def test_a_batch_counts_once_for_base_repeats(capsys, data_dir):
             "dates": ["2026-10-28", "2026-10-30"],
         }
     ]
-    _, out = check(capsys, data_dir, lunches((26, batch), (27, batch), (28, batch), (31, salad)))
+    _, out = check(capsys, data_dir, lunches((26, batch), (27, batch), (28, batch), (32, salad)))
     assert out["repeats"] == [] and out["ok"] is True
     # the same dish again is a dish repeat only, not also a base repeat
     plain = based("Lentejas estofadas", ["lentejas"])
@@ -761,3 +772,10 @@ def test_base_must_list_one_or_two_words(data_dir):
     # `base:` left empty is no base, like a breakfast without one
     _, days = mealplan.load_draft(write(data_dir, lunches((26, based("Lentejas", None)))))
     assert days[0].meals[0].dishes[0].base == []
+
+
+def test_base_words_are_plain_words(data_dir):
+    for bad in (["pollo asado"], ["pollo", "arroz integral"], [" pollo"], ["pollo\tarroz"]):
+        draft = lunches((26, based("Lentejas", bad)))
+        with pytest.raises(ValueError, match=r"2026-10-26 Lentejas: `base:`.*no spaces"):
+            mealplan.load_draft(write(data_dir, draft))
