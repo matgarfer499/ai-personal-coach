@@ -1,0 +1,40 @@
+name: Risk gate
+
+# Holds PRs that touch .github/risk-paths until Matías adds the human-ok label.
+# The path list is read from the base branch, so a PR cannot loosen its own gate.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  risk-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - name: Check risky paths
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'human-ok') }}
+        run: |
+          # First setup PR: the base branch has no list yet, so use the PR's own.
+          git show "$BASE:.github/risk-paths" > /tmp/risk-paths 2>/dev/null || cp .github/risk-paths /tmp/risk-paths
+          grep -v '^#' /tmp/risk-paths | grep -v '^$' > /tmp/patterns
+          risky=$(git diff --name-only "$BASE...$HEAD" | grep -E -f /tmp/patterns || true)
+          if [ -z "$risky" ]; then
+            echo "No risky paths touched."
+            exit 0
+          fi
+          echo "Risky paths touched:"
+          echo "$risky" | sed 's/^/  /'
+          if [ "$APPROVED" = "true" ]; then
+            echo "Approved with the human-ok label."
+            exit 0
+          fi
+          echo "::error::This PR touches risky paths and needs Matías's human-ok label."
+          exit 1
