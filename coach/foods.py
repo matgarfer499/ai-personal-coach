@@ -110,24 +110,28 @@ def label_energy(row: dict) -> float:
     )
 
 
-NO_ENERGY_MACROS = "no energy-yielding macros listed"
-
-
-def energy_exception(row: dict, typed: bool = False) -> str | None:
-    """None when stated kcal is within 10% of the label factors, else a short reason.
+def energy_check(row: dict, typed: bool = False) -> tuple[str, str] | None:
+    """None when stated kcal is within 10% of the label factors, else (kind, short reason):
+    kind is "no_macros" (kcal but no energy-yielding macros) or "gap".
 
     `typed`: the kcal was typed from a label, so the reason does not blame a source."""
     stated, computed = float(row["kcal"]), label_energy(row)
     if stated == computed == 0:
         return None
     if computed == 0:
-        return NO_ENERGY_MACROS
+        return "no_macros", "no energy-yielding macros listed"
     gap = abs(stated - computed) / computed
     if gap <= ENERGY_TOLERANCE:
         return None
     if typed:
-        return f"{gap:.0%} from the 4/4/9 factors"
-    return f"{gap:.0%} from 4/4/9 factors (source uses food-specific factors)"
+        return "gap", f"{gap:.0%} from the 4/4/9 factors"
+    return "gap", f"{gap:.0%} from 4/4/9 factors (source uses food-specific factors)"
+
+
+def energy_exception(row: dict, typed: bool = False) -> str | None:
+    """The reason text of `energy_check`, or None."""
+    check = energy_check(row, typed)
+    return check[1] if check else None
 
 
 def _read(path: Path) -> list[Food]:

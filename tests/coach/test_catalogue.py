@@ -311,4 +311,16 @@ def test_off_replace_never_overwrites_a_hand_entered_label_row(capsys, data_dir,
         capsys, data_dir, off_returns, "product_found.json", "8400000000017", "--replace"
     )
     assert code != 0 and "hand-entered label row" in out["message"]
+    assert "remove" not in out["message"] and "correct it with --label --barcode" in out["message"]
     assert catalogue.load(data_dir)[0].allergens == ("soja",)
+
+
+def test_off_add_with_energy_but_no_macros_warns_in_a_full_sentence(capsys, data_dir, monkeypatch):
+    raw = json.loads((FIXTURES / "product_found.json").read_text(encoding="utf-8"))
+    for key in ("proteins_100g", "carbohydrates_100g", "fat_100g", "fiber_100g"):
+        raw["product"]["nutriments"][key] = 0
+    monkeypatch.setattr(off, "_get_json", lambda url: raw)
+    _, out = run(capsys, data_dir, "products", "add", "8400000000017", "--chain", "X")
+    assert out["warnings"] == [
+        "kcal is stated but no energy-yielding macros are listed; check the pack"
+    ]

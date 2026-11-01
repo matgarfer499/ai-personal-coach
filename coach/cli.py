@@ -680,36 +680,41 @@ LABEL_KEY_HASH_CHARS = 8
 LABEL_ONLY = ("kcal", "protein", "carbs", "fat", "fibre", "allergens", "label_barcode")
 
 
-# Allergen words, matched on folded text. A label entry that looks like one of these but is not
-# exactly a "none" phrase is refused: it must never be stored as an allergen name or as "none".
-ALLERGEN_UNKNOWN = (
-    "unknown", "desconoc", "no se", "no lo se", "ns/nc", "sin informacion", "no consta",
-)  # fmt: skip
+# Allergen words, matched on whole words of the folded text (never substrings: "piñones" holds
+# "none", "no sesamo" holds "no se"). A label entry that looks like a "none" phrase but is not
+# exactly one is refused: it must never be stored as an allergen name or as "none".
+ALLERGEN_UNKNOWN = re.compile(
+    r"(?<!\w)(?:unknown|desconoc\w*|ilegible|no legible|no indicado|no consta|not sure|n/a|\?"
+    r"|sin informacion|no lo se|no se|ns/nc)(?!\w)"
+)
 ALLERGEN_NONE = {
     "none", "ninguno", "ninguna", "sin alergenos", "no contiene", "no contiene alergenos",
     "no allergens", "nothing",
 }  # fmt: skip
-ALLERGEN_NONE_LOOKALIKE = ("none", "ningun", "sin alergen", "no contiene", "no allergen", "nothing")
+ALLERGEN_NONE_LOOKALIKE = re.compile(
+    r"(?<!\w)(?:none|ningun[oa]|no contiene|no allergens?|nothing)(?!\w)"
+)
 
 
 def _label_allergens(text: str) -> list[str]:
     """`none` (the pack declares none) is [], `unknown` (cannot be read) leads the list."""
-    pieces = filter(None, (off._text(a) for a in re.split(r"[,;]", text)))
-    items = list({fold(a): a for a in reversed(list(pieces))}.values())[::-1]  # dedupe, folded
+    items: dict[str, str] = {}  # folded -> first spelling, in first-seen order
+    for piece in re.split(r"[,;]", text):
+        if cleaned := off._text(piece):
+            items.setdefault(fold(cleaned), cleaned)
     if not items:
         raise ValueError("--allergens is empty: list them, or say none or unknown")
     unknown = none = False
     real = []
-    for item in items:
-        folded = fold(item)
-        if any(mark in folded for mark in ALLERGEN_UNKNOWN):
+    for folded, item in items.items():
+        if ALLERGEN_UNKNOWN.search(folded):
             unknown = True
         elif folded in ALLERGEN_NONE:
             none = True
-        elif any(mark in folded for mark in ALLERGEN_NONE_LOOKALIKE):
+        elif ALLERGEN_NONE_LOOKALIKE.search(folded) or folded.startswith("sin "):
             raise ValueError(
-                f"--allergens {item!r} is unclear: write the allergens, or exactly none "
-                "(the pack declares none) or unknown (it cannot be read)"
+                f"--allergens {item!r} is not an allergen name: write the allergens, or exactly "
+                "none (the pack declares none) or unknown (it cannot be read)"
             )
         else:
             real.append(item)
@@ -736,7 +741,7 @@ def _label_product(args: argparse.Namespace) -> dict:
             continue
         limit = off.MAX_KCAL_PER_100G if column == "kcal" else off.MAX_G_PER_100G
         text = raw.strip()
-        if column == "kcal" and re.fullmatch(r"[0-9][.,][0-9]{3}", text, re.ASCII):
+        if column == "kcal" and re.fullmatch(r"[1-9][0-9]?[.,][0-9]{3}", text, re.ASCII):
             raise ValueError(f"--kcal {raw!r} looks like kJ or a thousands number: type kcal")
         # ASCII digits, at most one "." or "," ("9,5", ",5", "5.", "9.500"); no "1_0" or "1e1".
         # Limits are below 1000, so one separator is always a decimal point.
@@ -817,8 +822,7 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
     stored = next((p for p in products if p.barcode == barcode), None)
     if stored and not args.label and stored.source == catalogue.LABEL_SOURCE:
         raise ValueError(
-            f"{barcode} is a hand-entered label row: use --label --barcode {barcode} to "
-            "correct it, or remove it"
+            f"{barcode} is a hand-entered label row: correct it with --label --barcode {barcode}"
         )
     if stored and args.label and stored.source != catalogue.LABEL_SOURCE:
         raise ValueError(
@@ -860,16 +864,18 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
     if args.label and "unknown" in product.allergens:
         warnings.append("allergens unknown: do not use for anyone with an allergy or intolerance")
     if None not in (product.kcal, product.protein_g, product.carbs_g, product.fat_g):
-        gap = foods.energy_exception(product.to_row(), typed=args.label)
-        if gap == foods.NO_ENERGY_MACROS and args.label:
+        kind, reason = foods.energy_check(product.to_row(), typed=args.label) or ("", "")
+        again = (
+            ": read the label again, fix it with --replace" if args.label else "; check the pack"
+        )
+        if kind == "no_macros":
             warnings.append(
-                "label lists kcal but no energy-yielding macros: read the label again, "
-                "fix it with --replace"
+                "label lists kcal but no energy-yielding macros" + again
+                if args.label
+                else "kcal is stated but no energy-yielding macros are listed" + again
             )
-        elif gap and args.label:
-            warnings.append(f"label kcal is {gap}: read the label again, fix it with --replace")
-        elif gap:
-            warnings.append(f"label kcal is {gap}; check the pack")
+        elif kind:
+            warnings.append(f"label kcal is {reason}{again}")
     return {"added": product, "missing": product.missing(), "warnings": warnings}
 
 

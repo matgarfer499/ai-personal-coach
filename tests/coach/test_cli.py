@@ -1001,7 +1001,7 @@ def test_label_ambiguous_sentinels_are_refused_not_stored(capsys, data_dir, text
     assert not (data_dir / "catalogue.csv").exists()
 
 
-@pytest.mark.parametrize("kcal", ["1.674", "1,234", "0.500"])
+@pytest.mark.parametrize("kcal", ["1.674", "1,234", "12.500", "99,999"])
 def test_label_kcal_that_looks_like_kj_or_thousands_is_refused(capsys, data_dir, kcal):
     code, out = run(capsys, data_dir, *_label("--kcal", kcal))
     assert code != 0 and "kcal" in out["message"] and "kJ" in out["message"]
@@ -1011,6 +1011,42 @@ def test_label_over_another_source_says_how_to_get_a_separate_row(capsys, data_d
     catalogue.save([dataclasses.replace(SKYR_PRODUCT, barcode="8400000000017")], data_dir)
     _, out = run(capsys, data_dir, *_label("--barcode", "8400000000017"))
     assert "use a different --barcode, or omit --barcode" in out["message"]
+
+
+@pytest.mark.parametrize("kcal", ["0,125", "0.500", "0.000"])
+def test_label_kcal_with_a_leading_zero_is_a_plain_decimal(capsys, data_dir, kcal):
+    code, _ = run(capsys, data_dir, *_label("--kcal", kcal))
+    assert code == 0
+
+
+@pytest.mark.parametrize(
+    "text, stored",
+    [
+        ("piñones", ["piñones"]),
+        ("frutos secos (piñones)", ["frutos secos (piñones)"]),
+        ("sesamo", ["sesamo"]),
+        ("no sesamo", ["no sesamo"]),
+        ("no semillas", ["no semillas"]),
+        ("ilegible", ["unknown"]),
+        ("No legible", ["unknown"]),
+        ("no indicado", ["unknown"]),
+        ("not sure", ["unknown"]),
+        ("N/A", ["unknown"]),
+        ("?", ["unknown"]),
+        ("no sé", ["unknown"]),
+        ("soja, no lo sé", ["unknown", "soja"]),
+    ],
+)
+def test_label_sentinels_match_whole_words_only(capsys, data_dir, text, stored):
+    _, out = run(capsys, data_dir, *_label("--allergens", text))
+    assert out["added"]["allergens"] == stored
+
+
+@pytest.mark.parametrize("text", ["sin lactosa", "sin gluten", "soja, sin huevo"])
+def test_label_sin_phrases_are_not_allergen_names(capsys, data_dir, text):
+    code, out = run(capsys, data_dir, *_label("--allergens", text))
+    assert code != 0 and "--allergens" in out["message"]
+    assert not (data_dir / "catalogue.csv").exists()
 
 
 def test_label_with_energy_but_no_macros_warns_in_a_full_sentence(capsys, data_dir):
