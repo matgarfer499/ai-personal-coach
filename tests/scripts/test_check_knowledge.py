@@ -281,3 +281,21 @@ def test_unquoted_and_capitalised_references_are_checked():
     errors = ck.check_references(FIXTURES / "unquoted_see")
     targets = sorted(e.split('see "')[1].split('"')[0] for e in errors)
     assert targets == ["Gone", "Missing Heading", "Nowhere", "Real"]
+
+
+def test_reference_gaps_are_caught():
+    errors = ck.check_references(FIXTURES / "see_gaps")
+    targets = sorted(e.split('see "')[1].split('"')[0] for e in errors)
+    assert targets == [
+        "Activity multipliers (XYZ)",
+        "Capitalised Nowhere Target",
+        "Missing after comma",
+        "Missing after semicolon",
+        "real",
+        "real heading",
+    ]
+
+
+def test_valid_and_prose_references_pass():
+    # Covers quoted `See also "X"`, parenthesised headings, and prose that is not a reference.
+    assert ck.check_references(FIXTURES / "see_ok") == []
