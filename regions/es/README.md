@@ -38,8 +38,9 @@ network. `--allergens` is required: the declared allergens, `none` when the pack
 for anyone with an allergy or intolerance). The values are the ones printed on the pack, never
 estimated, and the row says `label (entered by hand)` with no URL. Without a barcode the key is
 `label-` plus the name's slug (`label-proteina-chocolate`), with `-` and 8 hex digits of a hash of
-the name appended when the slug is not an exact rendering of the name. `--replace` with a
-`--barcode` corrects a label row, and never overwrites an Open Food Facts row.
+the name appended when the slug is not an exact rendering of the name. `--replace` corrects a label row
+with or without `--barcode`; an explicit `--barcode` is the way to rename it. Label values never
+overwrite an Open Food Facts row, and an OFF add never overwrites a label row.
 
 Open Food Facts data is under the Open Database License (ODbL), and the row's URL is its
 attribution. Catalogue rows never move into `products.csv`.

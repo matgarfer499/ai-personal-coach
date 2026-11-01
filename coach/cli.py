@@ -675,21 +675,44 @@ def _catalogue_entry(p: catalogue.CatalogueProduct) -> dict:
 PER_NAMES = {"100 g": "grams", "100 ml": "millilitres"}
 
 
+# convention: 8 hex digits (32 bits) tell apart the lossy slugs of one client's few products.
+LABEL_KEY_HASH_CHARS = 8
 LABEL_ONLY = ("kcal", "protein", "carbs", "fat", "fibre", "allergens", "label_barcode")
 
 
-ALLERGEN_NONE = {"none", "ninguno", "ninguna", "sin alergenos"}
-ALLERGEN_UNKNOWN = {"unknown", "desconocido", "desconocidos", "no se"}
+# Allergen words, matched on folded text. A label entry that looks like one of these but is not
+# exactly a "none" phrase is refused: it must never be stored as an allergen name or as "none".
+ALLERGEN_UNKNOWN = (
+    "unknown", "desconoc", "no se", "no lo se", "ns/nc", "sin informacion", "no consta",
+)  # fmt: skip
+ALLERGEN_NONE = {
+    "none", "ninguno", "ninguna", "sin alergenos", "no contiene", "no contiene alergenos",
+    "no allergens", "nothing",
+}  # fmt: skip
+ALLERGEN_NONE_LOOKALIKE = ("none", "ningun", "sin alergen", "no contiene", "no allergen", "nothing")
 
 
 def _label_allergens(text: str) -> list[str]:
     """`none` (the pack declares none) is [], `unknown` (cannot be read) leads the list."""
-    items = list(dict.fromkeys(filter(None, (off._text(a) for a in re.split(r"[,;]", text)))))
-    none = [a for a in items if fold(a) in ALLERGEN_NONE]
-    unknown = [a for a in items if fold(a) in ALLERGEN_UNKNOWN]
-    real = [a for a in items if a not in none + unknown]
+    pieces = filter(None, (off._text(a) for a in re.split(r"[,;]", text)))
+    items = list({fold(a): a for a in reversed(list(pieces))}.values())[::-1]  # dedupe, folded
     if not items:
         raise ValueError("--allergens is empty: list them, or say none or unknown")
+    unknown = none = False
+    real = []
+    for item in items:
+        folded = fold(item)
+        if any(mark in folded for mark in ALLERGEN_UNKNOWN):
+            unknown = True
+        elif folded in ALLERGEN_NONE:
+            none = True
+        elif any(mark in folded for mark in ALLERGEN_NONE_LOOKALIKE):
+            raise ValueError(
+                f"--allergens {item!r} is unclear: write the allergens, or exactly none "
+                "(the pack declares none) or unknown (it cannot be read)"
+            )
+        else:
+            real.append(item)
     if none and (real or unknown):
         raise ValueError(f"--allergens {text!r}: none cannot be combined with other allergens")
     return ["unknown", *real] if unknown else real
@@ -713,6 +736,8 @@ def _label_product(args: argparse.Namespace) -> dict:
             continue
         limit = off.MAX_KCAL_PER_100G if column == "kcal" else off.MAX_G_PER_100G
         text = raw.strip()
+        if column == "kcal" and re.fullmatch(r"[0-9][.,][0-9]{3}", text, re.ASCII):
+            raise ValueError(f"--kcal {raw!r} looks like kJ or a thousands number: type kcal")
         # ASCII digits, at most one "." or "," ("9,5", ",5", "5.", "9.500"); no "1_0" or "1e1".
         # Limits are below 1000, so one separator is always a decimal point.
         strict = re.fullmatch(r"(?=.*[0-9])[0-9]*(?:[.,][0-9]*)?", text, re.ASCII)
@@ -728,8 +753,8 @@ def _label_product(args: argparse.Namespace) -> dict:
     # The slug is lossy (cuts, drops non-Latin text): then the key also carries a hash of the
     # folded name, so different names stay different keys.
     stem = recipes.slug(name)
-    if name.lower() != stem.replace("-", " "):  # plain only when the name is exactly its slug
-        stem += "-" + hashlib.sha1(fold(name).encode()).hexdigest()[:8]
+    if fold(name) != stem.replace("-", " "):  # plain only when the name is exactly its slug
+        stem += "-" + hashlib.sha1(fold(name).encode()).hexdigest()[:LABEL_KEY_HASH_CHARS]
     allergens = _label_allergens(args.allergens)
     return {
         # the slug keeps path and CSV structure out of the key
@@ -738,7 +763,7 @@ def _label_product(args: argparse.Namespace) -> dict:
         "brand": None,
         "per": args.per,
         "values": values,
-        "allergens": list(dict.fromkeys(allergens)),
+        "allergens": allergens,
         "url": "",
     }
 
@@ -790,10 +815,15 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         )
     products = catalogue.load(args.data_dir)
     stored = next((p for p in products if p.barcode == barcode), None)
+    if stored and not args.label and stored.source == catalogue.LABEL_SOURCE:
+        raise ValueError(
+            f"{barcode} is a hand-entered label row: use --label --barcode {barcode} to "
+            "correct it, or remove it"
+        )
     if stored and args.label and stored.source != catalogue.LABEL_SOURCE:
         raise ValueError(
             f"{barcode} is an {stored.source} row: label values never overwrite it; "
-            "pick another --name for a separate product"
+            "use a different --barcode, or omit --barcode, for a separate product"
         )
     # Only a generated key can be a lossy collision; an explicit barcode may rename its product.
     if (
@@ -831,7 +861,12 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         warnings.append("allergens unknown: do not use for anyone with an allergy or intolerance")
     if None not in (product.kcal, product.protein_g, product.carbs_g, product.fat_g):
         gap = foods.energy_exception(product.to_row(), typed=args.label)
-        if gap and args.label:
+        if gap == foods.NO_ENERGY_MACROS and args.label:
+            warnings.append(
+                "label lists kcal but no energy-yielding macros: read the label again, "
+                "fix it with --replace"
+            )
+        elif gap and args.label:
             warnings.append(f"label kcal is {gap}: read the label again, fix it with --replace")
         elif gap:
             warnings.append(f"label kcal is {gap}; check the pack")

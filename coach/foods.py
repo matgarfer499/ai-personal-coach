@@ -110,6 +110,9 @@ def label_energy(row: dict) -> float:
     )
 
 
+NO_ENERGY_MACROS = "no energy-yielding macros listed"
+
+
 def energy_exception(row: dict, typed: bool = False) -> str | None:
     """None when stated kcal is within 10% of the label factors, else a short reason.
 
@@ -118,7 +121,7 @@ def energy_exception(row: dict, typed: bool = False) -> str | None:
     if stated == computed == 0:
         return None
     if computed == 0:
-        return "no energy-yielding macros listed"
+        return NO_ENERGY_MACROS
     gap = abs(stated - computed) / computed
     if gap <= ENERGY_TOLERANCE:
         return None

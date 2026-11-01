@@ -298,3 +298,17 @@ def test_a_label_product_round_trips(tmp_path):
     catalogue.save([product], tmp_path)
     assert catalogue.load(tmp_path) == [product]
     assert catalogue.LABEL_SOURCE == "label (entered by hand)"
+
+
+def test_off_replace_never_overwrites_a_hand_entered_label_row(capsys, data_dir, off_returns):
+    code, _ = run(
+        capsys, data_dir, "products", "add", "--label", "--name", "Proteina choco",
+        "--chain", "X", "--per", "100 g", "--kcal", "380", "--protein", "30", "--carbs", "40",
+        "--fat", "9.5", "--allergens", "soja", "--barcode", "8400000000017",
+    )  # fmt: skip
+    assert code == 0
+    code, out = add(
+        capsys, data_dir, off_returns, "product_found.json", "8400000000017", "--replace"
+    )
+    assert code != 0 and "hand-entered label row" in out["message"]
+    assert catalogue.load(data_dir)[0].allergens == ("soja",)

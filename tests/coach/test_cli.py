@@ -975,6 +975,59 @@ def test_label_replace_never_overwrites_an_open_food_facts_row(capsys, data_dir)
     assert catalogue.load(data_dir) == [off_row]
 
 
+@pytest.mark.parametrize(
+    "text, stored",
+    [
+        ("No lo sé", ["unknown"]),
+        ("NS/NC", ["unknown"]),
+        ("sin información", ["unknown"]),
+        ("no consta", ["unknown"]),
+        ("unknown.", ["unknown"]),
+        ("Desconocido (ilegible)", ["unknown"]),
+        ("Leche, leche, LECHE", ["Leche"]),
+        ("No contiene", []),
+        ("none, None", []),
+    ],
+)
+def test_label_allergen_sentinels_fail_closed(capsys, data_dir, text, stored):
+    _, out = run(capsys, data_dir, *_label("--allergens", text))
+    assert out["added"]["allergens"] == stored
+
+
+@pytest.mark.parametrize("text", ["none.", "ninguno declarado", "Ninguna, soja", "sin alergenos!"])
+def test_label_ambiguous_sentinels_are_refused_not_stored(capsys, data_dir, text):
+    code, out = run(capsys, data_dir, *_label("--allergens", text))
+    assert code != 0 and "--allergens" in out["message"]
+    assert not (data_dir / "catalogue.csv").exists()
+
+
+@pytest.mark.parametrize("kcal", ["1.674", "1,234", "0.500"])
+def test_label_kcal_that_looks_like_kj_or_thousands_is_refused(capsys, data_dir, kcal):
+    code, out = run(capsys, data_dir, *_label("--kcal", kcal))
+    assert code != 0 and "kcal" in out["message"] and "kJ" in out["message"]
+
+
+def test_label_over_another_source_says_how_to_get_a_separate_row(capsys, data_dir):
+    catalogue.save([dataclasses.replace(SKYR_PRODUCT, barcode="8400000000017")], data_dir)
+    _, out = run(capsys, data_dir, *_label("--barcode", "8400000000017"))
+    assert "use a different --barcode, or omit --barcode" in out["message"]
+
+
+def test_label_with_energy_but_no_macros_warns_in_a_full_sentence(capsys, data_dir):
+    args = _label("--kcal", "100", "--protein", "0", "--carbs", "0", "--fat", "0")
+    code, out = run(capsys, data_dir, *args, "--replace")
+    assert code == 0
+    assert out["warnings"] == [
+        "label lists kcal but no energy-yielding macros: read the label again, "
+        "fix it with --replace"
+    ]
+
+
+def test_label_plain_key_ignores_accents(capsys, data_dir):
+    _, out = run(capsys, data_dir, *_label(name="Proteína chocolate"))
+    assert out["added"]["barcode"] == "label-proteina-chocolate"
+
+
 def test_explicit_barcode_with_replace_may_rename_the_product(capsys, data_dir):
     run(capsys, data_dir, *_label("--barcode", "8400000000017", name="Protein choco"))
     code, out = run(
