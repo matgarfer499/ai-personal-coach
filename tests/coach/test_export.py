@@ -8,6 +8,7 @@ import pytest
 import yaml
 
 from coach import catalogue
+from coach import export as export_module
 from coach.cli import main
 from coach.profile import Profile, save_profile
 
@@ -27,6 +28,29 @@ FOOD = catalogue.CatalogueProduct(
     url="https://world.openfoodfacts.org/product/8400000000017",
     fetched_on=date(2026, 10, 25),
 )
+COLD_CUT = catalogue.CatalogueProduct(
+    barcode="8400000000024",
+    product_name="Fiambre de prueba",
+    brand="Marca Prueba",
+    chain="Mercadona",
+    per="100 g",
+    kcal=150,
+    protein_g=18,
+    carbs_g=2,
+    fat_g=8,
+    fibre_g=None,
+    allergens=(),
+    url="https://world.openfoodfacts.org/product/8400000000024",
+    fetched_on=date(2026, 10, 25),
+)
+STEW = {
+    "dish": "Estofado de prueba",
+    "source": "https://example.org/estofado-de-prueba",
+    "servings": 2,
+    "steps": ["Dorar la carne", "Cocer despacio"],
+    "seasoning": ["laurel"],
+    "items": ["Comida de prueba=1800"],
+}
 
 
 @pytest.fixture
@@ -45,7 +69,7 @@ def data_dir(tmp_path):
         ),
         tmp_path / "profile.yaml",
     )
-    catalogue.save([FOOD], tmp_path)
+    catalogue.save([FOOD, COLD_CUT], tmp_path)
     draft = {
         "days": [
             {
@@ -54,20 +78,21 @@ def data_dir(tmp_path):
                     {
                         "meal": "Comida",
                         "tupper": True,
-                        "dishes": [
-                            {
-                                "dish": "Estofado de prueba",
-                                "source": "https://example.org/estofado-de-prueba",
-                                "servings": 2,
-                                "steps": ["Dorar la carne", "Cocer despacio"],
-                                "seasoning": ["laurel"],
-                                "items": ["Comida de prueba=1800"],
-                            }
-                        ],
+                        "dishes": [dict(STEW)],
                     },
                     {"meal": "Cena", "free": True},
                 ],
-            }
+            },
+            {
+                "date": date(2026, 10, 27),
+                "meals": [
+                    {
+                        "meal": "Desayuno",
+                        "dishes": [{"dish": "Bocadillo de prueba", "items": ["8400000000024=150"]}],
+                    },
+                    {"meal": "Comida", "dishes": [dict(STEW)]},
+                ],
+            },
         ]
     }
     (tmp_path / "menu-draft.yaml").write_text(
@@ -82,15 +107,15 @@ def run(capsys, data_dir, *args):
 
 
 def save(capsys, data_dir):
-    code, _ = run(capsys, data_dir, "mealplan", "save", "menu-draft.yaml", "--kcal", "2000")
-    assert code == 0
+    code, out = run(capsys, data_dir, "mealplan", "save", "menu-draft.yaml", "--kcal", "2000")
+    assert code == 0, out
 
 
 def test_export_writes_a_pdf_next_to_the_saved_menu(capsys, data_dir):
     pytest.importorskip("reportlab")
     save(capsys, data_dir)
     code, out = run(capsys, data_dir, "mealplan", "export")
-    assert code == 0 and out["pdf"] == "menus/2026-10-26.pdf" and out["days"] == 1
+    assert code == 0 and out["pdf"] == "menus/2026-10-26.pdf" and out["days"] == 2
     data = (data_dir / "menus" / "2026-10-26.pdf").read_bytes()
     assert data.startswith(b"%PDF")
     # pages are not compressed, so the text and the recipe link can be found in the file
@@ -158,8 +183,11 @@ def test_only_web_addresses_become_links(source, link):
 def test_a_source_that_is_not_a_web_address_is_printed_without_a_link(capsys, data_dir):
     pytest.importorskip("reportlab")
     draft = yaml.safe_load((data_dir / "menu-draft.yaml").read_text(encoding="utf-8"))
-    dish = draft["days"][0]["meals"][0]["dishes"][0]
-    dish["source"] = "javascript:alert(1)"
+    for day in draft["days"]:
+        for meal in day["meals"]:
+            for dish in meal.get("dishes") or []:
+                if dish["dish"] == "Estofado de prueba":
+                    dish["source"] = "javascript:alert(1)"
     (data_dir / "menu-draft.yaml").write_text(
         yaml.safe_dump(draft, allow_unicode=True), encoding="utf-8"
     )
@@ -171,3 +199,66 @@ def test_a_source_that_is_not_a_web_address_is_printed_without_a_link(capsys, da
     assert b"/URI" not in data  # but never as a link
     # and no QR code either: the file is the same size as the one exported without QR codes
     assert len(data) == (data_dir / "sin-qr.pdf").stat().st_size
+
+
+def export(capsys, data_dir) -> bytes:
+    pytest.importorskip("reportlab")
+    save(capsys, data_dir)
+    code, _ = run(capsys, data_dir, "mealplan", "export")
+    assert code == 0
+    return (data_dir / "menus" / "2026-10-26.pdf").read_bytes()
+
+
+def test_a_recipe_eaten_on_several_days_is_printed_once(capsys, data_dir):
+    data = export(capsys, data_dir)
+    assert data.count(b"Dorar la carne") == 1
+    assert (
+        data.count(b"/URI (https://example.org/estofado-de-prueba)") == 1
+    )  # one link, not one a day
+
+
+def test_the_week_overview_has_a_row_per_day(capsys, data_dir):
+    data = export(capsys, data_dir)
+    assert b"lun 26" in data and b"mar 27" in data
+
+
+def test_missing_data_names_the_product_not_its_barcode(capsys, data_dir):
+    data = export(capsys, data_dir)
+    assert b"Fiambre de prueba" in data and b"8400000000024" not in data
+
+
+def test_a_recipe_longer_than_a_page_still_exports(capsys, data_dir):
+    pytest.importorskip("reportlab")
+    draft = yaml.safe_load((data_dir / "menu-draft.yaml").read_text(encoding="utf-8"))
+    for day in draft["days"]:
+        for meal in day["meals"]:
+            for dish in meal.get("dishes") or []:
+                if dish["dish"] == "Estofado de prueba":
+                    dish["steps"] = [f"Paso {n}: " + "remover despacio " * 30 for n in range(40)]
+    (data_dir / "menu-draft.yaml").write_text(
+        yaml.safe_dump(draft, allow_unicode=True), encoding="utf-8"
+    )
+    save(capsys, data_dir)
+    code, out = run(capsys, data_dir, "mealplan", "export")
+    assert code == 0, out
+    data = (data_dir / "menus" / "2026-10-26.pdf").read_bytes()
+    assert b"(40) Tj" in data and b"Paso 39" in data  # the last step is printed, not cut off
+
+
+@pytest.mark.parametrize(
+    "first, last, text",
+    [
+        (date(2026, 11, 2), date(2026, 11, 8), "2 – 8 de noviembre de 2026"),
+        (date(2026, 10, 30), date(2026, 11, 5), "30 de octubre – 5 de noviembre de 2026"),
+        (date(2025, 12, 29), date(2026, 1, 4), "29 de diciembre de 2025 – 4 de enero de 2026"),
+        (date(2026, 11, 2), date(2026, 11, 2), "2 de noviembre de 2026"),
+    ],
+)
+def test_the_date_range_names_the_month_and_year_only_where_they_change(first, last, text):
+    assert export_module._date_range(first, last, export_module.LABELS["es"]) == text
+
+
+def test_a_dish_without_a_recipe_is_only_in_the_week_table(capsys, data_dir):
+    data = export(capsys, data_dir)
+    assert data.count(b"Bocadillo de prueba") == 1
+    assert b"Platos r" not in data
