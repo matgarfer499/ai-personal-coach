@@ -31,6 +31,7 @@ FIELDS = [
     "source_description",
     "form_note",
     "kcal_exception",
+    "g_per_ml",
 ]
 NUMBERS = ("kcal", "protein_g", "carbs_g", "fat_g", "fibre_g")
 # nutrition.md: "EU label rules and tolerances": fibre counts 2 kcal/g in label energy.
@@ -41,9 +42,10 @@ FIBRE_KCAL_PER_G = 2
 ENERGY_TOLERANCE = 0.10
 
 
-# convention: the two bases a table value can have. The coach has no densities, so an amount in
-# grams and an amount in millilitres are never converted into each other or mixed (see
-# `menu_totals`); a product per 100 ml is a menu item only in millilitres.
+# convention: the two bases a table value can have. Grams and millilitres are never mixed (see
+# `menu_totals`); a product per 100 ml is a menu item only in millilitres, and a per 100 g food
+# can be written in millilitres only when its row has `g_per_ml` (from the source's own portion
+# weights, see foods/README.md).
 PER_UNITS = {"100 g": "g", "100 ml": "ml"}
 
 
@@ -75,6 +77,7 @@ class Food:
     barcode: str = ""  # catalogue products, which `find` also matches by barcode
     chain: str = ""  # products: the supermarket, for the shopping list
     per: str = "100 g"  # the basis of the values: "100 g" (all generic foods) or "100 ml"
+    g_per_ml: float | None = None  # liquids per 100 g: grams in one millilitre
 
     @classmethod
     def from_row(cls, row: dict) -> Food:
@@ -82,6 +85,11 @@ class Food:
         for name in NUMBERS:
             text = str(values[name]).strip()
             values[name] = float(text) if text else None
+        text = str(values["g_per_ml"]).strip()
+        values["g_per_ml"] = float(text) if text else None
+        density = values["g_per_ml"]
+        if density is not None and not (math.isfinite(density) and density > 0):
+            raise ValueError(f"{values['name_en']}: g_per_ml must be a positive number")
         return cls(**values)
 
     @property
@@ -155,7 +163,7 @@ AMOUNT = re.compile(r"(.+?)\s*(ml|g)?", re.IGNORECASE)
 
 def parse_item(text: str) -> tuple[str, Amount]:
     """`NAME=AMOUNT` as used by `coach menu --item`: a food or product name (or a barcode) and
-    grams (`150` or `150g`) or millilitres (`15ml`, only for products labelled per 100 ml)."""
+    grams (`150` or `150g`) or millilitres (`15ml`: per 100 ml products or `g_per_ml`)."""
     name, sep, amount = text.rpartition("=")
     if not sep or not name.strip():
         raise ValueError(f"an item needs NAME=GRAMS (or NAME=MLml), got {text!r}")
@@ -192,7 +200,9 @@ def menu_totals(items: list[tuple[str, float]], table: list[Food]) -> MenuTotals
             totals.unknown.append(name)
             continue
         unit = getattr(grams, "unit", "g")
-        if unit != food.unit:
+        if unit == "ml" and food.unit == "g" and food.g_per_ml:
+            grams = grams * food.g_per_ml
+        elif unit != food.unit:
             if food.unit == "ml":
                 raise ValueError(f"{name} is per 100 ml: write it in millilitres ({name}=NNml)")
             raise ValueError(f"{name} is per 100 g: write it in grams ({name}=NNN), not {unit}")

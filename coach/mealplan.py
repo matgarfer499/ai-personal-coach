@@ -448,7 +448,9 @@ def shopping(
             if any(matches(word, food.name_en, food.name_es) for word in pantry or []):
                 skipped[fold(label)] = label
                 continue
-            amounts[food.chain or ANY_CHAIN][(label, food.unit)] += amount * times
+            amounts[food.chain or ANY_CHAIN][(label, getattr(amount, "unit", food.unit))] += (
+                amount * times
+            )
     chains = sorted(amounts, key=lambda chain: (chain == ANY_CHAIN, fold(chain)))
     return {
         "chains": {

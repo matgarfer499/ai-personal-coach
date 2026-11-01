@@ -16,6 +16,7 @@ too. A blank value is missing: menu totals list the items that lack it and never
 | `source_description` | the source's own name for the food, to judge the match |
 | `form_note` | how the match differs from the name (closest form, variety, salt) |
 | `kcal_exception` | set when stated energy is more than 10% from the 4/4/9 (+2 for fibre) energy, measured against that computed value |
+| `g_per_ml` | liquids only: grams in one millilitre, so `NAME=300ml` works for a per 100 g row |
 
 ## Where the numbers come from
 
@@ -29,23 +30,31 @@ fills the numbers from the release's CSV files; nothing is typed by hand. A spot
 against the live FDC API matched every value within the API's one-decimal rounding (2026-10-24).
 
 To change or add a food, edit `base_ids.tsv` (name_en, name_es, fdc_id, fdc_description,
-form_note), download the release (link in the script's docstring) and rebuild:
+form_note, and the optional `liquid` and `fibre_zero` columns), download the release (link in the script's docstring) and rebuild:
 
 ```
 uv run python scripts/build_food_table.py --fdc-dir <release dir> --ids foods/base_ids.tsv --out foods/base.csv
 ```
 
 The build stops if an `fdc_id` does not exist, if its description differs from the one you wrote,
-or if energy, protein, fat or carbohydrate is missing.
+or if energy, protein, fat or carbohydrate is missing, or if a `liquid: yes` row has no cup, fl oz
+or tbsp portion.
+
+Liquids: a row marked `liquid: yes` gets `g_per_ml` from the release's own portion weight (cup,
+else fl oz, else tbsp, divided by the exact US volume). Milks, juices, broth, soy sauce, coconut
+milk and kefir are marked; oils are not, they stay in grams. Each density comes from one SR
+portion, so it is approximate (coconut milk and kefir most of all). Caldo de pastilla is the
+made-up broth: enter ml (or g) of prepared broth, never the dry cube.
 
 BEDCA (the Spanish food composition database) was tried for Spanish staples; its public query
 endpoint answered searches but returned no nutrient values, so this version uses FDC only.
 Seitan and skyr are missing because SR Legacy has no entry for them.
 
 Fibre is blank for some foods because SR Legacy gives no value; it is never filled in by hand.
-Prawns are one: the plain raw shrimp entry (175179) has no fibre value, and the only shrimp
-entries that do (174210, 171971, 171972: 0 g) are other products ("may contain additives to
-retain moisture", moist-heat cooked, canned) whose energy and protein differ, so they are not
-used as a stand-in. Menus list prawns under `missing` for fibre; the fibre floor is still met
-from the other foods or the swap is made. Soy sauce and canned coconut milk are sold by volume
-but their rows are per 100 g (SR Legacy); weigh them, the coach applies no densities.
+The one exception is a row marked `fibre_zero: animal`: dietary fibre is plant carbohydrate, so
+unprocessed meat, fish, shellfish and eggs carry 0 g, and the build writes 0 where the source is
+blank and adds "fibre 0: animal food (convention)" to `form_note`. Prawns are one: the plain raw
+shrimp entry (175179) has no fibre value, and the only shrimp entries that do (174210, 171971,
+171972: 0 g) are other products ("may contain additives to retain moisture", moist-heat cooked,
+canned) whose energy and protein differ, so they are not used as a stand-in. Tempeh and canned
+coconut milk stay blank (plant foods).
