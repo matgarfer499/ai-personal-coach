@@ -8,7 +8,8 @@ permissions:
   contents: read
 
 jobs:
-  checks:
+  test:
+    name: test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     defaults:
@@ -56,12 +57,13 @@ jobs:
           uv run python scripts/build_knowledge_index.py
           git diff --exit-code
 
-  # Stable name for branch protection: the matrix job names change with the OS list.
-  checks-ok:
-    needs: checks
+  # Keeps the required context name `checks` stable whatever the matrix is.
+  checks:
+    name: checks
+    needs: test
     if: always()
     runs-on: ubuntu-latest
     steps:
       - env:
-          RESULT: ${{ needs.checks.result }}
+          RESULT: ${{ needs.test.result }}
         run: test "$RESULT" = success
