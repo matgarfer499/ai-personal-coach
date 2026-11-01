@@ -1,37 +1,48 @@
 name: Risk gate
 
 # Holds PRs that touch .github/risk-paths until Matías adds the human-ok label.
-# The path list is read from the base branch, so a PR cannot loosen its own gate.
+# pull_request_target runs this file and the path list from the base branch, so a PR cannot
+# loosen its own gate. It never checks out or runs PR code: changed files come from the API.
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened, labeled, unlabeled]
 
 permissions:
   contents: read
+  pull-requests: write # to drop a stale human-ok label
 
 jobs:
   risk-gate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
       - name: Check risky paths
         env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
           BASE: ${{ github.event.pull_request.base.sha }}
-          HEAD: ${{ github.event.pull_request.head.sha }}
+          ACTION: ${{ github.event.action }}
           APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'human-ok') }}
         run: |
-          # First setup PR: the base branch has no list yet, so use the PR's own.
-          git show "$BASE:.github/risk-paths" > /tmp/risk-paths 2>/dev/null || cp .github/risk-paths /tmp/risk-paths
-          grep -v '^#' /tmp/risk-paths | grep -v '^$' > /tmp/patterns
-          risky=$(git diff --name-only "$BASE...$HEAD" | grep -E -f /tmp/patterns || true)
+          # A missing list fails the step (bash -e), so the gate fails closed.
+          gh api -H "Accept: application/vnd.github.raw" \
+            "repos/$GITHUB_REPOSITORY/contents/.github/risk-paths?ref=$BASE" \
+            | grep -v '^#' | grep -v '^$' > "$RUNNER_TEMP/patterns"
+          # previous_filename catches a risky file renamed out of its path.
+          gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
+            --jq '.[] | .filename, (.previous_filename // empty)' > "$RUNNER_TEMP/files"
+          # grep exits 1 on no match (fine) and 2 on a bad pattern (fail closed).
+          risky=$(grep -E -f "$RUNNER_TEMP/patterns" "$RUNNER_TEMP/files" || [ $? -eq 1 ])
           if [ -z "$risky" ]; then
             echo "No risky paths touched."
             exit 0
           fi
           echo "Risky paths touched:"
           echo "$risky" | sed 's/^/  /'
+          if [ "$APPROVED" = "true" ] && [ "$ACTION" = "synchronize" ]; then
+            gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --remove-label human-ok
+            echo "::error::New commits after human-ok: label removed, Matías must review again."
+            exit 1
+          fi
           if [ "$APPROVED" = "true" ]; then
             echo "Approved with the human-ok label."
             exit 0
