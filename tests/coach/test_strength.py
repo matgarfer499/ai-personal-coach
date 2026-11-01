@@ -7,6 +7,7 @@ from coach.safety import Pause, SafetyFlags
 from coach.strength import (
     deload,
     e1rm,
+    find_pause,
     hard_set,
     load_muscle_map,
     lookup,
@@ -324,7 +325,7 @@ def test_parse_rep_range_rejects_bad_input(text, message):
 def test_rep_range_for_matches_names_like_the_rest_of_the_coach():
     ranges = [parse_rep_range("bench press=6-8")]
     assert rep_range_for("Bench Press (Barbell)", ranges) == (6, 8)
-    assert rep_range_for("Press de banca", ranges) == (8, 12)  # no alias matching: default
+    assert rep_range_for("Press de banca", ranges) == (6, 8)  # an alias of the same lift
     assert rep_range_for("Squat (Barbell)", ranges) == (8, 12)
     assert rep_range_for("Squat", []) == (8, 12)
     # the last range given for a lift wins
@@ -359,3 +360,57 @@ def test_suitcase_carry_is_known_but_credits_no_muscle():
     assert weekly_hard_sets(calf, muscle_map) == {"calves": 1}
     # Zercher Carry has no entry: a carry is mapped by name, not by the word "carry"
     assert unmapped_exercises([S("Zercher Carry", 40, 8)], muscle_map) == ["Zercher Carry"]
+
+
+# strength-hypertrophy.md "Double progression": the range is chosen; `*` sets it for every lift.
+def test_star_rep_range_is_the_default_for_every_lift():
+    ranges = [parse_rep_range("*=6-8")]
+    assert parse_rep_range("*=6-8") == ("*", (6, 8))
+    assert rep_range_for("Squat (Barbell)", ranges) == (6, 8)
+    assert rep_range_for("Anything Unmapped", ranges) == (6, 8)
+
+
+def test_a_named_range_beats_the_star():
+    ranges = [parse_rep_range("bench press=5-7"), parse_rep_range("*=6-8")]  # star last
+    assert rep_range_for("Bench Press (Barbell)", ranges) == (5, 7)
+    assert rep_range_for("Squat", ranges) == (6, 8)
+    assert rep_range_for("Squat", [parse_rep_range("bench press=5-7")]) == (8, 12)
+
+
+def test_rep_range_names_match_through_aliases():
+    ranges = [parse_rep_range("press de banca=5-7")]
+    assert rep_range_for("Bench Press (Barbell)", ranges) == (5, 7)
+    assert rep_range_for("Press Banca", ranges) == (5, 7)
+    assert rep_range_for("Squat", ranges) == (8, 12)
+
+
+SPANISH_HEVY = [
+    ("Press de Pecho Iso-Lateral (Máquina)", "chest press"),
+    ("Remo Sentado con Cable - Agarre Recto", "seated cable row"),
+    ("Tirón a la Cara (Cable)", "face pull"),
+    ("Press de Piernas (Máquina)", "leg press"),
+    ("Extensión de Pierna (Máquina)", "leg extension"),
+    ("Iso-Lateral Chest Press (Machine)", "chest press"),
+    ("Seated Cable Row - Bar Grip (Cable)", "seated cable row"),
+    ("Lat Pulldown - Close Grip (Cable)", "lat pulldown"),
+]
+
+
+@pytest.mark.parametrize("name, key", SPANISH_HEVY)
+def test_spanish_hevy_names_are_counted(name, key):
+    mm = load_muscle_map()
+    assert lookup(name, mm) is mm[key]
+
+
+def test_a_variant_entry_wins_over_its_base():
+    mm = {"row": {"muscles": {"back": 1}}, "row - wide": {"muscles": {"back": 0.5}}}
+    assert lookup("Row - Wide", mm) is mm["row - wide"]
+    assert lookup("Row - Narrow", mm) is mm["row"]
+
+
+def test_injury_pause_matches_a_spanish_name():
+    mm = load_muscle_map()
+    paused = {"Press de Piernas": Pause(["knee"], assessed=True)}
+    assert find_pause("Leg Press (Machine)", paused, mm) is not None
+    assert find_pause("Prensa de Piernas (Máquina)", paused, mm) is not None
+    assert find_pause("Squat (Barbell)", paused, mm) is None

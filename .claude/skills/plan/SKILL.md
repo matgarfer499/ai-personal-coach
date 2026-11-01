@@ -62,8 +62,10 @@ Run these, all with the ground-rule flags:
   `volume_cut`, `stop_rir` and `extra_rest_days` applied to the last logged week). Ignore
   anything the review marks pending.
 - If `data/sessions.csv` exists: `coach strength sets` (the last logged week by default) and
-  `coach strength progress`, adding `--rep-range "LIFT=LOW-HIGH"` for each lift whose range in
-  `data/plan.md` is not 8-12 (the default; the flag is ignored for a lift with no logged sets).
+  `coach strength progress`, adding `--rep-range "*=LOW-HIGH"` from the `rep_range:` line of
+  `data/plan.md` (the client's usual range; leave it out when the line is missing, 8-12 applies)
+  and one `--rep-range "LIFT=LOW-HIGH"` per lift whose `LIFT: LOW-HIGH reps` line differs (the
+  flag is ignored for a lift with no logged sets).
 
 Knowledge, by situation: run only the lines that apply.
 - Always:
@@ -143,8 +145,9 @@ Knowledge, by situation: run only the lines that apply.
      solid, within Safety below ("Load range for maximal strength"); a hypertrophy client may
      use anything from about 6 to 30 reps ("Load range for hypertrophy"). Keep the range the
      client already uses, from `data/plan.md` or their log, unless they ask for a change. Write
-     each lift as `LIFT: LOW-HIGH reps` in the training week, with the logged name, so `/review`
-     can pass it to `coach strength progress --rep-range`; after changing a lift's range, rerun
+     the client's usual range once as the `rep_range:` header line (step 5) and each lift with
+     another range as `LIFT: LOW-HIGH reps` in the training week, with the logged name, so
+     `/review` can pass them to `coach strength progress --rep-range`; after changing a lift's range, rerun
      that command for it before quoting a load.
    - Reps and effort: from the rules loaded above; with `hold_progression`, no harder than the
      last logged sessions. When two rules give different RIR, the more
@@ -169,6 +172,8 @@ Knowledge, by situation: run only the lines that apply.
    line follows: `training_schedule: mon 18:30; wed 18:30; sat` (English day tokens mon tue wed
    thu fri sat sun in any profile language, an optional 24 h start time after each; leave the
    line out when the days are not known; `/menu` places pre- and post-workout meals with it).
+   After it, an optional line `rep_range: 6-8`, the client's usual rep range (leave it out when
+   they use 8-12).
    Then the sections Semana de entrenamiento, Cardio, Nutrición, Notas de seguridad, Fuentes (en:
    Training week, Cardio, Nutrition, Safety notes, Rules used). Rule names stay as the knowledge
    headings, in brackets. Then a line on when to run `/review`, and the deferral line last
