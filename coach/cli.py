@@ -43,11 +43,13 @@ from coach.profile import (
     CONDITION_TOKENS,
     GOALS,
     MEDICATION_TOKENS,
+    NO_REGION,
     PARQ_ANSWERS,
     SCREENING_KEYS,
     Profile,
     ProfileIncomplete,
     load_profile,
+    real_region,
     save_profile,
 )
 from coach.sessions.importers import base as importers  # the package registers importers
@@ -174,7 +176,7 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
         name: strength.progression(
             [s for s in logged if s.exercise == name],
             today=today,
-            rep_range=strength.rep_range_for(name, ranges),
+            rep_range=strength.rep_range_for(name, ranges, muscle_map=muscle_map),
             muscle_map=muscle_map,
             flags=flags,
             stall_after=strength.pause_end(name, profile.injuries, muscle_map),
@@ -184,10 +186,9 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
     # Every logged lift, not just the ones shown: --exercise and the lookback only filter output.
     every = {s.exercise for s in logged}
     unmatched = strength.unmatched_rep_ranges(ranges, every, muscle_map)
-    # Names that match only lifts last logged before the lookback window (not --exercise).
-    recent = today - timedelta(days=PROGRESS_LOOKBACK_DAYS)
-    in_window = {s.exercise for s in logged if s.date > recent}
-    outside = strength.unmatched_rep_ranges(ranges, in_window, muscle_map)
+    # Names that match only lifts last logged before the lookback window. --exercise bypasses
+    # the window, so there is nothing outside it to report.
+    outside = [] if args.exercise else strength.unmatched_rep_ranges(ranges, set(names), muscle_map)
     return {
         "lifts": lifts,
         "unmatched_rep_ranges": unmatched,
@@ -477,8 +478,8 @@ def _parse_profile_value(field: str, raw: str) -> Any:
     if field == "injuries":
         raise ValueError("injuries are set with `coach injury add` and `coach injury clear`")
     if field == "region":
-        if raw.lower() == foods.NO_REGION:
-            return foods.NO_REGION  # chosen: no region for this country, the base food table only
+        if real_region(raw) is None:
+            return NO_REGION  # chosen: no region for this country, the base food table only
         if not (regions.ROOT / "regions" / raw / "region.yaml").exists():
             raise ValueError(
                 f"there is no region {raw!r} yet (no regions/{raw}/region.yaml): set the region "
@@ -652,7 +653,8 @@ def cmd_foods(profile: Profile, args: argparse.Namespace) -> dict:
         found = re.findall(r"\w+", fold(" ".join(names)))
         return all(any(f.startswith(w) for f in found) for w in words)
 
-    products = regions.load_products(region) if region and region != foods.NO_REGION else []
+    region = real_region(region)
+    products = regions.load_products(region) if region else []
     return {
         "foods": [
             {"name_en": f.name_en, "name_es": f.name_es}

@@ -301,10 +301,13 @@ def unmatched_rep_ranges(
 
 
 def rep_range_for(
-    exercise: str, ranges: list[tuple[str, tuple[int, int]]], default: tuple[int, int] = REP_RANGE
+    exercise: str,
+    ranges: list[tuple[str, tuple[int, int]]],
+    default: tuple[int, int] = REP_RANGE,
+    muscle_map: dict[str, dict] | None = None,
 ) -> tuple[int, int]:
     """The range given for a logged lift (the last one wins), else `*`, else the rule's default."""
-    mapped = load_muscle_map()
+    mapped = muscle_map if muscle_map is not None else load_muscle_map()
     named = [r for name, r in ranges if rep_range_matches(exercise, name, mapped)]
     stars = [r for name, r in ranges if name == STAR]
     return (named or stars or [default])[-1]

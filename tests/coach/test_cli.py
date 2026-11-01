@@ -311,8 +311,31 @@ def test_unmatched_rep_ranges_look_at_every_logged_lift(capsys, data_dir):
         "*=6-8",
     )
     assert out["unmatched_rep_ranges"] == ["sentadilla"]  # and `*` is never in the list
-    # logged, but not among the lifts shown: say so, so the skills need not infer it
+    assert out["rep_ranges_outside_lookback"] == []  # --exercise bypasses the window
+    _, out = run(
+        capsys, data_dir, "strength", "progress", "--rep-range", "barbell row=6-8"
+    )  # logged, but not among the lifts shown: say so, so the skills need not infer it
     assert out["rep_ranges_outside_lookback"] == ["barbell row"]
+
+
+def test_exercise_bypasses_the_window_so_its_range_is_not_outside_it(capsys, data_dir):
+    _log(data_dir)
+    old = ExerciseSet(
+        "hevy_csv", datetime(2026, 2, 20, 18, 0), "Barbell Row", 3, 0, weight_kg=50.0, reps=8
+    )
+    append([old], data_dir / "sessions.csv")
+    _, out = run(
+        capsys,
+        data_dir,
+        "strength",
+        "progress",
+        "--exercise",
+        "barbell row",
+        "--rep-range",
+        "barbell row=6-8",
+    )
+    assert out["lifts"]["Barbell Row"]["rep_range"] == [6, 8]
+    assert out["rep_ranges_outside_lookback"] == [] and out["unmatched_rep_ranges"] == []
 
 
 def test_strength_progress_rejects_a_bad_rep_range(capsys, data_dir):
@@ -834,6 +857,27 @@ def test_a_profile_with_no_region_chosen_is_complete_and_works_without_a_table(c
     assert code == 0 and out["unknown"] == [] and out["kcal"] > 0
     assert run(capsys, data_dir, "foods", "search", "pollo")[0] == 0
     assert run(capsys, data_dir, "foods", "search", "pollo", "--region", "none")[0] == 0
+
+
+def test_every_spelling_of_no_region_works_everywhere(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "region", "NONE")
+    assert run(capsys, data_dir, "profile", "show")[1]["profile"]["region"] == "none"
+    for flag in ("none", "NONE", "None"):
+        assert run(capsys, data_dir, "foods", "search", "pollo", "--region", flag)[0] == 0
+        assert run(capsys, data_dir, "menu", "--region", flag, "--item", "pollo=100")[0] == 0
+    path = data_dir / "profile.yaml"
+    path.write_text(path.read_text(encoding="utf-8") + "region: None\n", encoding="utf-8")
+    for spelling in ("region: None", "region: NONE"):
+        text = "".join(
+            line
+            for line in path.read_text(encoding="utf-8").splitlines(True)
+            if not line.startswith("region:")
+        )
+        path.write_text(text + spelling + "\n", encoding="utf-8")
+        code, out = run(capsys, data_dir, "safety")
+        assert code == 0 and out["emergency_number"] is None
+        assert run(capsys, data_dir, "menu", "--item", "pollo=100")[0] == 0
+        assert run(capsys, data_dir, "profile", "show")[1]["missing"].count("region") == 0
 
 
 def test_safety_prints_the_emergency_number(capsys, data_dir):

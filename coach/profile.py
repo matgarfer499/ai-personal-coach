@@ -36,6 +36,15 @@ EXPERIENCE = ("novice", "intermediate", "advanced")
 ACTIVITY_LEVELS = ("desk", "desk_training", "active")
 # The languages the skills, the deferral line and the PDF labels exist in.
 LANGUAGES = ("es", "en")
+NO_REGION = "none"  # the `region` of a country with no regions/<code>/ folder
+
+
+def real_region(code: str | None) -> str | None:
+    """The region folder code, or None for no region (None, "" or "none" in any case)."""
+    code = (code or "").strip()
+    return None if code.lower() == NO_REGION else code or None
+
+
 # convention: input check, not coaching: emergency numbers are 2 to 6 digits (112, 911, 000).
 EMERGENCY_NUMBER = re.compile(r"^\d{2,6}$")
 
@@ -240,6 +249,8 @@ def load_profile(path: Path) -> Profile:
     for injury in data.get("injuries") or []:
         if isinstance(injury, dict) and injury.get("exercises", []) is None:
             del injury["exercises"]
+    if isinstance(data.get("region"), str) and real_region(data["region"]) is None:
+        data["region"] = NO_REGION  # a hand-edited `None` or `NONE` means the same
     _validate(data)
     return Profile(**data)
 
