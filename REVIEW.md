@@ -12,6 +12,8 @@ What matters when reviewing this repo. Reviewers read this before reporting.
   without the deferral line from `docs/safety.md`.
 - Personal data in the repo: anything from `data/` or a real workout export or food log in
   fixtures, docs, issues or commits.
+- A risk-gate change that lets a risky PR pass: an approval not tied to the commit Matías
+  reviewed, or an error (failed API call, cut-off file list) that passes instead of failing.
 
 ## How to report
 
@@ -24,8 +26,8 @@ What matters when reviewing this repo. Reviewers read this before reporting.
 
 - `uv.lock`, `assets/`
 - `knowledge/index.md` (built by `scripts/build_knowledge_index.py`)
-- `foods/base.csv`, `regions/*/foods.csv` (built by `scripts/build_food_table.py` from the
-  `*_ids.tsv` lists; review the ID lists instead)
+- `foods/base.csv` (built by `scripts/build_food_table.py` from `foods/base_ids.tsv`; review the
+  ID list instead)
 
 ## Risky paths
 

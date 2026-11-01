@@ -5,7 +5,8 @@ name: Risk gate
 # loosen its own gate. It never checks out or runs PR code: changed files come from the API.
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+    # edited: retargeting the PR to another base changes its file list.
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
 
 permissions:
   contents: read
@@ -16,28 +17,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check risky paths
+        # Explicit bash runs with -eo pipefail; the default shell has no pipefail.
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
           BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
           ACTION: ${{ github.event.action }}
-          APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'human-ok') }}
         run: |
-          # A missing list fails the step (bash -e), so the gate fails closed.
+          # A missing list or a failed request fails the step, so the gate fails closed.
           gh api -H "Accept: application/vnd.github.raw" \
             "repos/$GITHUB_REPOSITORY/contents/.github/risk-paths?ref=$BASE" \
             | grep -v '^#' | grep -v '^$' > "$RUNNER_TEMP/patterns"
-          files_url="repos/$GITHUB_REPOSITORY/pulls/$PR/files"
-          gh api --paginate "$files_url" --jq '.[].filename' > "$RUNNER_TEMP/files"
+          pr=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '"\(.changed_files) \(.head.sha)"')
+          expected=${pr% *} live_head=${pr#* }
+          # One row per file; previous_filename catches a risky file renamed out of its path.
+          gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
+            --jq '.[] | [.filename, .previous_filename // empty] | @tsv' > "$RUNNER_TEMP/rows"
           # The files API stops at 3000 entries: a short list fails closed.
-          expected=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq .changed_files)
-          got=$(wc -l < "$RUNNER_TEMP/files")
+          got=$(wc -l < "$RUNNER_TEMP/rows")
           if [ "$got" -ne "$expected" ]; then
             echo "::error::Got $got of $expected changed files; cannot check the full PR."
             exit 1
           fi
-          # previous_filename catches a risky file renamed out of its path.
-          gh api --paginate "$files_url" --jq '.[].previous_filename // empty' >> "$RUNNER_TEMP/files"
+          tr '\t' '\n' < "$RUNNER_TEMP/rows" > "$RUNNER_TEMP/files"
           # grep exits 1 on no match (fine) and 2 on a bad pattern (fail closed).
           risky=$(grep -E -f "$RUNNER_TEMP/patterns" "$RUNNER_TEMP/files" || [ $? -eq 1 ])
           if [ -z "$risky" ]; then
@@ -46,12 +50,26 @@ jobs:
           fi
           echo "Risky paths touched:"
           echo "$risky" | sed 's/^/  /'
-          if [ "$APPROVED" = "true" ] && [ "$ACTION" = "synchronize" ]; then
-            gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --remove-label human-ok
-            echo "::error::New commits after human-ok: label removed, Matías must review again."
+          # Live labels, not the event payload, which can predate another run's removal.
+          approved=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/labels" \
+            --jq 'any(.[]; .name == "human-ok")')
+          # Only label changes (maintainer-only) keep the approval. Any author event voids it,
+          # edits too: an edit racing a push could otherwise read the label before it is dropped.
+          case "$ACTION" in
+            labeled | unlabeled) stale=false ;;
+            *) stale=true ;;
+          esac
+          if [ "$approved" = "true" ] && [ "$stale" = "true" ]; then
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/issues/$PR/labels/human-ok" > /dev/null
+            echo "::error::PR changed ($ACTION) after human-ok: label removed, Matías must review again."
             exit 1
           fi
-          if [ "$APPROVED" = "true" ]; then
+          # A delayed or re-run event can carry an old head: the run for the newest push decides.
+          if [ "$approved" = "true" ] && [ "$live_head" != "$HEAD" ]; then
+            echo "::error::The PR moved past this event's commit; human-ok is not for the new one."
+            exit 1
+          fi
+          if [ "$approved" = "true" ]; then
             echo "Approved with the human-ok label."
             exit 0
           fi
