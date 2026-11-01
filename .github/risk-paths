@@ -1,8 +1,10 @@
 # Extended regexes, one per line. A PR touching a match waits for Matías's human-ok label.
 # CI and repo config
 ^\.github/
-# Safety: red flags, deferral line, calorie floors and the no-deficit rule
+# Safety: red flags, deferral line, screening, calorie floors and the no-deficit clamp
 ^coach/safety\.py$
+^coach/profile\.py$
+^coach/cli\.py$
 ^docs/safety\.md$
 ^coach/energy\.py$
 ^coach/macros\.py$
