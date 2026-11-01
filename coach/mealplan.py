@@ -11,9 +11,9 @@ simple breakfast made again each day): the repeats within its N servings are all
 list buys it once at N servings, and an appearance beyond N is an accidental repeat again.
 
 `base: [PROTEIN, CARB]` on a dish names its main protein and carbohydrate base (one or two plain
-words, e.g. `[pollo, arroz]` or `[garbanzos]`): two different dishes on the same base with a gap
-of BASE_REPEAT_DAYS days or fewer are a repeat too. A dish without `base` (a breakfast, a snack)
-is not checked.
+words, e.g. `[pollo, arroz]` or `[garbanzos]`): two different dishes on the same base are a
+repeat too when the two dishes' dates differ by BASE_REPEAT_DAYS (3) days or fewer (day 26 and
+day 29 are flagged, 26 and 30 pass). A dish without `base` (a breakfast, a snack) is not checked.
 """
 
 from __future__ import annotations
@@ -33,8 +33,9 @@ MENUS_DIR = "menus"
 # convention: chosen when the coach was designed (2026-10-25): a dish does not come back
 # within 7 consecutive days; a longer plan may cycle its weeks.
 NO_REPEAT_DAYS = 7
-# convention: two dishes on the same protein and carb base with a gap of 3 days or fewer are a
-# repeat, 4 or more passes (see docs/conventions.md): enough variety, a batch still counts once.
+# convention: two dishes on the same protein and carb base are a repeat when the two dishes'
+# dates differ by 3 days or fewer (day 26 and day 29 are flagged, 26 and 30 pass; see
+# docs/conventions.md): enough variety, and a batch still counts once.
 BASE_REPEAT_DAYS = 3
 # A free meal is the client's choice, never a prescription; with a positive eating-disorder screen
 # the CLI refuses it (loss-of-control eating is the risk the rule names).
@@ -252,10 +253,11 @@ def same_base(a: list[str], b: list[str]) -> bool:
 
 def repeats(days: list[Day]) -> list[dict]:
     """Dishes (case and accents ignored) served again within NO_REPEAT_DAYS (`kind: dish`), then
-    different dishes on the same `base` with a gap of BASE_REPEAT_DAYS or fewer (`kind: base`;
-    a gap of 3 days flags, 4 passes). Both count
-    between groups (see `batches`, so a batch is one appearance), from the last serving of one to
-    the first of the next."""
+    different dishes on the same `base` whose dates differ by BASE_REPEAT_DAYS days or fewer
+    (`kind: base`; day 26 and day 29 are flagged, 26 and 30 pass).
+
+    Both are counted between groups (see `batches`, so a batch is one appearance), from the last
+    serving of one group to the first serving of the next."""
     groups = batches(days)
     by_dish: dict[str, list[Batch]] = defaultdict(list)
     for group in groups:

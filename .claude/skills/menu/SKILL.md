@@ -134,9 +134,10 @@ Every lunch and dinner dish, whatever its source:
 - **Spread over the menu:** proteins (poultry, fish or seafood, legumes, eggs, red meat or pork,
   dairy or tofu), carb bases (rice, pasta, potato, bread, legumes, grains such as couscous or
   quinoa) and at least two of the client's `cuisines` across a week.
-- **Base:** no two dishes on the same main protein and carb base with a gap of 3 days or fewer
-  (4 or more passes; a convention). Each lunch and dinner dish carries its `base` in the draft
-  (see the draft format), and `coach mealplan check` flags a repeat (step 8).
+- **Base:** no two dishes on the same main protein and carb base whose dates differ by 3 days or
+  fewer (day 26 and day 29 are flagged, 26 and 30 pass; a convention). Each lunch and dinner
+  dish carries its `base` in the draft (see the draft format), and `coach mealplan check` flags
+  a repeat (step 8).
 - **Tastes:** `flavours` steers the spice and acid choices. `favoured` dishes come back (still
   subject to `repeats`), `disliked` rarely, `excluded` never. A disliked food is also never a
   flavour builder (a client who dislikes cilantro gets parsley or none).
@@ -178,8 +179,8 @@ Every lunch and dinner dish, whatever its source:
 8. Whole plan. Write the draft to `data/menu-draft.yaml` in the format below and run
    `coach mealplan check menu-draft.yaml` with the same target flags. Every day must be `ok`
    and `repeats` empty. Each entry has a `kind`: `dish` (the same dish within 7 days) or `base`
-   (two dishes on the same protein and carb base with a gap of 3 days or fewer; 4 or more
-   passes; both conventions). For `kind: base`, change the protein or the carb of one of the
+   (two dishes on the same protein and carb base whose dates differ by 3 days or fewer: day 26
+   and day 29 are flagged, 26 and 30 pass; both conventions). For `kind: base`, change the protein or the carb of one of the
    dishes, not the dates. Fix and rerun.
    `taste_flags` lists where a dish, item or seasoning matches the client's tastes by name:
    `allergy` and `intolerance` block saving (replace the food, never argue), `disliked`,
