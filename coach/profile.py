@@ -40,6 +40,7 @@ ACTIVITY_LEVELS = ("desk", "desk_training", "active")
 LANGUAGES = ("es", "en")
 # convention: input check, not coaching: emergency numbers are 2 to 6 digits (112, 911, 000).
 EMERGENCY_NUMBER = re.compile(r"^\d{2,6}$")
+NO_NUMBER = "none"  # the client declined or has no number: `coach safety` prints none of its own
 
 # Tokens the calculators read.
 BETA_BLOCKER = "beta_blocker"  # cardio-health.md: "Beta-blockers: no formula-based HR zones"
@@ -196,9 +197,16 @@ def _validate(data: dict) -> None:
         raise ValueError(f"screening.menstrual must be one of {', '.join(MENSTRUAL_STATES)}")
     for injury in data.get("injuries") or []:
         _validate_injury(injury)
+    if isinstance(data.get("region"), str):
+        real_region(data["region"])  # raises for a path
     number = data.get("emergency_number")
-    if number is not None and not (isinstance(number, str) and EMERGENCY_NUMBER.match(number)):
-        raise ValueError(f"emergency_number must be 2 to 6 digits, not {number!r}")
+    declined = number == NO_NUMBER
+    if (
+        number is not None
+        and not declined
+        and not (isinstance(number, str) and EMERGENCY_NUMBER.match(number))
+    ):
+        raise ValueError(f"emergency_number must be 2 to 6 digits or none, not {number!r}")
 
 
 def _validate_injury(injury: object) -> None:
@@ -249,6 +257,9 @@ def load_profile(path: Path) -> Profile:
         )
         if data["region"] is None:
             del data["region"]
+    number = data.get("emergency_number")
+    if isinstance(number, str) and number.strip().lower() == NO_NUMBER:
+        data["emergency_number"] = NO_NUMBER
     _validate(data)
     return Profile(**data)
 

@@ -844,6 +844,34 @@ def test_an_empty_region_is_an_error_and_codes_are_stored_normalised(capsys, dat
     assert "region" in run(capsys, data_dir, "profile", "show")[1]["missing"]
 
 
+def test_a_region_that_is_a_path_is_refused_by_the_cli_and_the_file_loader(capsys, data_dir):
+    for bad in ("../x", "/abs", "es/../es"):
+        code, out = run(capsys, data_dir, "profile", "set", "region", bad)
+        assert code == 2 and "not a region code" in out["message"]
+    path = data_dir / "profile.yaml"
+    path.write_text(path.read_text(encoding="utf-8") + "region: ../x\n", encoding="utf-8")
+    code, out = run(capsys, data_dir, "profile", "show")
+    assert code == 2 and "not a region code" in out["message"]
+
+
+def test_an_empty_region_flag_is_an_error(capsys, data_dir):
+    for args in (("menu", "--item", "pollo=100"), ("foods", "search", "pollo")):
+        code, out = run(capsys, data_dir, *args, "--region", "")
+        assert code == 2 and "region" in out["message"]
+
+
+def test_emergency_number_none_is_a_declined_number(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "emergency_number", "None")
+    show = run(capsys, data_dir, "profile", "show")[1]
+    assert show["profile"]["emergency_number"] == "none"
+    assert "emergency_number" not in show["missing"]
+    assert run(capsys, data_dir, "safety")[1]["emergency_number"] is None
+    run(capsys, data_dir, "profile", "set", "region", "es")
+    assert (
+        run(capsys, data_dir, "safety")[1]["emergency_number"] == "112"
+    )  # the region's still wins
+
+
 def test_a_region_without_its_folder_is_refused_with_a_hint(capsys, data_dir):
     code, out = run(capsys, data_dir, "profile", "set", "region", "mx")
     assert code == 2

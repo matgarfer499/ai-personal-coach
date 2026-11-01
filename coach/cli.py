@@ -43,6 +43,7 @@ from coach.profile import (
     CONDITION_TOKENS,
     GOALS,
     MEDICATION_TOKENS,
+    NO_NUMBER,
     PARQ_ANSWERS,
     SCREENING_KEYS,
     Profile,
@@ -299,10 +300,16 @@ def _free_meal(day: mealplan.Day, totals: foods.MenuTotals, targets: dict) -> di
     }
 
 
+def _region_for(profile: Profile, args: argparse.Namespace) -> str | None:
+    """`--region` over the profile's; an empty `--region` is an error, as in `profile set`."""
+    given = getattr(args, "region", None)
+    if given is not None and not given.strip():
+        raise ValueError("--region needs a value: a region code, or none for no region")
+    return given or profile.region
+
+
 def _menu_table(profile: Profile, args: argparse.Namespace) -> list[foods.Food]:
-    return regions.menu_table(
-        getattr(args, "region", None) or profile.region, data_dir=args.data_dir
-    )
+    return regions.menu_table(_region_for(profile, args), data_dir=args.data_dir)
 
 
 def cmd_menu(profile: Profile, args: argparse.Namespace) -> foods.MenuTotals | dict:
@@ -476,6 +483,8 @@ def _parse_profile_value(field: str, raw: str) -> Any:
         return raw
     if field == "injuries":
         raise ValueError("injuries are set with `coach injury add` and `coach injury clear`")
+    if field == "emergency_number" and raw.strip().lower() == NO_NUMBER:
+        return NO_NUMBER  # declined or not available: counts as set, safety prints none
     if field == "region":
         if not raw.strip():
             raise ValueError("region needs a value: a region code, or none for no region")
@@ -644,7 +653,7 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> Checkin:
 
 
 def cmd_foods(profile: Profile, args: argparse.Namespace) -> dict:
-    region = args.region or profile.region
+    region = _region_for(profile, args)
 
     words = [fold(w) for w in args.words if w.strip()]
     if not words:
