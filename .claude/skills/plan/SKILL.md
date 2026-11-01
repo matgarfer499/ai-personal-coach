@@ -98,6 +98,8 @@ Knowledge, by situation: run only the lines that apply.
 - Any cardio modality you are about to prescribe: its rule from `knowledge/index.md` (search
   the modality's name), e.g. `coach knowledge section cardio-health "Jump rope as conditioning"`
   or `coach knowledge section strength-hypertrophy "HIIT and sprint intervals with lifting"`.
+  - Heavy bag, boxing: `coach knowledge section cardio-health "Heavy-bag boxing as conditioning"`
+  - Functional training, CrossFit-style circuits: `coach knowledge section cardio-health "Functional training circuits"`
 - Pregnant:
   - `coach knowledge section recovery-habits "Default is to be active"`
   - `coach knowledge section recovery-habits "Warning signs to stop exercise"`
@@ -159,7 +161,8 @@ Knowledge, by situation: run only the lines that apply.
      never a number you invent.
 3. Cardio: before prescribing a modality, load its rule (Reads) and use the intensity class the
    rule gives it, not a guess: jump rope, HIIT, sprints and plyometric jumps are vigorous work,
-   never "moderate cardio". Start at the minimum of "Weekly baseline dose" (or what they already do, if more),
+   never "moderate cardio". For an activity with no rule of its own, use the rule of the closest
+   modality by intensity, say which one, and suggest `/research`. Start at the minimum of "Weekly baseline dose" (or what they already do, if more),
    split evenly over the days they offered (ask which, when it is unclear and the client has not delegated it; with only one
    day, add short walks on days they choose); intensity only as the zones `coach zones` printed (RPE and
    talk test, and bpm only if it printed them).
