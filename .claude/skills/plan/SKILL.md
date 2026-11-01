@@ -68,7 +68,8 @@ Run these, all with the ground-rule flags:
   flag is ignored for a lift with no logged sets). The output is `lifts` plus
   `unmatched_rep_ranges`: names given with `--rep-range` that match no logged lift (so they were
   not applied). For each, ask which logged lift it is, then rerun with that lift's name. A name
-  that matched an older lift is not reported, just absent from `lifts` (outside the lookback).
+  that matched an older lift is not reported, just absent from `lifts` (outside the lookback). Treat that
+  lift as returning: ask whether it is back in the plan, and keep its range if so.
 
 Knowledge, by situation: run only the lines that apply.
 - Always:

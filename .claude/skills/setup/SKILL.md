@@ -36,7 +36,10 @@ the `coach` CLI.
 
 ## When to use
 
-- First contact, `data/profile.yaml` missing, or `coach profile show` lists missing fields.
+- First contact, `data/profile.yaml` missing, or `coach profile show` lists missing fields. The
+  one exception is an unset `region` for a country with no `regions/<code>/` folder (step 1):
+  with everything else set, that profile is complete; `/setup` is needed when `missing` has
+  anything other than that unset `region`.
 - The client asks to redo screening or change basic data (then ask only what changes).
 
 ## Reads

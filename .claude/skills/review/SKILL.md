@@ -48,7 +48,8 @@ END is the last day of the week under review (default: today). When END is befor
   one `--rep-range "LIFT=LOW-HIGH"` per lift whose `LIFT: LOW-HIGH reps` line differs. The
   output is `lifts` plus `unmatched_rep_ranges`: names that match no logged lift were not
   applied; ask which logged lift each one is and rerun with that name. A name that matched an older
-  lift is not reported, just absent from `lifts` (outside the lookback).
+  lift is not reported, just absent from `lifts` (outside the lookback). Treat that
+  lift as returning: ask whether it is back in the plan, and keep its range if so.
 - `data/checkins.csv` rows of the week (sleep, notes), and `data/plan.md` if it exists.
 
 Knowledge, by situation: run only the lines that apply.

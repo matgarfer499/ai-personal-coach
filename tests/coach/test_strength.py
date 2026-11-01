@@ -15,6 +15,7 @@ from coach.strength import (
     parse_rep_range,
     progression,
     rep_range_for,
+    rep_range_matches,
     unmapped_exercises,
     weekly_hard_sets,
 )
@@ -426,6 +427,7 @@ def test_an_injury_on_one_variant_pauses_every_variant_of_the_lift():
 
 
 def test_a_rep_range_for_one_variant_does_not_apply_to_another():
+    assert not rep_range_matches("*", "*", None)
     ranges = [parse_rep_range("Lat Pulldown - Wide Grip=12-15")]
     assert rep_range_for("Lat Pulldown - Wide Grip (Cable)", ranges) == (12, 15)
     assert rep_range_for("Lat Pulldown - Close Grip (Cable)", ranges) == (8, 12)
