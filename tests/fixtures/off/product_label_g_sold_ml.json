@@ -1,5 +1,5 @@
 {
-  "code": "8400000000055",
+  "code": "8400000000079",
   "errors": [],
   "result": {
     "id": "product_found",
@@ -9,7 +9,7 @@
   "status": "success",
   "warnings": [],
   "product": {
-    "code": "8400000000055",
+    "code": "8400000000079",
     "product_name": "Aceite de prueba",
     "brands": "Marca Prueba",
     "product_quantity": 1000,

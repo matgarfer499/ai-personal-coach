@@ -128,9 +128,20 @@ def test_product_volume_and_unknown_unit(monkeypatch):
 
 def test_product_nutrition_basis_beats_the_pack_unit(monkeypatch):
     monkeypatch.setattr(off, "_get_json", fake_get(["product_label_g_sold_ml.json"], []))
-    assert off.product("8400000000055")["per"] == "100 g"
+    assert off.product("8400000000079")["per"] == "100 g"
     monkeypatch.setattr(off, "_get_json", fake_get(["product_label_ml_sold_ml.json"], []))
-    assert off.product("8400000000062")["per"] == "100 ml"
+    assert off.product("8400000000086")["per"] == "100 ml"
+
+
+@pytest.mark.parametrize(
+    ("basis", "expected"),
+    [("serving", "100 ml"), (None, "100 ml"), ("100g", "100 g"), ("100ml", "100 ml")],
+)
+def test_product_basis_values_for_a_pack_sold_in_ml(basis, expected):
+    raw = {"code": "8400000000093", "product_quantity_unit": "ml"}
+    if basis:
+        raw["nutrition_data_per"] = basis
+    assert off._product(raw)["per"] == expected
 
 
 def test_product_impossible_values_are_missing_and_text_is_cleaned(monkeypatch):

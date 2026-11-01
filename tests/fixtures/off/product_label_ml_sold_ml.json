@@ -1,5 +1,5 @@
 {
-  "code": "8400000000062",
+  "code": "8400000000086",
   "errors": [],
   "result": {
     "id": "product_found",
@@ -9,7 +9,7 @@
   "status": "success",
   "warnings": [],
   "product": {
-    "code": "8400000000062",
+    "code": "8400000000086",
     "product_name": "Bebida etiquetada por 100 ml",
     "brands": "Marca Prueba",
     "product_quantity": 1000,

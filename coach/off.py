@@ -4,7 +4,8 @@ Checked against the OFF API documentation and live answers on 2026-10-25 and 202
 - Text search is Search-a-licious (`q` in Lucene syntax, e.g. `revuelto brands:"hacendado"`); the
   v2 search API has no full-text search.
 - One product is API v3 `/api/v3/product/<barcode>`: `status` is "success" or, with HTTP 404,
-  "failure".
+  "failure". The product read sends no `fields`: `fields=` omits `nutrition_data_per` (verified
+  live on 2026-11-01 on one milk barcode), which the unfiltered answer carries.
 - Every app must send a User-Agent `AppName/Version (ContactEmail)`. The limits are 10 searches and
   15 product reads per minute per IP; over them, OFF answers 503.
 
@@ -47,6 +48,7 @@ NUTRIMENTS = {
 # 900 kcal. A value above it (or above 100 g per 100 g) is an entry error: recorded as missing.
 MAX_KCAL_PER_100G = 100 * KCAL_PER_G["fat"]
 MAX_G_PER_100G = 100
+# Search only: search hits carry the pack unit, not the label basis (see BASES).
 FIELDS = (
     "code",
     "product_name",
@@ -121,6 +123,8 @@ def _product(raw: dict) -> dict:
         "name": _text(raw.get("product_name_es")) or _text(raw.get("product_name")),
         "brand": _text(raw.get("brands")),
         "stores": _text(raw.get("stores")),
+        # A missing or "serving" basis falls back to the pack unit: cli.py accepts a None `per`
+        # without --confirm-per when --per is given, so None would drop the guard.
         # The label basis wins over the pack unit: a per-100 g label on a pack sold in ml is per
         # 100 g. `coach products add` then asks for --confirm-per when --per says otherwise.
         "per": BASES.get(raw.get("nutrition_data_per"))
