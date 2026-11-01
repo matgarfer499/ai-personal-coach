@@ -11,6 +11,7 @@ from datetime import date
 
 from coach.profile import GLP1, GOALS, WEIGHT_RELATED_CONDITION, Profile, ProfileIncomplete
 from coach.safety import GLP1_RULE, SafetyFlags, calorie_block_reason
+from coach.safety import flags as safety_flags
 
 # nutrition.md: "Default RMR equation: Mifflin-St Jeor" (sex-specific form, [S819])
 MSJ_WEIGHT, MSJ_HEIGHT, MSJ_AGE = 10.0, 6.25, 5.0
@@ -58,15 +59,22 @@ def rmr_mifflin(profile: Profile, today: date | None = None) -> float:
     )
 
 
-def pal(profile: Profile) -> float:
-    """Midpoint of the client's activity band (convention: band midpoint as the point estimate)."""
-    low, high = PAL_BANDS[profile.require("activity_level")]
+def pal(profile: Profile, training: bool = True) -> float:
+    """Midpoint of the client's activity band (convention: band midpoint as the point estimate).
+
+    Without training (`no_training` flag) desk_training drops to the desk band: desk work with
+    little exercise (PAL_RULE). `active` stays: it may come from the job.
+    """
+    level = profile.require("activity_level")
+    if not training and level == "desk_training":
+        level = "desk"
+    low, high = PAL_BANDS[level]
     return (low + high) / 2
 
 
 def tdee(profile: Profile, multiplier: float | None = None, today: date | None = None) -> float:
     if multiplier is None:
-        multiplier = pal(profile)
+        multiplier = pal(profile, training=not safety_flags(profile, today).no_training)
     elif multiplier < PAL_MIN:
         raise ValueError(
             f"PAL {multiplier} is too low: never 1.2 for ambulatory adults, use at least "
@@ -152,6 +160,18 @@ def calorie_target(
         # A surplus aims at weight gain, which is a weight target: blocked by the same flags.
         if not (flags.prescriber_owns_weight or flags.no_weight_targets):
             adjustment = maintenance * SURPLUS_FRACTION
+    # An explicit --pal reaches here as a tdee_kcal that differs from the default estimate.
+    default_estimate = tdee(profile, today=today) if flags.no_training else None
+    if (
+        flags.no_training
+        and not recalibrated
+        and profile.activity_level == "active"
+        and abs(maintenance - default_estimate) < 0.5
+    ):
+        notes.append(
+            f"{PAL_RULE}: activity level 'active' is kept while training is on hold: if it comes "
+            "from the job, no change is needed; if it comes from exercise, rerun with --pal"
+        )
     notes += [r for r in flags.reasons if r not in notes]
 
     kcal = round(maintenance + adjustment)
