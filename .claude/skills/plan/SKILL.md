@@ -161,11 +161,13 @@ Knowledge, by situation: run only the lines that apply.
      never a number you invent.
 3. Cardio: before prescribing a modality, load its rule (Reads) and use the intensity class the
    rule gives it, not a guess: jump rope, HIIT, sprints and plyometric jumps are vigorous work,
-   never "moderate cardio". For an activity with no rule of its own, use the rule of the closest
-   modality by intensity, say which one, and suggest `/research`. Start at the minimum of "Weekly baseline dose" (or what they already do, if more),
+   never "moderate cardio". Start at the minimum of "Weekly baseline dose" (or what they already do, if more),
    split evenly over the days they offered (ask which, when it is unclear and the client has not delegated it; with only one
    day, add short walks on days they choose); intensity only as the zones `coach zones` printed (RPE and
    talk test, and bpm only if it printed them).
+   For an activity with no rule of its own, use the rule of the closest modality by intensity; if
+   the intensity is unclear, use the vigorous (HIIT) rule and its safety flags. Say which rule you
+   used and suggest `/research`.
 4. Nutrition: the calorie target, protein, fat, carbohydrate and fibre exactly as `coach macros`
    printed them.
 5. Write `data/plan.md` in the profile language. Its first three lines, with nothing before

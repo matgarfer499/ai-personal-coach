@@ -36,7 +36,7 @@ None.
 
 ## Dropped claims
 
-4 corrections and drops, appended to `docs/dropped-claims.md` as D248 to D251. Main points: the RPE 15-17
+7 corrections and drops, appended to `docs/dropped-claims.md` as D248 to D254. Main points: the RPE 15-17
 figure was an instruction and the 86-89% HRmax was a whole boxing circuit; "multi-joint" and punch rate were
 not in the sources; Liu 2024 is about functional training in older adults, not high intensity.
 

@@ -6013,21 +6013,21 @@ Cheema BS, Davies TB, Stewart M, Papalia S, Atlantis E. 2015. The feasibility an
 Type: RCT · DOI: [10.1186/2052-1847-7-3](https://doi.org/10.1186/2052-1847-7-3) · Files: cardio-health  
 URL: <https://pubmed.ncbi.nlm.nih.gov/25973207/>  
 Opened: <https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4429464/fullTextXML>  
-Supports: Condensed: 'Mean training heart rate during the 12-week intervention period ranged from 86-89% and 64-77% of age-predicted HR max in the boxing and walking groups, respectively' ... 'participants were instructed to exercise at a rating of perceived exertion of 15-17/20 (“hard” to “very hard”)' ... '(1) heavy bag, (2) focus mitts, (3) circular body bag, (4) footwork drills, and (4) skipping.'. Added by research 2026-11-01 (boxing functional).
+Supports: Condensed: 'Mean training heart rate during the 12-week intervention period ranged from 86-89% and 64-77% of age-predicted HR max in the boxing and walking groups' ... 'instructed to exercise at a rating of perceived exertion of 15-17/20 (“hard” to “very hard”)' ... '(1) heavy bag, (2) focus mitts, (3) circular body bag, (4) footwork drills, and (4) skipping.' ... 'Two participants in the boxing group experienced an adverse event'. Added by research 2026-11-01 (boxing functional).
 
 ### S866
 Scott C. 2019. Estimating the total energy costs of a brief 1-minute bout of heavy bag punching. European Journal of Human Movement 42:101-107  
 Type: Other · Files: cardio-health  
 URL: <https://dialnet.unirioja.es/descarga/articulo/7383013.pdf>  
 Opened: <https://dialnet.unirioja.es/descarga/articulo/7383013.pdf>  
-Supports: Condensed: 'Ten male subjects completed testing: 25.6 ± 3.5 years' ... 'For brief intense pugilistic exercise, our total energy cost estimate was as much as 4.5-fold greater than previously published per minute exercise oxygen uptake rates.'. Added by research 2026-11-01 (boxing functional).
+Supports: Condensed: 'a convenience sample of inexperienced young men who were learning to train with a heavy bag' ... 'For brief intense pugilistic exercise, our total energy cost estimate was as much as 4.5-fold greater than previously published per minute exercise oxygen uptake rates.'. Added by research 2026-11-01 (boxing functional).
 
 ### S867
 Wilke J, Mohr L. 2020. Chronic effects of high-intensity functional training on motor function: a systematic review with multilevel meta-analysis. Sci Rep 10:21680  
 Type: Meta-analysis · DOI: [10.1038/s41598-020-78615-5](https://doi.org/10.1038/s41598-020-78615-5) · Files: cardio-health  
 URL: <https://pubmed.ncbi.nlm.nih.gov/33303848/>  
 Opened: <https://www.ebi.ac.uk/europepmc/webservices/rest/PMC7728805/fullTextXML>  
-Supports: Condensed: 'Compared to NEX, HIFT had small to moderate positive effects on endurance capacity (SMD: 0.42, 95% CI 0.07 ... p = 0.03) and strength (0.60, 95% CI 0.02 ... p = 0.04) but no effect on balance' ... 'HIFT showed similar effectiveness as moderate-intensity endurance training (SMD: − 0.11, 95% CI − 1.17 to 0.95, p = 0.75)'. Added by research 2026-11-01 (boxing functional).
+Supports: Condensed: 'HIFT had small to moderate positive effects on endurance capacity ... and strength ... but no effect on balance' ... 'HIFT showed similar effectiveness as moderate-intensity endurance training (SMD: − 0.11, 95% CI − 1.17 to 0.95, p = 0.75) and high-intensity interval endurance training (SMD: − 0.15, 95% CI − 1.4 to 1.1, p = 0.66)' ... 'No comparisons of HIFT vs. classical resistance or balance training were found.'. Added by research 2026-11-01 (boxing functional).
 
 ### S868
 Feito Y, Heinrich KM, Butcher SJ, Poston WSC. 2018. High-Intensity Functional Training (HIFT): Definition and Research Implications for Improved Fitness. Sports 6(3):76  
@@ -6041,4 +6041,4 @@ Liu CJ, Chang WP, Shin YC, Hu YL, Morgan-Daniel J. 2024. Is functional training 
 Type: Systematic review · DOI: [10.1186/s11556-024-00366-3](https://doi.org/10.1186/s11556-024-00366-3) · Files: cardio-health  
 URL: <https://pubmed.ncbi.nlm.nih.gov/39716049/>  
 Opened: <https://www.ebi.ac.uk/europepmc/webservices/rest/PMC11664925/fullTextXML>  
-Supports: Condensed: 'The review included 32 studies.' ... 'the training effect on balance and mobility was not superior to that of other exercise programs.' ... 'Functional training alone is effective in preventing late-life disability in general community-dwelling older adults.'. Added by research 2026-11-01 (boxing functional).
+Supports: Condensed: 'studies that applied functional training as a single-component approach showed a positive effect on activities of daily living' ... 'the training effect on balance and mobility was not superior to that of other exercise programs.' ... 'community-dwelling older adults'. Added by research 2026-11-01 (boxing functional).
