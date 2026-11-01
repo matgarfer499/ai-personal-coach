@@ -1,6 +1,7 @@
 """Build a food table from FoodData Central SR Legacy by fdc_id.
 
-Input: one or more tab-separated ID lists (name_en, name_es, fdc_id, fdc_description, form_note).
+Input: one or more tab-separated ID lists (name_en, name_es, fdc_id, fdc_description, form_note,
+and optional liquid and fibre_zero columns).
 Every number comes from the SR Legacy CSV release (April 2018, the final SR Legacy release, so it
 is what FDC serves today), never typed by hand. A row whose fdc_id is unknown, whose description
 does not match the release, or whose energy, protein, fat or carbohydrate is missing stops the
@@ -32,6 +33,13 @@ NUTRIENTS = {
     "1079": "fibre",
 }
 SOURCE = "fdc_sr_legacy"
+# convention: US customary volume definitions (not measurements), in millilitres. A row marked
+# `liquid: yes` gets its density from the release's own portion weight for the first of these
+# units it has (cup, then fl oz, then tbsp).
+UNIT_ML = {"cup": 236.588, "fl oz": 29.5735, "tbsp": 14.7868}
+# convention: dietary fibre is plant carbohydrate, so a row marked `fibre_zero: animal` whose
+# source has no fibre value gets 0, with this note.
+FIBRE_ZERO_NOTE = "fibre 0: animal food (convention)"
 
 
 def load_release(fdc_dir: Path, ids: set[str]) -> tuple[dict[str, str], dict[str, dict]]:
@@ -45,7 +53,30 @@ def load_release(fdc_dir: Path, ids: set[str]) -> tuple[dict[str, str], dict[str
     return descriptions, values
 
 
-def build_rows(id_rows: list[dict], descriptions: dict, values: dict) -> list[dict]:
+def load_densities(fdc_dir: Path, ids: set[str]) -> dict[str, list[tuple[str, float]]]:
+    """fdc_id -> (unit, grams per ml) for each portion given in a unit of UNIT_ML. SR Legacy
+    writes the unit in `modifier`, as "cup" or "cup (8 fl oz)"."""
+    found: dict[str, list[tuple[str, float]]] = {}
+    with (fdc_dir / "food_portion.csv").open(newline="", encoding="utf-8") as handle:
+        for r in csv.DictReader(handle):
+            unit = r["modifier"].split(" (")[0].strip()
+            if r["fdc_id"] in ids and unit in UNIT_ML and float(r["amount"]) > 0:
+                grams = float(r["gram_weight"]) / (float(r["amount"]) * UNIT_ML[unit])
+                found.setdefault(r["fdc_id"], []).append((unit, grams))
+    return found
+
+
+def density(options: list[tuple[str, float]]) -> float | None:
+    for unit in UNIT_ML:
+        for found, grams_per_ml in options:
+            if found == unit:
+                return round(grams_per_ml, 3)
+    return None
+
+
+def build_rows(
+    id_rows: list[dict], descriptions: dict, values: dict, densities: dict | None = None
+) -> list[dict]:
     rows, errors = [], []
     for item in id_rows:
         fdc_id = item["fdc_id"].strip()
@@ -61,11 +92,20 @@ def build_rows(id_rows: list[dict], descriptions: dict, values: dict) -> list[di
             errors.append(f"{item['name_en']}: {fdc_id} lacks {', '.join(missing)}")
             continue
         fibre = v.get("fibre")
+        zero_note = ""
+        if fibre is None and (item.get("fibre_zero") or "").strip() == "animal":
+            fibre, zero_note = 0.0, FIBRE_ZERO_NOTE
+        g_per_ml = None
+        if (item.get("liquid") or "").strip() == "yes":
+            g_per_ml = density((densities or {}).get(fdc_id, []))
+            if g_per_ml is None:
+                errors.append(f"{item['name_en']}: liquid with no cup, fl oz or tbsp portion")
+                continue
         # FDC "carbohydrate by difference" includes fibre; EU labels and this table give
         # available carbohydrate (nutrition.md: "EU label rules and tolerances"). Without a fibre
         # value, fibre stays blank and carbs_g is the total, which the form note says.
         carbs = max(v["carbs_total"] - (fibre or 0.0), 0.0)
-        note = (item.get("form_note") or "").strip()
+        note = "; ".join(x for x in ((item.get("form_note") or "").strip(), zero_note) if x)
         if fibre is None:
             note = "; ".join(x for x in (note, "no fibre value in source, carbs_g is total") if x)
         row = {
@@ -80,6 +120,7 @@ def build_rows(id_rows: list[dict], descriptions: dict, values: dict) -> list[di
             "source_id": fdc_id,
             "source_description": descriptions[fdc_id],
             "form_note": note,
+            "g_per_ml": "" if g_per_ml is None else g_per_ml,
         }
         row["kcal_exception"] = energy_exception(row) or ""
         rows.append(row)
@@ -104,7 +145,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     id_rows = read_ids(args.ids)
     descriptions, values = load_release(args.fdc_dir, {r["fdc_id"].strip() for r in id_rows})
-    rows = build_rows(id_rows, descriptions, values)
+    ids = {r["fdc_id"].strip() for r in id_rows}
+    rows = build_rows(id_rows, descriptions, values, load_densities(args.fdc_dir, ids))
     with args.out.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=FIELDS)
         writer.writeheader()

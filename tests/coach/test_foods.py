@@ -18,6 +18,7 @@ def row(**kw):
         source_description="Test",
         form_note="",
         kcal_exception="",
+        g_per_ml="",
     )
     return base | kw
 
@@ -138,3 +139,17 @@ def test_grams_and_millilitres_are_never_mixed():
         menu_totals([foods.parse_item("arroz=100ml")], table)
     # plain tuples (callers that never use millilitres) are grams
     assert menu_totals([("arroz", 100)], table).kcal == pytest.approx(100)
+
+
+def test_a_liquid_with_a_density_can_be_written_in_ml():
+    milk = Food.from_row(row(name_en="milk", name_es="leche", g_per_ml="1.03"))
+    totals = menu_totals([("leche", foods.Amount(300, "ml"))], [milk])
+    assert totals.kcal == pytest.approx(100 * 300 * 1.03 / 100)
+    assert totals.protein_g == pytest.approx(10 * 300 * 1.03 / 100)
+
+
+def test_ml_for_a_food_without_density_is_still_an_error():
+    rice = Food.from_row(row(name_en="rice", name_es="arroz"))
+    assert rice.g_per_ml is None
+    with pytest.raises(ValueError, match="per 100 g"):
+        menu_totals([("arroz", foods.Amount(300, "ml"))], [rice])

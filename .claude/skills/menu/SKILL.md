@@ -158,7 +158,9 @@ Every lunch and dinner dish, whatever its source:
      CLI asks for them. A pack in ml is per 100 ml: its items are written in millilitres
      (`NAME=15ml`), never grams, and never converted. If the CLI says the pack unit and `--per`
      disagree, use the unit it names; add `--confirm-per` only after reading the label with the
-     client.
+     client. A liquid food from `coach foods search` (milk, juice, broth, soy sauce, kefir) can
+     also be written in millilitres (`leche semidesnatada=300ml`); the shopping list then shows
+     it in ml. Oils and other foods without a density stay in grams.
    - No match: ask for the barcode on the pack and add it. Still not in OFF: use a generic food
      from `coach foods search` and say so.
    - Exit code 2 naming `COACH_OFF_CONTACT`: tell the person running the coach that Open Food
@@ -172,7 +174,7 @@ Every lunch and dinner dish, whatever its source:
    for a product per 100 ml (a convention, see docs/conventions.md).
 7. Each day. Check it with `coach menu --item "NAME=GRAMS" --item ... --targets` (one `--item`
    per food; a catalogue product may be named by its barcode; products per 100 ml as `NAME=NNml`,
-   a food is never in the other unit). `check` says `ok`, `under`,
+   liquid foods may be `NAME=NNml`; any other food is never in the other unit). `check` says `ok`, `under`,
    `over` or `missing` for kcal, protein, fat and fibre. Fix any name in `unknown` first
    (another food, or ask the client; never estimate). `missing` means an item has no value for
    that nutrient: never fill it in; swap the item, or reach the floor with the known values.

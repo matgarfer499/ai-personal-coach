@@ -4,7 +4,7 @@ from datetime import date
 import pytest
 import yaml
 
-from coach import catalogue, mealplan
+from coach import catalogue, foods, mealplan
 from coach.cli import main
 from coach.profile import Profile, save_profile
 
@@ -876,3 +876,31 @@ def test_eaten_out_names_each_dish_once(capsys, data_dir):
 
     assert check(capsys, data_dir, {"days": [bar(26), bar(34)]}, "save")[0] == 0
     assert run(capsys, data_dir, "shopping")[1]["eaten_out"] == ["Menú del bar"]
+
+
+def test_shopping_lists_a_liquid_written_in_ml_in_ml():
+    """Milk is a per 100 g food: written in ml it is bought in ml, written in g it stays grams."""
+    milk = foods.Food.from_row(
+        dict(
+            name_en="milk",
+            name_es="leche de prueba",
+            kcal=50,
+            protein_g=3,
+            carbs_g=5,
+            fat_g=2,
+            fibre_g=0,
+            source="fdc_sr_legacy",
+            source_id="1",
+            g_per_ml="1.03",
+        )
+    )
+    items = [("leche de prueba", foods.Amount(300, "ml")), ("leche de prueba", 100.0)]
+    dish = mealplan.Dish(name="Leche", servings=1, items=items)
+    day = mealplan.Day(
+        date=date(2026, 10, 26), meals=[mealplan.Meal("Desayuno", False, False, [dish])]
+    )
+    shop = mealplan.shopping([day], [milk], "es")
+    assert shop["chains"]["any"] == [
+        {"name": "leche de prueba", "grams": 100},
+        {"name": "leche de prueba", "ml": 300},
+    ]

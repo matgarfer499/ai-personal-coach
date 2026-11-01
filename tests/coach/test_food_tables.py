@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from coach.foods import FIELDS, energy_exception, load_foods
+from coach.foods import FIELDS, energy_exception, find, load_foods
 
 ROOT = Path(__file__).parent.parent.parent
 TABLES = [ROOT / "foods" / "base.csv", *sorted(ROOT.glob("regions/*/foods.csv"))]
@@ -55,8 +55,47 @@ def test_common_cooking_foods_are_in_the_base_table(name):
     assert food is not None and food.kcal is not None and food.protein_g is not None
 
 
-def test_prawns_keep_no_fibre_value_because_the_source_has_none():
-    """SR Legacy 175179 has no fibre; the other shrimp entries with fibre 0 are different foods
-    (moisture-retaining additives change the macros), so the value stays blank, never typed."""
-    row = next(r for r in rows(ROOT / "foods" / "base.csv") if r["name_en"] == "prawns, raw")
-    assert row["fibre_g"] == "" and "no fibre value" in row["form_note"]
+NEW_STAPLES = [
+    "zumo de naranja",
+    "caldo de pastilla, preparado",
+    "pan de molde",
+    "pan de centeno",
+    "tortilla de trigo",
+    "atún fresco, crudo",
+]
+
+
+def test_new_spanish_staples_resolve():
+    table = load_foods()
+    for name in NEW_STAPLES:
+        food = find(name, table)
+        assert food is not None and food.kcal is not None and food.protein_g is not None, name
+
+
+def id_rows(path):
+    with path.open(newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle, delimiter="\t"))
+
+
+def test_animal_foods_have_fibre():
+    """Rows marked `fibre_zero: animal` carry 0, never blank, and say why in the form note."""
+    by_id = {r["source_id"]: r for r in rows(ROOT / "foods" / "base.csv")}
+    marked = [r for r in id_rows(ROOT / "foods" / "base_ids.tsv") if r["fibre_zero"] == "animal"]
+    assert any(r["name_en"] == "prawns, raw" for r in marked)
+    for item in marked:
+        built = by_id[item["fdc_id"]]
+        assert built["fibre_g"] != "", item["name_en"]
+        assert "no fibre value" not in built["form_note"], item["name_en"]
+    prawns = next(r for r in rows(ROOT / "foods" / "base.csv") if r["name_en"] == "prawns, raw")
+    assert float(prawns["fibre_g"]) == 0
+    assert "fibre 0: animal food (convention)" in prawns["form_note"]
+
+
+def test_liquid_rows_have_a_density_from_the_source():
+    marked = [r for r in id_rows(ROOT / "foods" / "base_ids.tsv") if r["liquid"] == "yes"]
+    names = {r["name_en"] for r in marked}
+    assert {"whole milk", "soy sauce", "coconut milk, canned"} <= names
+    built = {r["name_en"]: r for r in rows(ROOT / "foods" / "base.csv")}
+    for name in names:
+        assert 0.9 < float(built[name]["g_per_ml"]) < 1.3, name
+    assert built["olive oil"]["g_per_ml"] == ""  # fats keep grams
