@@ -39,7 +39,7 @@ def test_section_not_found_names_file_and_heading():
 
 
 def test_iter_rules_reports_section_and_line():
-    rules = list(knowledge.iter_rules((GOOD / "widgets.md").read_text()))
+    rules = list(knowledge.iter_rules((GOOD / "widgets.md").read_text(encoding="utf-8")))
     assert [(r.heading, r.section, r.line) for r in rules] == [
         ("Lift widgets slowly", "Handling widgets", 11),
         ("Store widgets dry", "Handling widgets", 17),
@@ -50,9 +50,9 @@ def test_iter_rules_reports_section_and_line():
 
 
 def _kdir(tmp_path, checked):
-    (tmp_path / "a.md").write_text(f"# A\n\n> Evidence checked on {checked}.\n")
-    (tmp_path / "b.md").write_text("# B\n\n> Evidence checked on 2026-09-01.\n")
-    (tmp_path / "sources.md").write_text("# Sources\n")
+    (tmp_path / "a.md").write_text(f"# A\n\n> Evidence checked on {checked}.\n", encoding="utf-8")
+    (tmp_path / "b.md").write_text("# B\n\n> Evidence checked on 2026-09-01.\n", encoding="utf-8")
+    (tmp_path / "sources.md").write_text("# Sources\n", encoding="utf-8")
     return tmp_path
 
 
@@ -76,7 +76,7 @@ def test_stale_files_month_end_clamps(tmp_path):
 
 
 def test_stale_files_missing_date_counts_as_stale(tmp_path):
-    (tmp_path / "c.md").write_text("# C\n")
+    (tmp_path / "c.md").write_text("# C\n", encoding="utf-8")
     assert knowledge.stale_files(6, date(2026, 1, 1), knowledge_dir=tmp_path) == [("c.md", None)]
 
 
@@ -103,7 +103,7 @@ Still part of the real rule.
 
 
 def test_fenced_code_is_not_read_as_headings(tmp_path):
-    (tmp_path / "f.md").write_text(FENCED)
+    (tmp_path / "f.md").write_text(FENCED, encoding="utf-8")
     rules = list(knowledge.iter_rules(FENCED))
     assert [r.heading for r in rules] == ["Real rule"]
     assert "### not a rule" in rules[0].body
@@ -113,6 +113,6 @@ def test_fenced_code_is_not_read_as_headings(tmp_path):
 
 
 def test_invalid_checked_date_is_none_and_stale(tmp_path):
-    (tmp_path / "x.md").write_text("# X\n\n> Evidence checked on 2026-13-45.\n")
-    assert knowledge.checked_date((tmp_path / "x.md").read_text()) is None
+    (tmp_path / "x.md").write_text("# X\n\n> Evidence checked on 2026-13-45.\n", encoding="utf-8")
+    assert knowledge.checked_date((tmp_path / "x.md").read_text(encoding="utf-8")) is None
     assert knowledge.stale_files(6, date(2026, 1, 1), knowledge_dir=tmp_path) == [("x.md", None)]

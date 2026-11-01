@@ -78,7 +78,7 @@ def write_table(path, *rows):
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = [",".join(foods.FIELDS)]
     lines += [",".join(str(r[f]) for f in foods.FIELDS) for r in rows]
-    path.write_text("\n".join(lines) + "\n")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def test_load_foods_merges_base_and_region(tmp_path):

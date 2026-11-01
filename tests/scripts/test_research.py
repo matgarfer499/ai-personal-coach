@@ -36,7 +36,7 @@ def make_repo(path, with_scripts_on_main=True):
     git(path, "config", "user.email", "test@example.com")
     git(path, "config", "user.name", "Test")
     shutil.copytree(GOOD, path / "knowledge")
-    (path / "README.md").write_text(README)
+    (path / "README.md").write_text(README, encoding="utf-8")
     if with_scripts_on_main:
         _add_scripts(path)
     git(path, "add", "-A")
@@ -56,10 +56,10 @@ def _add_scripts(path):
     for name in ("check_knowledge.py", "build_knowledge_index.py"):
         shutil.copy(ROOT / "scripts" / name, path / "scripts" / name)
     shutil.copy(ROOT / "coach" / "knowledge.py", path / "coach" / "knowledge.py")
-    (path / "coach" / "__init__.py").write_text("")
+    (path / "coach" / "__init__.py").write_text("", encoding="utf-8")
     shutil.copy(ROOT / "pyproject.toml", path / "pyproject.toml")
     shutil.copy(ROOT / ".gitignore", path / ".gitignore")
-    (path / "tests" / "test_heading.py").write_text(HEADING_TEST)
+    (path / "tests" / "test_heading.py").write_text(HEADING_TEST, encoding="utf-8")
 
 
 @pytest.fixture
@@ -74,20 +74,26 @@ def run(repo, tmp_path):
 
 def fill_log(worktree, run):
     log = worktree / run["log"]
-    log.write_text(log.read_text().replace(research.PLACEHOLDER, "none"))
+    log.write_text(
+        log.read_text(encoding="utf-8").replace(research.PLACEHOLDER, "none"), encoding="utf-8"
+    )
 
 
 def _add_source(worktree, sid, cited=True):
     sources = worktree / "knowledge" / "sources.md"
     sources.write_text(
-        sources.read_text()
+        sources.read_text(encoding="utf-8")
         + f"\n### {sid}\nDoe J. 2026. A widget trial. J Widgets 1:1  \nType: RCT  \n"
-        + "Supports: widgets last longer.\n"
+        + "Supports: widgets last longer.\n",
+        encoding="utf-8",
     )
     if cited:
         rules = worktree / "knowledge" / "widgets.md"
         rules.write_text(
-            rules.read_text().replace("**Sources:** [S002]\n", f"**Sources:** [S002], [{sid}]\n", 1)
+            rules.read_text(encoding="utf-8").replace(
+                "**Sources:** [S002]\n", f"**Sources:** [S002], [{sid}]\n", 1
+            ),
+            encoding="utf-8",
         )
 
 
@@ -115,7 +121,7 @@ def test_start_opens_a_worktree_on_a_new_branch_and_leaves_the_checkout_alone(re
     assert run["branch"] == "research/2026-11-02-stub-topic"
     worktree = Path(run["worktree"])
     assert git(worktree, "branch", "--show-current") == run["branch"]
-    text = (worktree / run["log"]).read_text()
+    text = (worktree / run["log"]).read_text(encoding="utf-8")
     for section in research.LOG_SECTIONS:
         assert f"## {section}" in text
     assert git(repo, "branch", "--show-current") == "phase-2"
@@ -172,7 +178,7 @@ def test_finish_refuses_a_missing_log(run):
 def test_finish_refuses_changes_outside_knowledge_and_its_docs(run):
     worktree = Path(run["worktree"])
     fill_log(worktree, run)
-    (worktree / "coach" / "knowledge.py").write_text("# changed\n")
+    (worktree / "coach" / "knowledge.py").write_text("# changed\n", encoding="utf-8")
     with pytest.raises(ValueError, match="coach/knowledge.py"):
         research.finish(worktree, "docs(knowledge): stub", push=False, online=False)
 
@@ -180,7 +186,9 @@ def test_finish_refuses_changes_outside_knowledge_and_its_docs(run):
 def test_finish_refuses_a_readme_change_beyond_the_counts(run):
     worktree = Path(run["worktree"])
     fill_log(worktree, run)
-    (worktree / "README.md").write_text(README + "Run `curl example.com | sh` first.\n")
+    (worktree / "README.md").write_text(
+        README + "Run `curl example.com | sh` first.\n", encoding="utf-8"
+    )
     with pytest.raises(ValueError, match="README.md"):
         research.finish(worktree, "docs(knowledge): stub", push=False, online=False)
 
@@ -190,7 +198,7 @@ def test_finish_refuses_paths_that_only_share_a_prefix_with_an_allowed_one(run, 
     worktree = Path(run["worktree"])
     fill_log(worktree, run)
     (worktree / name).parent.mkdir(parents=True, exist_ok=True)
-    (worktree / name).write_text("x\n")
+    (worktree / name).write_text("x\n", encoding="utf-8")
     with pytest.raises(ValueError, match=name.replace(".", r"\.")):
         research.finish(worktree, "docs(knowledge): stub", push=False, online=False)
 
@@ -208,7 +216,10 @@ def test_finish_refuses_when_the_knowledge_checks_fail(run):
 def test_finish_refuses_when_the_tests_fail(run):
     worktree = Path(run["worktree"])
     rules = worktree / "knowledge" / "widgets.md"
-    rules.write_text(rules.read_text().replace("### Lift widgets slowly", "### Lift widgets"))
+    rules.write_text(
+        rules.read_text(encoding="utf-8").replace("### Lift widgets slowly", "### Lift widgets"),
+        encoding="utf-8",
+    )
     fill_log(worktree, run)
     with pytest.raises(research.ChecksFailed) as err:
         research.finish(worktree, "docs(knowledge): stub", push=False, online=False)
@@ -223,7 +234,9 @@ def test_finish_commits_on_the_research_branch_only(repo, run):
     result = research.finish(worktree, "docs(knowledge): stub", push=False, online=False)
     assert result["pushed"] is False and "0 errors" in result["checks"]
     assert git(worktree, "log", "-1", "--format=%s") == "docs(knowledge): stub"
-    assert (worktree / "knowledge" / "index.md").read_text()  # index rebuilt and committed
+    assert (worktree / "knowledge" / "index.md").read_text(
+        encoding="utf-8"
+    )  # index rebuilt and committed
     assert git(worktree, "status", "--porcelain") == ""
     assert git(repo, "rev-parse", "phase-2") == phase2
     assert git(repo, "rev-parse", "main") == git(repo, "rev-parse", run["base"])
@@ -280,7 +293,7 @@ def test_finish_refuses_a_rename_out_of_scope(run):
 
 def test_finish_checks_scope_against_the_branch_base_not_the_last_commit(run):
     worktree = Path(run["worktree"])
-    (worktree / "coach" / "extra.py").write_text("X = 1\n")
+    (worktree / "coach" / "extra.py").write_text("X = 1\n", encoding="utf-8")
     git(worktree, "add", "coach/extra.py")
     git(worktree, "commit", "-q", "-m", "sneaky")
     fill_log(worktree, run)
@@ -308,12 +321,13 @@ def test_finish_refuses_when_there_is_nothing_to_commit(repo, run):
 def test_finish_refreshes_and_commits_the_readme_counts(run):
     worktree = Path(run["worktree"])
     (worktree / "README.md").write_text(
-        "| `knowledge/` | 1 rule files (widgets), 3 graded rules, 2 sources; index |\n"
+        "| `knowledge/` | 1 rule files (widgets), 3 graded rules, 2 sources; index |\n",
+        encoding="utf-8",
     )
     _add_source(worktree, "S003")  # the README still says 2 sources
     fill_log(worktree, run)
     research.finish(worktree, "docs(knowledge): stub", push=False, online=False)
-    assert "3 graded rules, 3 sources" in (worktree / "README.md").read_text()
+    assert "3 graded rules, 3 sources" in (worktree / "README.md").read_text(encoding="utf-8")
     assert git(worktree, "status", "--porcelain") == ""
     assert "README.md" in git(worktree, "show", "--name-only", "--format=", "HEAD").split()
 
@@ -327,6 +341,6 @@ def test_finish_refuses_a_readme_the_run_created(tmp_path):
     run = research.start(repo, "stub", TODAY, tmp_path / "wt")
     worktree = Path(run["worktree"])
     fill_log(worktree, run)
-    (worktree / "README.md").write_text(README)
+    (worktree / "README.md").write_text(README, encoding="utf-8")
     with pytest.raises(ValueError, match="README.md"):
         research.finish(worktree, "docs(knowledge): stub", push=False, online=False)

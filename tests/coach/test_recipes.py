@@ -67,7 +67,7 @@ def save_menu(data_dir):
     }
     path = data_dir / "menus" / "2026-10-26.yaml"
     path.parent.mkdir(parents=True)
-    path.write_text(yaml.safe_dump(document, allow_unicode=True, sort_keys=False))
+    path.write_text(yaml.safe_dump(document, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
 
 def recipe_files(data_dir):
@@ -78,7 +78,9 @@ def test_rating_a_dish_loved_saves_its_recipe_from_the_saved_menu(capsys, data_d
     save_menu(data_dir)
     code, out = run(capsys, data_dir, "tastes", "rate", "lentejas con verduras", "loved")
     assert code == 0 and out["recipe_saved"] == "recipes/lentejas-con-verduras.yaml"
-    saved = yaml.safe_load((data_dir / "recipes" / "lentejas-con-verduras.yaml").read_text())
+    saved = yaml.safe_load(
+        (data_dir / "recipes" / "lentejas-con-verduras.yaml").read_text(encoding="utf-8")
+    )
     assert saved["dish"] == "Lentejas con verduras"  # the menu's own spelling
     assert saved["source"] == "https://example.org/lentejas" and saved["servings"] == 4
     assert saved["steps"] == ["Sofreír", "Cocer 25 min"]
@@ -99,7 +101,7 @@ def test_a_rated_dish_outside_the_menus_keeps_its_source_only(capsys, data_dir):
         capsys, data_dir, "tastes", "rate", "Gazpacho", "liked", "--source", "https://example.org/g"
     )
     assert out["recipe_saved"] == "recipes/gazpacho.yaml"
-    saved = yaml.safe_load((data_dir / "recipes" / "gazpacho.yaml").read_text())
+    saved = yaml.safe_load((data_dir / "recipes" / "gazpacho.yaml").read_text(encoding="utf-8"))
     assert saved == {
         "dish": "Gazpacho",
         "source": "https://example.org/g",
@@ -176,7 +178,7 @@ def test_save_a_dish_by_hand_and_show_and_remove_it(capsys, data_dir):
 def test_the_library_lives_in_the_gitignored_data_dir(data_dir):
     from pathlib import Path
 
-    ignore = (Path(__file__).parent.parent.parent / ".gitignore").read_text()
+    ignore = (Path(__file__).parent.parent.parent / ".gitignore").read_text(encoding="utf-8")
     assert "data/*" in ignore  # recipes/ is under data/, never committed
 
 

@@ -88,7 +88,7 @@ def test_products_per_100_ml_become_foods_counted_in_millilitres():
 def test_products_file_with_bom(tmp_path):
     region = tmp_path / "regions" / "zz"
     region.mkdir(parents=True)
-    (region / "region.yaml").write_text("code: zz\nchains: []\n")
+    (region / "region.yaml").write_text("code: zz\nchains: []\n", encoding="utf-8")
     row = "Cadena,Marca,Producto de prueba,dairy,100 g,50,8,4,4,0.2,,https://example.org/p,2026-01-05,x"
     source = ",".join(PRODUCT_FIELDS) + "\n" + row + "\n"
     (region / "products.csv").write_bytes(b"\xef\xbb\xbf" + source.encode())

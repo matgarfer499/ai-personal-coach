@@ -104,8 +104,10 @@ def test_store_with_bom_still_deduplicates(tmp_path):
 def test_store_refuses_a_changed_header(tmp_path):
     path = tmp_path / "sessions.csv"
     append([s()], path)
-    text = path.read_text()
-    path.write_text(text.replace("notes", "notes,my_column", 1).replace("\n", ",x\n", 2)[:-2])
+    text = path.read_text(encoding="utf-8")
+    path.write_text(
+        text.replace("notes", "notes,my_column", 1).replace("\n", ",x\n", 2)[:-2], encoding="utf-8"
+    )
     with pytest.raises(StoreError, match="my_column"):
         read_sets(path)
 
@@ -113,6 +115,8 @@ def test_store_refuses_a_changed_header(tmp_path):
 def test_store_bad_line_names_file_and_line(tmp_path):
     path = tmp_path / "sessions.csv"
     append([s()], path)
-    path.write_text(path.read_text().replace(",0,0,", ",0,5.0,", 1))
+    path.write_text(
+        path.read_text(encoding="utf-8").replace(",0,0,", ",0,5.0,", 1), encoding="utf-8"
+    )
     with pytest.raises(StoreError, match="line 2"):
         read_sets(path)

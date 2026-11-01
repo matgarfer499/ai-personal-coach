@@ -70,7 +70,9 @@ def data_dir(tmp_path):
             }
         ]
     }
-    (tmp_path / "menu-draft.yaml").write_text(yaml.safe_dump(draft, allow_unicode=True))
+    (tmp_path / "menu-draft.yaml").write_text(
+        yaml.safe_dump(draft, allow_unicode=True), encoding="utf-8"
+    )
     return tmp_path
 
 
@@ -155,10 +157,12 @@ def test_only_web_addresses_become_links(source, link):
 
 def test_a_source_that_is_not_a_web_address_is_printed_without_a_link(capsys, data_dir):
     pytest.importorskip("reportlab")
-    draft = yaml.safe_load((data_dir / "menu-draft.yaml").read_text())
+    draft = yaml.safe_load((data_dir / "menu-draft.yaml").read_text(encoding="utf-8"))
     dish = draft["days"][0]["meals"][0]["dishes"][0]
     dish["source"] = "javascript:alert(1)"
-    (data_dir / "menu-draft.yaml").write_text(yaml.safe_dump(draft, allow_unicode=True))
+    (data_dir / "menu-draft.yaml").write_text(
+        yaml.safe_dump(draft, allow_unicode=True), encoding="utf-8"
+    )
     save(capsys, data_dir)
     run(capsys, data_dir, "mealplan", "export", "--out", "con-qr.pdf")
     run(capsys, data_dir, "mealplan", "export", "--out", "sin-qr.pdf", "--no-qr")
