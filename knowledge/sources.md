@@ -8,16 +8,16 @@ Fields: type, DOI, canonical URL, opened URL, which files cite it, and what in t
 
 | Type | Count |
 |---|---|
-| Meta-analysis | 296 |
-| Other | 112 |
-| RCT | 96 |
+| Meta-analysis | 297 |
+| Other | 114 |
+| RCT | 97 |
 | Cohort | 86 |
-| Systematic review | 91 |
+| Systematic review | 92 |
 | Guideline | 78 |
-| Narrative review | 48 |
+| Narrative review | 49 |
 | Position stand | 37 |
 | Umbrella review | 15 |
-| **Total** | **859** |
+| **Total** | **865** |
 
 ## List
 
@@ -6000,3 +6000,45 @@ Type: Meta-analysis · DOI: [10.52082/jssm.2023.367](https://doi.org/10.52082/js
 URL: <https://pubmed.ncbi.nlm.nih.gov/37293420/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=37293420&rettype=abstract&retmode=text>  
 Supports: Abstract: 'A total of 1048 subjects from 15 studies were included. Compared to regular physical education courses, jumping rope did not show a significant advantage in terms of body morphology.'. Added by research 2026-10-24 (power balance core agility).
+
+### S864
+Herrmann SD et al., 2024. 2024 Adult Compendium of Physical Activities, sports table (boxing codes 15110-15125). Compendium of Physical Activities website  
+Type: Other · Files: cardio-health  
+URL: <https://pacompendium.com/sports/>  
+Opened: <https://pacompendium.com/sports/>  
+Supports: Condensed: '15110 5.8 Boxing, punching bag 15113 7.0 Boxing, punching bag, 60 b/min 15115 8.5 Boxing, punching bag, 120 b/min 15118 10.8 Boxing, punching bag, 180 b/min 15120 7.8 Boxing, sparring 15125 9.3 Boxing, simulated boxing round, exercise'. Added by research 2026-11-01 (boxing functional).
+
+### S865
+Cheema BS, Davies TB, Stewart M, Papalia S, Atlantis E. 2015. The feasibility and effectiveness of high-intensity boxing training versus moderate-intensity brisk walking in adults with abdominal obesity: a pilot study. BMC Sports Sci Med Rehabil 7:3  
+Type: RCT · DOI: [10.1186/2052-1847-7-3](https://doi.org/10.1186/2052-1847-7-3) · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/25973207/>  
+Opened: <https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4429464/fullTextXML>  
+Supports: Condensed: 'Men and women with abdominal obesity' ... 'Mean training heart rate during the 12-week intervention period ranged from 86-89% and 64-77% of age-predicted HR max in the boxing and walking groups' ... 'instructed to exercise at a rating of perceived exertion of 15-17/20' ... '(1) heavy bag, (2) focus mitts ... (4) footwork drills, and (4) skipping.' ... 'Two participants in the boxing group experienced an adverse event'. Added by research 2026-11-01 (boxing functional).
+
+### S866
+Scott C. 2019. Estimating the total energy costs of a brief 1-minute bout of heavy bag punching. European Journal of Human Movement 42:101-107  
+Type: Other · Files: cardio-health  
+URL: <https://dialnet.unirioja.es/descarga/articulo/7383013.pdf>  
+Opened: <https://dialnet.unirioja.es/descarga/articulo/7383013.pdf>  
+Supports: Condensed: 'Ten male subjects completed testing' ... 'a convenience sample of inexperienced young men who were learning to train with a heavy bag' ... 'For brief intense pugilistic exercise, our total energy cost estimate was as much as 4.5-fold greater than previously published per minute exercise oxygen uptake rates.'. Added by research 2026-11-01 (boxing functional).
+
+### S867
+Wilke J, Mohr L. 2020. Chronic effects of high-intensity functional training on motor function: a systematic review with multilevel meta-analysis. Sci Rep 10:21680  
+Type: Meta-analysis · DOI: [10.1038/s41598-020-78615-5](https://doi.org/10.1038/s41598-020-78615-5) · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/33303848/>  
+Opened: <https://www.ebi.ac.uk/europepmc/webservices/rest/PMC7728805/fullTextXML>  
+Supports: Condensed: 'HIFT had small to moderate positive effects on endurance capacity ... and strength ... but no effect on balance' ... 'HIFT showed similar effectiveness as moderate-intensity endurance training (SMD: − 0.11, 95% CI − 1.17 to 0.95, p = 0.75) and high-intensity interval endurance training (SMD: − 0.15, 95% CI − 1.4 to 1.1, p = 0.66)' ... 'No comparisons of HIFT vs. classical resistance or balance training were found.'. Added by research 2026-11-01 (boxing functional).
+
+### S868
+Feito Y, Heinrich KM, Butcher SJ, Poston WSC. 2018. High-Intensity Functional Training (HIFT): Definition and Research Implications for Improved Fitness. Sports 6(3):76  
+Type: Narrative review · DOI: [10.3390/sports6030076](https://doi.org/10.3390/sports6030076) · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/30087252/>  
+Opened: <https://www.ebi.ac.uk/europepmc/webservices/rest/PMC6162410/fullTextXML>  
+Supports: Condensed: 'we propose the definition of HIFT as a training style [or program] that incorporates a variety of functional movements, performed at high-intensity [relative to an individual’s ability], and designed to improve parameters of general physical fitness'. Added by research 2026-11-01 (boxing functional).
+
+### S869
+Liu CJ, Chang WP, Shin YC, Hu YL, Morgan-Daniel J. 2024. Is functional training functional? a systematic review of its effects in community-dwelling older adults. Eur Rev Aging Phys Act 21:32  
+Type: Systematic review · DOI: [10.1186/s11556-024-00366-3](https://doi.org/10.1186/s11556-024-00366-3) · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/39716049/>  
+Opened: <https://www.ebi.ac.uk/europepmc/webservices/rest/PMC11664925/fullTextXML>  
+Supports: Condensed: 'studies that applied functional training as a single-component approach showed a positive effect on activities of daily living' ... 'the training effect on balance and mobility was not superior to that of other exercise programs.' ... 'community-dwelling older adults'. Added by research 2026-11-01 (boxing functional).
