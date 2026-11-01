@@ -107,7 +107,8 @@ fibre_g, url, checked_on, label_quote`.
 - `label_quote` is a verbatim snippet containing the values; the tests check that each recorded
   number appears in it as a whole number token.
 - Open Food Facts never fills this file. Clients add the products they buy from OFF to their own
-  catalogue in the data directory (`coach products add`), labelled unverified; see
+  catalogue in the data directory (`coach products add`): OFF products are unverified and
+  label rows say "label (entered by hand)"; see
   `regions/es/README.md`.
 
 ## Tests

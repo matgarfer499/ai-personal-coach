@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import subprocess
 import sys
@@ -599,6 +600,7 @@ def test_foods_search(capsys, data_dir):
 LABEL = (
     "products", "add", "--label", "--name", "Proteina chocolate", "--chain", "Mercadona",
     "--per", "100 g", "--kcal", "380", "--protein", "30", "--carbs", "40", "--fat", "9.5",
+    "--allergens", "none",
 )  # fmt: skip
 
 
@@ -833,7 +835,9 @@ def _label(*extra, name="Proteina chocolate"):
 
 
 def test_label_slug_collision_is_a_different_product_not_a_replace(capsys, data_dir):
-    assert run(capsys, data_dir, *_label(name="Yogur 0%"))[0] == 0
+    # a key stored by an older version, when the slug alone was the key
+    legacy = dataclasses.replace(SKYR_PRODUCT, barcode="label-yogur-0", product_name="Yogur 0%")
+    catalogue.save([legacy], data_dir)
     code, out = run(capsys, data_dir, *_label(name="Yogur 0"))
     assert code != 0
     assert "DIFFERENT product" in out["message"] and "--barcode" in out["message"]
@@ -851,10 +855,22 @@ def test_label_same_name_again_may_be_replaced(capsys, data_dir):
 def test_label_non_latin_names_get_a_stable_hash_key(capsys, data_dir):
     import hashlib
 
-    _, out = run(capsys, data_dir, *_label(name="豆腐"))
-    assert out["added"]["barcode"] == "label-" + hashlib.sha1("豆腐".encode()).hexdigest()[:8]
-    code, out = run(capsys, data_dir, *_label(name="牛奶"))
-    assert code == 0 and out["added"]["barcode"] != "label-dish"
+    from coach.text import fold
+
+    _, out = run(capsys, data_dir, *_label(name="豆腐 1L"))
+    digest = hashlib.sha1(fold("豆腐 1L").encode()).hexdigest()[:8]
+    assert out["added"]["barcode"] == f"label-1l-{digest}"
+    code, out = run(capsys, data_dir, *_label(name="牛奶 1L"))
+    assert code == 0 and out["added"]["barcode"] != f"label-1l-{digest}"
+    assert len(catalogue.load(data_dir)) == 2
+
+
+def test_label_key_hash_ignores_case_and_accents_and_lossless_names_stay_plain(capsys, data_dir):
+    _, a = run(capsys, data_dir, *_label(name="Yogur 0%"))
+    _, b = run(capsys, data_dir, *_label("--replace", name="YÓGUR 0%"))
+    assert a["added"]["barcode"] == b["added"]["barcode"] != "label-yogur-0"
+    _, c = run(capsys, data_dir, *_label(name="Galleta de prueba"))
+    assert c["added"]["barcode"] == "label-galleta-de-prueba"
 
 
 @pytest.mark.parametrize(
@@ -885,9 +901,44 @@ def test_label_stores_the_cleaned_name(capsys, data_dir):
 def test_label_numbers_take_a_decimal_comma_and_refuse_underscores(capsys, data_dir):
     code, out = run(capsys, data_dir, *_label("--fibre", "2,5"))
     assert code == 0 and out["added"]["fibre_g"] == 2.5
-    for bad in ("1_0", "1,2,3", ".5", "1e1", " "):
+    for text, value in ((",5", 0.5), (".5", 0.5), ("5.", 5)):
+        _, out = run(capsys, data_dir, *_label("--fibre", text, "--replace"))
+        assert out["added"]["fibre_g"] == value, text
+    for bad in ("1_0", "1,2,3", "1.2.3", "1e1", " ", ".", ","):
         code, _ = run(capsys, data_dir, *_label("--fibre", bad, name="Otro"))
         assert code != 0, bad
+    code, out = run(capsys, data_dir, *_label("--fibre", "1,234", name="Otro"))
+    assert code != 0 and "one decimal separator" in out["message"]
+
+
+def test_label_allergens_are_required_and_unknown_is_stored_with_a_warning(capsys, data_dir):
+    no_allergens = [a for a in LABEL if a not in ("--allergens", "none")]
+    code, out = run(capsys, data_dir, *no_allergens)
+    assert code != 0 and "--allergens" in out["message"]
+    _, none = run(capsys, data_dir, *LABEL)
+    assert none["added"]["allergens"] == [] and none["warnings"] == []
+    _, unknown = run(capsys, data_dir, *_label("--allergens", "unknown", name="Otro"))
+    assert unknown["added"]["allergens"] == ["unknown"]
+    assert (
+        "allergens unknown: do not use for anyone with an allergy or intolerance"
+        in (unknown["warnings"])
+    )
+
+
+def test_explicit_barcode_with_replace_may_rename_the_product(capsys, data_dir):
+    run(capsys, data_dir, *_label("--barcode", "8400000000017", name="Protein choco"))
+    code, out = run(
+        capsys,
+        data_dir,
+        *_label("--barcode", "8400000000017", "--replace", name="Proteina chocolate"),
+    )
+    assert code == 0
+    assert [p.product_name for p in catalogue.load(data_dir)] == ["Proteina chocolate"]
+
+
+def test_confirm_per_is_refused_with_label(capsys, data_dir):
+    code, out = run(capsys, data_dir, *_label("--confirm-per"))
+    assert code != 0 and "--confirm-per" in out["message"]
 
 
 def test_label_name_clash_with_a_known_food_via_another_barcode(capsys, data_dir):

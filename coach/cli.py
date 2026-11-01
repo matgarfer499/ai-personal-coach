@@ -675,9 +675,12 @@ def _catalogue_entry(p: catalogue.CatalogueProduct) -> dict:
 PER_NAMES = {"100 g": "grams", "100 ml": "millilitres"}
 
 
+LABEL_ONLY = ("kcal", "protein", "carbs", "fat", "fibre", "allergens", "label_barcode")
+
+
 def _label_product(args: argparse.Namespace) -> dict:
     """Values the client read off the pack: no network, same limits as Open Food Facts values."""
-    required = ("name", "per", "kcal", "protein", "carbs", "fat")
+    required = ("name", "per", "kcal", "protein", "carbs", "fat", "allergens")
     if missing := [f"--{f}" for f in required if getattr(args, f) is None]:
         raise ValueError(f"--label also needs {', '.join(missing)}")
     values = {}
@@ -692,9 +695,12 @@ def _label_product(args: argparse.Namespace) -> dict:
             values[column] = None
             continue
         limit = off.MAX_KCAL_PER_100G if column == "kcal" else off.MAX_G_PER_100G
-        # ASCII digits with an optional decimal point or comma ("9,5"); no "1_0", "1e1" or "nan"
-        strict = re.fullmatch(r"[0-9]+(?:[.,][0-9]+)?", raw.strip(), re.ASCII)
-        number = off._number(strict.group().replace(",", ".") if strict else None, limit)
+        text = raw.strip()
+        if re.fullmatch(r"[1-9][0-9]{0,2}[.,][0-9]{3}", text, re.ASCII):
+            raise ValueError(f"--{flag} {raw!r} is ambiguous: use one decimal separator, e.g. 1.5")
+        # ASCII digits, at most one "." or "," ("9,5", ",5", "5."); no "1_0", "1e1" or "nan"
+        strict = re.fullmatch(r"(?=.*[0-9])[0-9]*(?:[.,][0-9]*)?", text, re.ASCII)
+        number = off._number(text.replace(",", ".") if strict else None, limit)
         if number is None:
             raise ValueError(f"--{flag} {raw!r} must be a number from 0 to {limit:g}")
         values[column] = number
@@ -703,13 +709,17 @@ def _label_product(args: argparse.Namespace) -> dict:
     name = off._text(args.name)
     if not name:
         raise ValueError("--name is empty")
-    # No ASCII letter or digit to slug (e.g. a Chinese name): a short stable hash of the name.
-    stem = (
-        recipes.slug(name)
-        if re.search("[a-z0-9]", fold(name))
-        else hashlib.sha1(name.encode()).hexdigest()[:8]
-    )
-    allergens = [off._text(a) for a in re.split(r"[,;]", args.allergens or "")]
+    # The slug is lossy (cuts, drops non-Latin text): then the key also carries a hash of the
+    # folded name, so different names stay different keys.
+    stem = recipes.slug(name)
+    if stem != "-".join(fold(name).split()):
+        stem += "-" + hashlib.sha1(fold(name).encode()).hexdigest()[:8]
+    allergens = [off._text(a) for a in re.split(r"[,;]", args.allergens)]
+    allergens = [a for a in allergens if a]
+    if [a.lower() for a in allergens] == ["none"]:  # the pack declares no allergens
+        allergens = []
+    elif not allergens:
+        raise ValueError("--allergens is empty: list them, or say none or unknown")
     return {
         # the slug keeps path and CSV structure out of the key
         "barcode": args.label_barcode or f"label-{stem}",
@@ -717,7 +727,7 @@ def _label_product(args: argparse.Namespace) -> dict:
         "brand": None,
         "per": args.per,
         "values": values,
-        "allergens": list(dict.fromkeys(filter(None, allergens))),
+        "allergens": list(dict.fromkeys(allergens)),
         "url": "",
     }
 
@@ -730,13 +740,15 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         return {"source": catalogue.SOURCE, "hits": hits}
     if not args.label:
         stray = [
-            "--" + f.replace("label_", "")
-            for f in ("kcal", "protein", "carbs", "fat", "fibre", "allergens", "label_barcode")
+            "--" + f.replace("label_", "").replace("_", "-")
+            for f in LABEL_ONLY
             if getattr(args, f) is not None
         ]
         if stray:
             raise ValueError(f"{', '.join(stray)} only work with --label")
     if args.label:
+        if args.confirm_per:
+            raise ValueError("--confirm-per does nothing with --label (there is no pack unit)")
         if args.barcode:
             raise ValueError("with --label, give the barcode as --barcode, not as an argument")
         found = _label_product(args)
@@ -767,7 +779,13 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         )
     products = catalogue.load(args.data_dir)
     stored = next((p for p in products if p.barcode == barcode), None)
-    if stored and args.label and fold(stored.product_name) != fold(name):
+    # Only a generated key can be a lossy collision; an explicit barcode may rename its product.
+    if (
+        stored
+        and args.label
+        and not args.label_barcode
+        and (fold(stored.product_name) != fold(name))
+    ):
         raise ValueError(
             f"{barcode} is already in the catalogue as a DIFFERENT product "
             f"({stored.product_name!r}, not {name!r}): pass --barcode with the pack's barcode, "
@@ -793,6 +811,8 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
     )
     catalogue.save([*others, product], args.data_dir)
     warnings = []
+    if args.label and product.allergens == ("unknown",):
+        warnings.append("allergens unknown: do not use for anyone with an allergy or intolerance")
     if None not in (product.kcal, product.protein_g, product.carbs_g, product.fat_g):
         gap = foods.energy_exception(product.to_row())
         if gap:
@@ -971,7 +991,9 @@ def build_parser() -> argparse.ArgumentParser:
     for flag in ("kcal", "protein", "carbs", "fat", "fibre"):
         off_add.add_argument(f"--{flag}", default=None, help="--label: per 100 g or 100 ml")
     off_add.add_argument("--barcode", dest="label_barcode", default=None, help="--label only")
-    off_add.add_argument("--allergens", default=None, help='--label: "soja, leche"')
+    off_add.add_argument(
+        "--allergens", default=None, help='--label (required): "soja, leche", none, or unknown'
+    )
     products_sub.add_parser("list", parents=[json_flag])
 
     profile_cmd = add("profile", cmd_profile, "show or set data/profile.yaml fields")

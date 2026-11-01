@@ -168,9 +168,9 @@ Every lunch and dinner dish, whatever its source:
      --carbs C --fat F` (optional `--fibre FI`, `--barcode B`, `--allergens "a, b"`). Read each
      value from the label with the client, per 100 g or per 100 ml, carbohydrate as printed;
      never estimate one, and leave `--fibre` out when the label has none. Read the allergen
-     declaration on the pack too and always pass `--allergens`; if the client cannot read it,
-     tell them the allergens are unknown and do not use the product for anyone with an allergy
-     or intolerance. Say the product is "values from the label". If the CLI warns that kcal and
+     declaration on the pack too: `--allergens` is required, `"a, b"` for the declared ones,
+     `none` only if the pack declares none, `unknown` if the client cannot read it (the CLI then
+     warns: do not use the product for anyone with an allergy or intolerance). Say the product is "values from the label". If the CLI warns that kcal and
      macros disagree, read the label again and fix the entry with `--replace`.
    - Exit code 2 naming `COACH_OFF_CONTACT`: use `--label` as above, and tell the person running
      the coach that Open Food Facts lookups need a contact email in that variable (set it under
