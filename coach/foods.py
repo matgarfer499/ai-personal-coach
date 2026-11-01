@@ -110,8 +110,10 @@ def label_energy(row: dict) -> float:
     )
 
 
-def energy_exception(row: dict) -> str | None:
-    """None when stated kcal is within 10% of the label factors, else a short reason."""
+def energy_exception(row: dict, typed: bool = False) -> str | None:
+    """None when stated kcal is within 10% of the label factors, else a short reason.
+
+    `typed`: the kcal was typed from a label, so the reason does not blame a source."""
     stated, computed = float(row["kcal"]), label_energy(row)
     if stated == computed == 0:
         return None
@@ -120,6 +122,8 @@ def energy_exception(row: dict) -> str | None:
     gap = abs(stated - computed) / computed
     if gap <= ENERGY_TOLERANCE:
         return None
+    if typed:
+        return f"{gap:.0%} from the 4/4/9 factors"
     return f"{gap:.0%} from 4/4/9 factors (source uses food-specific factors)"
 
 

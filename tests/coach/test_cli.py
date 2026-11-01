@@ -651,7 +651,7 @@ def test_label_energy_far_from_the_macros_warns(capsys, data_dir):
     args = [*LABEL]
     args[args.index("--kcal") + 1] = "200"
     _, out = run(capsys, data_dir, *args)
-    assert out["warnings"] and "check the pack" in out["warnings"][0]
+    assert out["warnings"] and "label again" in out["warnings"][0]
 
 
 def test_label_requires_every_value(capsys, data_dir):
@@ -836,7 +836,12 @@ def _label(*extra, name="Proteina chocolate"):
 
 def test_label_slug_collision_is_a_different_product_not_a_replace(capsys, data_dir):
     # a key stored by an older version, when the slug alone was the key
-    legacy = dataclasses.replace(SKYR_PRODUCT, barcode="label-yogur-0", product_name="Yogur 0%")
+    legacy = dataclasses.replace(
+        SKYR_PRODUCT,
+        barcode="label-yogur-0",
+        product_name="Yogur 0%",
+        source=catalogue.LABEL_SOURCE,
+    )
     catalogue.save([legacy], data_dir)
     code, out = run(capsys, data_dir, *_label(name="Yogur 0"))
     assert code != 0
@@ -873,6 +878,13 @@ def test_label_key_hash_ignores_case_and_accents_and_lossless_names_stay_plain(c
     assert c["added"]["barcode"] == "label-galleta-de-prueba"
 
 
+def test_label_keys_are_injective_for_dashes_and_spaces(capsys, data_dir):
+    _, spaced = run(capsys, data_dir, *_label(name="Galleta de prueba"))
+    code, dashed = run(capsys, data_dir, *_label(name="Galleta-de-prueba"))
+    assert code == 0 and dashed["added"]["barcode"] != spaced["added"]["barcode"]
+    assert len(catalogue.load(data_dir)) == 2
+
+
 @pytest.mark.parametrize(
     "extra",
     [["--kcal", "1"], ["--fibre", "1"], ["--allergens", "soja"], ["--barcode", "8400000000017"]],
@@ -907,8 +919,9 @@ def test_label_numbers_take_a_decimal_comma_and_refuse_underscores(capsys, data_
     for bad in ("1_0", "1,2,3", "1.2.3", "1e1", " ", ".", ","):
         code, _ = run(capsys, data_dir, *_label("--fibre", bad, name="Otro"))
         assert code != 0, bad
-    code, out = run(capsys, data_dir, *_label("--fibre", "1,234", name="Otro"))
-    assert code != 0 and "one decimal separator" in out["message"]
+    for text, value in (("1,234", 1.23), ("9.500", 9.5)):
+        _, out = run(capsys, data_dir, *_label("--fibre", text, "--replace"))
+        assert out["added"]["fibre_g"] == value, text
 
 
 def test_label_allergens_are_required_and_unknown_is_stored_with_a_warning(capsys, data_dir):
@@ -923,6 +936,43 @@ def test_label_allergens_are_required_and_unknown_is_stored_with_a_warning(capsy
         "allergens unknown: do not use for anyone with an allergy or intolerance"
         in (unknown["warnings"])
     )
+
+
+@pytest.mark.parametrize(
+    "text, stored",
+    [
+        ("Unknown", ["unknown"]),
+        ("UNKNOWN", ["unknown"]),
+        ("desconocido", ["unknown"]),
+        ("No sé", ["unknown"]),
+        ("unknown, soja", ["unknown", "soja"]),
+        ("soja, Desconocidos", ["unknown", "soja"]),
+        ("Ninguno", []),
+        ("ninguna", []),
+        ("Sin alérgenos", []),
+        ("NONE", []),
+    ],
+)
+def test_label_allergen_sentinels_are_folded_and_bilingual(capsys, data_dir, text, stored):
+    _, out = run(capsys, data_dir, *_label("--allergens", text))
+    assert out["added"]["allergens"] == stored
+    assert bool(out["warnings"]) == ("unknown" in stored)
+
+
+@pytest.mark.parametrize("text", ["none, leche", "ninguno; soja", "none, unknown", ", "])
+def test_label_none_with_other_allergens_is_refused(capsys, data_dir, text):
+    code, out = run(capsys, data_dir, *_label("--allergens", text))
+    assert code != 0 and "--allergens" in out["message"]
+    assert not (data_dir / "catalogue.csv").exists()
+
+
+def test_label_replace_never_overwrites_an_open_food_facts_row(capsys, data_dir):
+    off_row = dataclasses.replace(SKYR_PRODUCT, barcode="8400000000017")
+    catalogue.save([off_row], data_dir)
+    for extra in (["--replace"], []):
+        code, out = run(capsys, data_dir, *_label("--barcode", "8400000000017", *extra))
+        assert code != 0 and "Open Food Facts" in out["message"]
+    assert catalogue.load(data_dir) == [off_row]
 
 
 def test_explicit_barcode_with_replace_may_rename_the_product(capsys, data_dir):
@@ -953,4 +1003,6 @@ def test_label_energy_warning_does_not_blame_the_source(capsys, data_dir):
     args = _label()
     args[args.index("--kcal") + 1] = "200"
     _, out = run(capsys, data_dir, *args)
-    assert "source uses" not in out["warnings"][0] and "re-read" in out["warnings"][0]
+    warning = out["warnings"][0]
+    assert "source uses" not in warning and "4/4/9" in warning
+    assert "read the label again" in warning and "check the pack" not in warning

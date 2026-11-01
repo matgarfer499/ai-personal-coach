@@ -29,6 +29,8 @@ def test_energy_exception():
     assert energy_exception(row()) is None
     assert energy_exception(row(kcal=109)) is None
     assert "%" in energy_exception(row(kcal=120))
+    assert "source uses" in energy_exception(row(kcal=120))
+    assert "source uses" not in energy_exception(row(kcal=120), typed=True)
     assert energy_exception(row(kcal=0, protein_g=0, carbs_g=0, fat_g=0, fibre_g=0)) is None
     # Measured against the computed value: 89 is 11% below 100.
     assert energy_exception(row(kcal=89)) is not None

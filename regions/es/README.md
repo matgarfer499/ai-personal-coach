@@ -32,9 +32,14 @@ email in the User-Agent, so the commands need `COACH_OFF_CONTACT` set (under `en
 `.claude/settings.local.json`; the README's Settings section shows how). Prices are never fetched.
 A product OFF does not have, or any time `COACH_OFF_CONTACT` is not set, goes in by hand from its
 label: `coach products add --label --name NAME --chain CHAIN --per "100 g" --kcal K --protein P
---carbs C --fat F`, with optional `--fibre`, `--barcode` and `--allergens`. It needs no network.
-The values are the ones printed on the pack, never estimated, and the row says `label (entered by
-hand)` with no URL; without a barcode its key is `label-` plus a slug of the name.
+--carbs C --fat F --allergens "a, b"`, with optional `--fibre` and `--barcode`. It needs no
+network. `--allergens` is required: the declared allergens, `none` when the pack declares none, or
+`unknown` when the client cannot read it (the row then keeps `unknown` and the menu never uses it
+for anyone with an allergy or intolerance). The values are the ones printed on the pack, never
+estimated, and the row says `label (entered by hand)` with no URL. Without a barcode the key is
+`label-` plus the name's slug (`label-proteina-chocolate`), with `-` and 8 hex digits of a hash of
+the name appended when the slug is not an exact rendering of the name. `--replace` with a
+`--barcode` corrects a label row, and never overwrites an Open Food Facts row.
 
 Open Food Facts data is under the Open Database License (ODbL), and the row's URL is its
 attribution. Catalogue rows never move into `products.csv`.

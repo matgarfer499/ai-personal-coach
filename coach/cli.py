@@ -678,6 +678,23 @@ PER_NAMES = {"100 g": "grams", "100 ml": "millilitres"}
 LABEL_ONLY = ("kcal", "protein", "carbs", "fat", "fibre", "allergens", "label_barcode")
 
 
+ALLERGEN_NONE = {"none", "ninguno", "ninguna", "sin alergenos"}
+ALLERGEN_UNKNOWN = {"unknown", "desconocido", "desconocidos", "no se"}
+
+
+def _label_allergens(text: str) -> list[str]:
+    """`none` (the pack declares none) is [], `unknown` (cannot be read) leads the list."""
+    items = list(dict.fromkeys(filter(None, (off._text(a) for a in re.split(r"[,;]", text)))))
+    none = [a for a in items if fold(a) in ALLERGEN_NONE]
+    unknown = [a for a in items if fold(a) in ALLERGEN_UNKNOWN]
+    real = [a for a in items if a not in none + unknown]
+    if not items:
+        raise ValueError("--allergens is empty: list them, or say none or unknown")
+    if none and (real or unknown):
+        raise ValueError(f"--allergens {text!r}: none cannot be combined with other allergens")
+    return ["unknown", *real] if unknown else real
+
+
 def _label_product(args: argparse.Namespace) -> dict:
     """Values the client read off the pack: no network, same limits as Open Food Facts values."""
     required = ("name", "per", "kcal", "protein", "carbs", "fat", "allergens")
@@ -696,9 +713,8 @@ def _label_product(args: argparse.Namespace) -> dict:
             continue
         limit = off.MAX_KCAL_PER_100G if column == "kcal" else off.MAX_G_PER_100G
         text = raw.strip()
-        if re.fullmatch(r"[1-9][0-9]{0,2}[.,][0-9]{3}", text, re.ASCII):
-            raise ValueError(f"--{flag} {raw!r} is ambiguous: use one decimal separator, e.g. 1.5")
-        # ASCII digits, at most one "." or "," ("9,5", ",5", "5."); no "1_0", "1e1" or "nan"
+        # ASCII digits, at most one "." or "," ("9,5", ",5", "5.", "9.500"); no "1_0" or "1e1".
+        # Limits are below 1000, so one separator is always a decimal point.
         strict = re.fullmatch(r"(?=.*[0-9])[0-9]*(?:[.,][0-9]*)?", text, re.ASCII)
         number = off._number(text.replace(",", ".") if strict else None, limit)
         if number is None:
@@ -712,14 +728,9 @@ def _label_product(args: argparse.Namespace) -> dict:
     # The slug is lossy (cuts, drops non-Latin text): then the key also carries a hash of the
     # folded name, so different names stay different keys.
     stem = recipes.slug(name)
-    if stem != "-".join(fold(name).split()):
+    if name.lower() != stem.replace("-", " "):  # plain only when the name is exactly its slug
         stem += "-" + hashlib.sha1(fold(name).encode()).hexdigest()[:8]
-    allergens = [off._text(a) for a in re.split(r"[,;]", args.allergens)]
-    allergens = [a for a in allergens if a]
-    if [a.lower() for a in allergens] == ["none"]:  # the pack declares no allergens
-        allergens = []
-    elif not allergens:
-        raise ValueError("--allergens is empty: list them, or say none or unknown")
+    allergens = _label_allergens(args.allergens)
     return {
         # the slug keeps path and CSV structure out of the key
         "barcode": args.label_barcode or f"label-{stem}",
@@ -779,6 +790,11 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         )
     products = catalogue.load(args.data_dir)
     stored = next((p for p in products if p.barcode == barcode), None)
+    if stored and args.label and stored.source != catalogue.LABEL_SOURCE:
+        raise ValueError(
+            f"{barcode} is an {stored.source} row: label values never overwrite it; "
+            "pick another --name for a separate product"
+        )
     # Only a generated key can be a lossy collision; an explicit barcode may rename its product.
     if (
         stored
@@ -811,13 +827,13 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
     )
     catalogue.save([*others, product], args.data_dir)
     warnings = []
-    if args.label and product.allergens == ("unknown",):
+    if args.label and "unknown" in product.allergens:
         warnings.append("allergens unknown: do not use for anyone with an allergy or intolerance")
     if None not in (product.kcal, product.protein_g, product.carbs_g, product.fat_g):
-        gap = foods.energy_exception(product.to_row())
-        if gap:
-            if args.label:  # the 4/4/9 caveat blames the source; here the typed value is suspect
-                gap = f"{gap.split(' (')[0]}; re-read the label and fix it with --replace"
+        gap = foods.energy_exception(product.to_row(), typed=args.label)
+        if gap and args.label:
+            warnings.append(f"label kcal is {gap}: read the label again, fix it with --replace")
+        elif gap:
             warnings.append(f"label kcal is {gap}; check the pack")
     return {"added": product, "missing": product.missing(), "warnings": warnings}
 
