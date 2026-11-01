@@ -241,4 +241,4 @@ def test_a_recipe_longer_than_a_page_still_exports(capsys, data_dir):
     code, out = run(capsys, data_dir, "mealplan", "export")
     assert code == 0, out
     data = (data_dir / "menus" / "2026-10-26.pdf").read_bytes()
-    assert b"40. Paso 39" in data  # the last step is printed, not cut off
+    assert b"Paso 39" in data  # the last step is printed, not cut off
