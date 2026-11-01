@@ -277,15 +277,19 @@ def test_a_reference_target_must_be_a_level_2_or_3_heading(tmp_path):
     assert any('"Top"' in e for e in errors) and any('"Deep"' in e for e in errors)
 
 
+def _target(error: str) -> str:
+    return error.split(": see ", 1)[1].removesuffix(" names no heading").strip('"')
+
+
 def test_unquoted_and_capitalised_references_are_checked():
     errors = ck.check_references(FIXTURES / "unquoted_see")
-    targets = sorted(e.split('see "')[1].split('"')[0] for e in errors)
+    targets = sorted(_target(e) for e in errors)
     assert targets == ["Gone", "Missing Heading", "Nowhere", "Real"]
 
 
 def test_reference_gaps_are_caught():
     errors = ck.check_references(FIXTURES / "see_gaps")
-    targets = sorted(e.split('see "')[1].split('"')[0] for e in errors)
+    targets = sorted(_target(e) for e in errors)
     assert targets == [
         "Activity multipliers (XYZ)",
         "Capitalised Nowhere Target",
@@ -299,3 +303,23 @@ def test_reference_gaps_are_caught():
 def test_valid_and_prose_references_pass():
     # Covers quoted `See also "X"`, parenthesised headings, and prose that is not a reference.
     assert ck.check_references(FIXTURES / "see_ok") == []
+
+
+def test_reference_scan_details_are_exact(tmp_path):
+    (tmp_path / "a.md").write_text(
+        "## Section\n\n### Real heading\n\n### Activity multipliers (PAL)\n\n"
+        "Prose (see Table 2) (see S012) (see Real heading for details) (see Below).\n"
+        'We foresee "x" and (see Activity multipliers (PAL)) and see "Activity multipliers (PAL)"\n'
+        '```\n(see Fenced Fake Reference) see "fenced"\n```\n'
+        "A wrapped (see Real\nheading) reference is not checked.\n"
+        '(see Gone Missing) twice (see Gone Missing) and see "Quoted gone".\n',
+        encoding="utf-8",
+    )
+    (tmp_path / "b.md").write_text("### Other\n\n(see real heading for more)\n", encoding="utf-8")
+    errors = ck.check_references(tmp_path)
+    assert errors == [
+        f'{tmp_path / "a.md"}:14: see "Quoted gone" names no heading',
+        f"{tmp_path / 'a.md'}:14: see Gone Missing names no heading",
+        f"{tmp_path / 'a.md'}:14: see Gone Missing names no heading",
+        f"{tmp_path / 'b.md'}:3: see real heading for more names no heading",
+    ]

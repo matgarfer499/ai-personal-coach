@@ -66,12 +66,14 @@ BOILERPLATE = re.compile(
 # the sentences that carry the claim's numbers, at most about 500 characters).
 MAX_SUPPORTS_CHARS = 500
 # a heading may itself contain quotes, so the closing quote is the one followed by punctuation
-SEE_RE = re.compile(r'[Ss]ee(?: also)? "(.+?)"(?=[\s,;.:)]|$)')
+SEE_RE = re.compile(r'\b[Ss]ee(?: also)? "(.+?)"(?=[\s,;.:)]|$)')
 # `(see Some Heading)`: unquoted, so only a capitalised target counts ("(see next rule)" is prose)
 # An unquoted reference opens a parenthetical or follows `;` or `,` inside one.
 SEE_UNQUOTED_RE = re.compile(r"(?:\(|[;,] )[Ss]ee(?: also)? (?=([^\"\s].*))")
 # Prose after `see` that is not a heading: "Table 2", "Cai 2023", "D080", "S123".
-PROSE_SEE_RE = re.compile(r"(?:(?:Table|Figure|Appendix|Box)\b.*|.*\b(?:19|20)\d\d[a-z]?|[DS]\d+)$")
+PROSE_SEE_RE = re.compile(
+    r"(?:(?:Table|Figure|Appendix|Box)\b.*|.*\b(?:19|20)\d\d[a-z]?|[DS]\d+|(?:above|below))$", re.I
+)
 
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 
@@ -161,8 +163,11 @@ def check_readme_counts(knowledge_dir: Path) -> list[str]:
     return []
 
 
-def _clause(rest: str) -> str:
-    """Text up to the `)` that closes the reference, a `;`, or a sentence end; parens balance."""
+def _clause(rest: str) -> str | None:
+    """Text up to the `)` that closes the reference, a `;`, or a sentence end; parens balance.
+
+    None when the line ends first: the reference wraps onto the next line and is not checked.
+    """
     depth = 0
     for i, ch in enumerate(rest):
         if ch == "(":
@@ -173,7 +178,7 @@ def _clause(rest: str) -> str:
             return rest[:i].strip()
         elif ch == ")":
             depth -= 1
-    return rest.strip()
+    return None
 
 
 def _unquoted_target(rest: str, headings: set[str]) -> str | None:
@@ -184,11 +189,13 @@ def _unquoted_target(rest: str, headings: set[str]) -> str | None:
     target = _clause(rest)
     if not target or PROSE_SEE_RE.match(target):
         return None
-    low = target.lower()
-    near = len(target) >= 4 and any(
-        h.lower().startswith(low) or low.startswith(h.lower()) for h in headings
+    words = target.lower().split()
+    near = any(
+        words[:n] == h.lower().split()[:n]
+        for h in headings
+        if (n := min(3, len(words), len(h.split()))) and (n > 1 or len(target) >= 4)
     )
-    return target if near or (target[0].isupper() and len(target.split()) > 1) else None
+    return target if near or (target[0].isupper() and len(words) > 1) else None
 
 
 def check_references(knowledge_dir: Path) -> list[str]:
@@ -197,14 +204,18 @@ def check_references(knowledge_dir: Path) -> list[str]:
     Quoted targets (`see "X"`, `See also "X"`) must match a heading exactly. Unquoted targets
     (after `(see`, or `; see` / `, see`) are matched against the heading list: the longest heading
     that prefixes the text passes, which also covers headings with parentheses. Otherwise the text
-    up to `)`, `;` or a sentence end is reported when it is a case-insensitive prefix of a heading
-    or starts with one (a near miss), or when it is a capitalised multi-word phrase. Prose such as
-    `(see next rule)`, `(see above)`, `(see Table 2)`, `(see Cai 2023)`, `(see D080)` passes.
+    up to `)`, `;` or a sentence end is reported when a heading shares its first three words (or
+    fewer, if either has fewer) with it case-insensitively (a near miss, including wrong case or a
+    bare first word), or when it is a capitalised multi-word phrase. Prose such as `(see next
+    rule)`, `(see above)`, `(see Below)`, `(see Table 2)`, `(see Cai 2023)`, `(see D080)`,
+    `(see S012)` passes, as does a heading followed by prose (`(see Real heading for details)`).
+    Fenced code blocks are skipped. The message shows the target as written (quoted only if it
+    was quoted).
 
-    Still not seen: a lowercase single-phrase unquoted target that is not near a heading, a
-    reference without `see` (for example "refer to X"), a reference that is not inside parentheses
-    or after `;`/`,`, a heading in the wrong file (any rule file satisfies it), and references in
-    `sources.md`, `index.md` or `README.md`.
+    Still not seen: a lowercase unquoted target that is not near a heading, a reference without
+    `see` (for example "refer to X"), a reference outside parentheses and not after `;`/`,`, a
+    reference wrapped across two lines, a heading in the wrong file (any rule file satisfies it),
+    and references in `sources.md`, `index.md` or `README.md`.
     """
     texts = {path: read(path) for path in rule_files(knowledge_dir)}
     headings = {
@@ -215,14 +226,14 @@ def check_references(knowledge_dir: Path) -> list[str]:
     }
     errors = []
     for path, text in texts.items():
-        for lineno, line in enumerate(text.splitlines(), start=1):
-            targets = [t for t in SEE_RE.findall(line) if t not in headings]
+        for lineno, line in enumerate(blank_fences(text.splitlines()), start=1):
+            targets = [f'"{t}"' for t in SEE_RE.findall(line) if t not in headings]
             targets += [
                 t
                 for rest in SEE_UNQUOTED_RE.findall(line)
                 if (t := _unquoted_target(rest, headings))
             ]
-            errors += [f'{path}:{lineno}: see "{t}" names no heading' for t in targets]
+            errors += [f"{path}:{lineno}: see {t} names no heading" for t in targets]
     return errors
 
 
