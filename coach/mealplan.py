@@ -14,6 +14,11 @@ list buys it once at N servings, and an appearance beyond N is an accidental rep
 words, e.g. `[pollo, arroz]` or `[garbanzos]`): two different dishes on the same base are a
 repeat too when the two dishes' dates differ by BASE_REPEAT_DAYS (3) days or fewer (day 26 and
 day 29 are flagged, 26 and 30 pass). A dish without `base` (a breakfast, a snack) is not checked.
+
+A meal may carry `eat_out: true` (planned food eaten at a bar or canteen: it counts in the day's
+totals, the shopping list skips it and names its dishes under `eaten_out`; never with `tupper`)
+and `people: N` (cooked for N people: the shopping list multiplies its items by N; a batch's
+appearances must share `people`). Totals stay per client serving.
 """
 
 from __future__ import annotations
@@ -54,6 +59,8 @@ class Dish:
     items: list[tuple[str, float]]  # for one serving: what is eaten
     seasoning: list[str] = field(default_factory=list)
     base: list[str] = field(default_factory=list)  # main protein, then carb base; may be empty
+    people: int = 1  # from the meal: the dish is cooked for this many people
+    eat_out: bool = False  # from the meal: eaten out, not bought
 
 
 @dataclass
@@ -62,6 +69,8 @@ class Meal:
     tupper: bool  # carried in a lunchbox
     free: bool  # a free meal: no dishes, its energy is not planned
     dishes: list[Dish]
+    eat_out: bool = False  # eaten at a bar or canteen: counts in totals, is not bought
+    people: int = 1  # cooked for this many people (shopping only)
 
     @property
     def items(self) -> list[tuple[str, float]]:
@@ -131,6 +140,20 @@ def parse(data) -> tuple[dict, list[Day]]:
             _need(isinstance(meal, dict), f"{when}: each meal needs `meal:` and `dishes:`")
             tupper = _flag(meal, "tupper", f"{when}")
             free = _flag(meal, "free", f"{when}")
+            eat_out = _flag(meal, "eat_out", f"{when}")
+            _need(
+                not free or (not eat_out and meal.get("people", 1) == 1),
+                f"{when}: free meals have no dishes, so `eat_out:` and `people:` do not apply",
+            )
+            _need(
+                not (eat_out and tupper),
+                f"{when}: a meal cannot be both `eat_out:` and `tupper:` (a lunchbox is from home)",
+            )
+            people = meal.get("people", 1)
+            _need(
+                isinstance(people, int) and not isinstance(people, bool) and people >= 1,
+                f"{when}: `people:` must be a whole number, 1 or more, not {people!r}",
+            )
             listed = meal.get("dishes")
             if free:
                 _need(not listed, f"{when}: a free meal has no dishes (it replaces a planned one)")
@@ -171,9 +194,13 @@ def parse(data) -> tuple[dict, list[Day]]:
                         [parse_item(str(x)) for x in lines],
                         list(dish.get("seasoning") or []),
                         [w.strip() for w in base or []],
+                        people,
+                        eat_out,
                     )
                 )
-            meals.append(Meal(str(meal.get("meal", "")).strip(), tupper, False, dishes))
+            meals.append(
+                Meal(str(meal.get("meal", "")).strip(), tupper, False, dishes, eat_out, people)
+            )
         free_meals = [m for m in meals if m.free]
         _need(
             len(free_meals) <= FREE_MEALS_PER_DAY,
@@ -204,6 +231,8 @@ class Batch:
     dates: list[date]
     items: list[tuple[str, float]]
     base: list[str] = field(default_factory=list)  # from the group's first appearance
+    people: int = 1  # shared by all appearances
+    eat_out: bool = False  # from the group's first appearance
 
 
 def _signature(items: list[tuple[str, float]]) -> list[tuple[str, float, str]]:
@@ -229,6 +258,16 @@ def batches(days: list[Day]) -> list[Batch]:
                 else:
                     joins = False
                 if joins:
+                    if dish.eat_out != group.eat_out:
+                        raise ValueError(
+                            f"{day.date} {dish.name}: every appearance of a dish that comes "
+                            "back needs the same `eat_out:` (eaten out or cooked at home)"
+                        )
+                    if dish.people != group.people:
+                        raise ValueError(
+                            f"{day.date} {dish.name}: every appearance of a batch needs the same "
+                            f"`people:` ({group.people}, not {dish.people})"
+                        )
                     if dish.servings > 1 and _signature(dish.items) != _signature(group.items):
                         raise ValueError(
                             f"{day.date} {dish.name}: a batch dish needs the same items every "
@@ -238,7 +277,15 @@ def batches(days: list[Day]) -> list[Batch]:
                     if dish.servings == 1:
                         group.items += dish.items  # same day twice: both are eaten
                     continue
-                group = Batch(dish.name, dish.servings, [day.date], list(dish.items), dish.base)
+                group = Batch(
+                    dish.name,
+                    dish.servings,
+                    [day.date],
+                    list(dish.items),
+                    dish.base,
+                    dish.people,
+                    dish.eat_out,
+                )
                 groups.append(group)
                 last[key] = group
     return groups
@@ -369,14 +416,20 @@ def shopping(
 
     A batch (`servings: N`) is bought once, at N servings, however many days it is eaten on; any
     other dish is bought for each appearance. Grams (`grams`) and millilitres (`ml`) are listed
-    apart. Foods that match the client's `pantry` words are left out and named in
+    apart. A meal's `people` multiplies its items; an `eat_out` meal is not bought, its dishes are
+    named in `eaten_out`. Foods that match the client's `pantry` words are left out and named in
     `pantry_skipped`; names not in the table are listed in `unknown`."""
     amounts: dict[str, dict[tuple[str, str], float]] = defaultdict(lambda: defaultdict(float))
     unknown: list[str] = []
     skipped: dict[str, str] = {}
     cooked = []
+    eaten_out: list[str] = []
     for group in batches(days):
-        times = group.servings if group.servings > 1 else 1
+        if group.eat_out:
+            if fold(group.dish) not in {fold(d) for d in eaten_out}:
+                eaten_out.append(group.dish)
+            continue
+        times = (group.servings if group.servings > 1 else 1) * group.people
         if group.servings > 1:
             cooked.append(
                 {
@@ -407,5 +460,6 @@ def shopping(
         },
         "unknown": unknown,
         "batches": cooked,
+        "eaten_out": eaten_out,
         "pantry_skipped": [skipped[key] for key in sorted(skipped)],
     }

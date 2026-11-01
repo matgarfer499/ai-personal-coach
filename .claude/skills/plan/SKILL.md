@@ -173,6 +173,8 @@ Knowledge, by situation: run only the lines that apply.
    `training_schedule: mon 18:30; wed 18:30; sat` (English day tokens mon tue wed thu fri sat
    sun in any profile language, an optional 24 h start time after each; leave the
    line out when the days are not known; `/menu` places pre- and post-workout meals with it).
+   When the client trains on one of two days ("viernes o sábado"), write both with `|`:
+   `fri|sat 10:00`.
    An optional line `rep_range: 6-8`, the client's usual rep range (leave it out when they use
    8-12), comes directly after the `training_schedule:` line, or directly after the third
    header line when `training_schedule:` is absent, with no blank line or heading between.

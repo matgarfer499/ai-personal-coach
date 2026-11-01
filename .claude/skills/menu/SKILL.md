@@ -51,8 +51,8 @@ list. Every number comes from the CLI.
   (with `hold_deficit`, ask what they eat now and pass `--current-kcal KCAL` to all of them),
   and say these are starting targets until `/plan` sets the plan's own.
 - `data/plan.md`'s `training_schedule:` line (`mon 18:30; wed 18:30; sat`: training days with an
-  optional start time), when it exists; the Semana de entrenamiento section says what the
-  sessions are.
+  optional start time; `fri|sat 10:00` is one session on either of two days), when it exists;
+  the Semana de entrenamiento section says what the sessions are.
 - `coach tastes show`, on every run: the taste profile. `missing` lists the fields never asked;
   `favoured` the dishes rated loved or liked, `disliked` and `excluded` (never_again) the rest.
 - `coach foods search WORD` to find exact names of foods, regional products and the client's
@@ -88,12 +88,17 @@ list. Every number comes from the CLI.
    the structure, per day when it differs (a few days with 3 meals, others with 4): which
    meals the day has, which of them go in a lunchbox (`tupper: true`: eaten away from home,
    so cold or reheatable and no last-minute cooking), and whether any meal is cooked once for
-   several days (step 8). Do not offer a free meal; only when the client asks for one, see
+   several days (step 8), which meals are eaten out (`eat_out: true`: a bar, canteen or
+   restaurant; its dishes still count in the day's totals but are not bought), and for how many
+   people a meal is cooked (`people: N`, default 1; the shopping list multiplies it, the
+   totals stay for the client's own serving). Do not offer a free meal; only when the client asks for one, see
    step 8. Training days: for each date in the menu that falls on a day of
    `training_schedule:`, place the meals around the session as the two rules above say: a
    protein-containing meal within a few hours before or after (no shake needed straight
    after), and a carbohydrate-containing snack or meal before a fasted early session or one
-   over about 45 min. With no schedule in the plan, or no time, ask the client once whether
+   over about 45 min. A `fri|sat` day is possible training on both days: arrange the meals so
+   they work on either day, and ask the client which one only when the meals would differ.
+   With no schedule in the plan, or no time, ask the client once whether
    and when they train on those days.
 4. Recipes, in this order:
    1. The client's library: `coach recipes search WORD...` (dishes they rated loved or liked,
@@ -201,13 +206,16 @@ Every lunch and dinner dish, whatever its source:
    it and follow the safety lines below.
 9. Show the plan (see Output). When the client accepts it, run
    `coach mealplan save menu-draft.yaml` with the same flags (`--replace` only to replace a
-   menu saved for the same first date), then `coach shopping` for the shopping list. A batch
-   (`servings: N`) is bought once at N servings however many days it is eaten; `batches` lists them with `left_over` servings, and
-   `pantry_skipped` the foods left out because the client has them at home.
-   Printable copy: when the client wants the menu, recipes and shopping list to print or carry
-   on the phone, run `coach mealplan export` (a PDF next to the saved menu, with a QR code to
-   each recipe link; `--no-qr` without them). It needs the optional `pdf` extra: if the CLI says
-   so, tell the person running the coach to run `uv sync --extra pdf`.
+   menu saved for the same first date), then `coach mealplan export` and give the PDF path: it
+   carries the recipes (with a QR code to each link; `--no-qr` without them) and the shopping
+   list. If the CLI says the `pdf` extra is missing, say `uv sync --extra pdf` and show the list
+   from `coach shopping` as a table instead. In `coach shopping`, a batch (`servings: N`) is
+   bought once at N servings however many days it is eaten (`batches` lists them with
+   `left_over` servings), a meal's `people` multiplies its items, `eaten_out` names the dishes
+   of `eat_out` meals (not bought), and `pantry_skipped` the foods left out because the client
+   has them at home. After saving, name the dishes in `eaten_out` as not bought, and when a
+   meal has `people` above 1 say the shopping amounts are multiplied for it (the PDF's day
+   pages show per-serving amounts).
 10. Feedback. When the client says how a dish went, run
     `coach tastes rate "DISH" RATING --source URL`: `loved` ("me encantó"), `liked` ("estaba
     bien"), `disliked` ("no me gustó"), `never_again` ("no lo repetiría"). Ask when unclear.
@@ -216,7 +224,9 @@ Every lunch and dinner dish, whatever its source:
     dish drops out of `coach recipes search`. `coach recipes save DISH` saves one rated earlier.
 
 Draft format (`items` as in `coach menu --item`; dates unquoted, in order; `tupper` is
-optional, a meal with `free: true` has no `dishes`). Give each lunch and dinner dish its
+optional, a meal with `free: true` has no `dishes`; `eat_out: true` and `people: N` are
+optional per meal, and `eat_out` never goes with `tupper`; every appearance of a batch has the
+same `people`). Give each lunch and dinner dish its
 `base`: the main protein, then the carb base, one plain word each (`[pollo, arroz]`,
 `[merluza, patata]`, or one word such as `[garbanzos]` when the protein is the base).
 Breakfasts and snacks go without it and are not checked:
@@ -227,6 +237,7 @@ days:
     meals:
       - meal: Comida
         tupper: true
+        people: 2   # optional: cooked for 2 people (shopping only)
         dishes:
           - dish: Pollo al limón con arroz y verduras salteadas
             source: https://...
@@ -250,13 +261,12 @@ days:
 
 ## Output
 
-In the profile language, day by day: each meal with its dishes (name, short preparation steps,
-seasoning ideas, source link, foods and grams), then the day's `totals` next to the `targets`,
-all quoted from `coach mealplan check` (or `coach menu`). Name any value in `missing` as "sin
-dato" for that item, never as a number. Mark products from Open Food Facts as unverified data
-from a public database. After saving: the shopping list from `coach shopping`, by chain, with
-grams or ml as printed and its note on the form of each food, the batches to cook (servings
-and leftovers for the freezer) and the pantry foods skipped.
+In the profile language, one compact table per day: meal, dish, and the day's kcal and protein
+from `coach mealplan check` (or `coach menu`), then one line with any day that is not ok. Steps,
+items and seasoning only for a dish the client asks about. Name any value in `missing` as "sin
+dato", never as a number. Mark products from Open Food Facts as unverified data from a public
+database. After saving: the PDF path from `coach mealplan export`; the recipes and the shopping
+list are in the PDF (step 9 says what to do without the `pdf` extra).
 
 ## Safety
 
