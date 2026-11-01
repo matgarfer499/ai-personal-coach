@@ -1,6 +1,6 @@
 """Open Food Facts reads: a text search and one product by barcode.
 
-Checked against the OFF API documentation and live answers on 2026-10-25:
+Checked against the OFF API documentation and live answers on 2026-10-25 and 2026-11-01:
 - Text search is Search-a-licious (`q` in Lucene syntax, e.g. `revuelto brands:"hacendado"`); the
   v2 search API has no full-text search.
 - One product is API v3 `/api/v3/product/<barcode>`: `status` is "success" or, with HTTP 404,
@@ -58,6 +58,8 @@ FIELDS = (
     "nutriments",
 )
 UNITS = {"g": "100 g", "ml": "100 ml"}
+# OFF's label basis (`nutrition_data_per`); "serving" is not a per-100 basis, so it is ignored.
+BASES = {"100g": "100 g", "100ml": "100 ml"}
 # Lucene syntax characters, stripped from search words so they stay plain text.
 QUERY_SYNTAX = re.compile(r'[+\-&|!(){}\[\]^"~*?:\\/]')
 
@@ -119,7 +121,10 @@ def _product(raw: dict) -> dict:
         "name": _text(raw.get("product_name_es")) or _text(raw.get("product_name")),
         "brand": _text(raw.get("brands")),
         "stores": _text(raw.get("stores")),
-        "per": UNITS.get(raw.get("product_quantity_unit")),
+        # The label basis wins over the pack unit: a per-100 g label on a pack sold in ml is per
+        # 100 g. `coach products add` then asks for --confirm-per when --per says otherwise.
+        "per": BASES.get(raw.get("nutrition_data_per"))
+        or UNITS.get(raw.get("product_quantity_unit")),
         "values": values,
         "missing": [name for name, value in values.items() if value is None],
         "allergens": list(dict.fromkeys(filter(None, map(_text, raw.get("allergens_tags") or [])))),
@@ -131,8 +136,8 @@ def product(barcode: str) -> dict | None:
     """The product, or None when OFF does not have it."""
     if not BARCODE.fullmatch(barcode):
         raise ValueError(f"a barcode is 8 to 14 digits, not {barcode!r}")
-    query = urllib.parse.urlencode({"fields": ",".join(FIELDS)})
-    answer = _get_json(f"{PRODUCT_URL.format(barcode=barcode)}?{query}")
+    # No `fields`: with it OFF's v3 read drops nutrition_data_per (checked live on 2026-11-01).
+    answer = _get_json(PRODUCT_URL.format(barcode=barcode))
     if answer.get("status") == "failure" or not answer.get("product"):
         return None
     return _product(answer["product"] | {"code": answer.get("code", barcode)})
