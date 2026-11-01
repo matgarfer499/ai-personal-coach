@@ -88,13 +88,22 @@ Computed by `coach safety` from the profile; the calculators obey them.
 | Any PAR-Q+ YES, reviewed or not, or PAR-Q+ not answered | `no_all_out_sprints` | no SIT or REHIT: they need every PAR-Q+ answer NO. With every answer NO, /plan also requires 4+ weeks of regular moderate cardio without symptoms and never gives them to sedentary beginners (skill text) |
 | Active injury with `exercises` listed | `paused_exercises` (exercise: its reasons and whether a professional assessed it) | `strength progress` says `paused`: no progression, no stall, no added sets. Unassessed: no load at all. Assessed: at most the last load, or the lower restart load after a break; the professional's limits decide the rest. Names match logged lifts by case, accents, "(Equipment)" and muscle-map aliases; `coach injury add` lists names that match no logged lift as `unmatched`. A new injury in a cleared area starts unassessed. Sessions up to its `cleared_on` never count as a stall afterwards |
 | Active injury with no `professional` | `refer_gp` | a GP or physiotherapist assesses it before it is loaded; sharp or worsening pain: stop and refer |
-| Cardiac warning symptoms | `no_training`, `hold_progression`, `refer_gp` | stop exercising until a clinician clears it: no zones, no loads; `coach energy` uses the desk PAL band for `desk_training` and keeps `active` and adds a note: no change if the activity comes from the job; if from exercise, rerun with `--pal` |
-| Resting BP 180+ systolic or 110+ diastolic | `no_training`, `hold_progression`, `refer_gp` | no zones, no training until a doctor reviews it (200/110+: no exercise, see a doctor promptly); energy PAL as for cardiac symptoms |
+| Cardiac warning symptoms | `no_training`, `hold_progression`, `refer_gp` | stop exercising until a clinician clears it: no zones, no loads (energy: see "`no_training` and the energy estimate") |
+| Resting BP 180+ systolic or 110+ diastolic | `no_training`, `hold_progression`, `refer_gp` | no zones, no training until a doctor reviews it (200/110+: no exercise, see a doctor promptly) (energy: see "`no_training` and the energy estimate") |
 | Resting BP 160-179 systolic or 90-109 diastolic, or hypertension with BP unknown | `cap_moderate`, `hold_progression`, `refer_gp` | no vigorous zone; GP review before starting or progressing |
 | Resting BP 140-159 systolic with diastolic below 90 | `cap_moderate`, `refer_gp` | moderate intensity; GP check |
 | Age 65+ without obesity and a weight-related condition | (calculator rule) | no deficit |
 | Heart disease | (calculator rule) | no zones; the cardiac team sets them |
 | Calories below 1,200 (women) / 1,500 (men) | (calculator rule) | raised to the floor and flagged |
+
+### `no_training` and the energy estimate
+
+`energy.tdee` (run by `coach energy`) stops counting planned training when `no_training` is set:
+- `desk_training` uses the `desk` PAL band (nutrition.md "Activity multipliers (PAL)": desk work
+  with little exercise).
+- Only `active` is kept, with a note, because it may come from the job: its text is in
+  `docs/conventions.md` (`energy.pal` row). The note is skipped when `--pal` or `--tdee` was given.
+- An explicit `--pal` always wins.
 
 ## Red flags
 

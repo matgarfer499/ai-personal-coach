@@ -12,7 +12,7 @@ Every one is labelled where it lives: `# convention:` in code, "convention", "he
 
 | Constant | Value | Rule it builds on | Why this value |
 |---|---|---|---|
-| `energy.pal` | band midpoint | nutrition.md "Activity multipliers (PAL)" | midpoint as the point estimate; with `no_training`, `desk_training` uses the `desk` band (little exercise) and `active` is kept and adds a note: no change if the activity comes from the job; if from exercise, rerun with `--pal` |
+| `energy.pal` | band midpoint | nutrition.md "Activity multipliers (PAL)" | midpoint as the point estimate; with `no_training`, `desk_training` uses the `desk` band and `active` is kept with the note "activity level 'active' is kept while training is on hold: if it comes from the job, no change is needed; if it comes from exercise, rerun with --pal" (shown only without `--pal` or `--tdee`; see docs/safety.md) |
 | `macros.PROTEIN_DEFICIT`, `PROTEIN_OLDER`, `PROTEIN_GLP1` | midpoints 2.0, 1.4, 1.4 g/kg | "Protein during fat loss", "Older adults: protein targets", "GLP-1 users: protein, training and red flags" | midpoint of the rule's range |
 | `macros.REFERENCE_BMI` | 25 | "Daily protein target for people who lift" (use fat-free mass or goal weight with obesity) | the coach knows neither, so it uses the weight at BMI 25 for the client's height |
 | `macros.FAT_FRACTION` | 25% of energy | "Minimum dietary fat" (default 20-35%) | lower half of the default range, leaving room for carbohydrate |

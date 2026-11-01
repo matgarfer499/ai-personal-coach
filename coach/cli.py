@@ -81,13 +81,15 @@ def _jsonable(value: Any) -> Any:
 def cmd_energy(profile: Profile, args: argparse.Namespace) -> dict:
     flags = safety.flags(profile, args.today)
     rmr = energy.rmr_mifflin(profile, args.today)
-    estimated = energy.tdee(profile, args.pal, args.today)
+    estimated = energy.tdee(profile, args.pal, args.today, flags.no_training)
+    # None (neither --pal nor --tdee) lets calorie_target use the default and add its notes.
+    tdee_kcal = args.tdee if args.tdee is not None else estimated if args.pal is not None else None
     target = energy.calorie_target(
         profile,
         flags,
         goal=args.goal,
         today=args.today,
-        tdee_kcal=args.tdee if args.tdee is not None else estimated,
+        tdee_kcal=tdee_kcal,
         current_kcal=args.current_kcal,
         recalibrated=args.tdee is not None,
     )

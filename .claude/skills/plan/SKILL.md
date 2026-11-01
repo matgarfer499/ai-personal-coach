@@ -49,7 +49,9 @@ Run these, all with the ground-rule flags:
      `target_kcal:` and `in_deficit:` lines.
   3. Otherwise run `coach energy` (with `hold_deficit`, ask what they eat now and add
      `--current-kcal KCAL`); `target_kcal` is its `kcal`, `in_deficit` is whether `deficit` is
-     above 0.
+     above 0. When its `notes` hold the `active` `no_training` note, ask whether the activity comes
+     from the job or from exercise; if exercise, rerun `coach energy` with `--pal` (a value from
+     the `active` band in the PAL rule, never computed by you).
   Then `coach macros --kcal TARGET` (add `--in-deficit` when `in_deficit` is true): the CLI
   raises a stored target that the current flags no longer allow.
 - `coach zones`.

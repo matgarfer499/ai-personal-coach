@@ -235,10 +235,11 @@ How the original evidence base was built, and its limits:
   product labelled per 100 g and sold in ml can be stored as per 100 ml.
 - **Allergies** are matched against menu items by name only, with no synonyms or hidden
   ingredients: read the labels.
-- **Known gaps** (tracked as issues): with `no_training` the energy estimate keeps an `active`
-  level and only notes it (no skill reruns with `--pal` yet); the dry runs in `docs/examples/`
-  predate the current skills and there is no `/menu` one; the `hold` and `paused` paths of
-  `strength progress` are covered by tests but have not been seen in a real `/plan` run.
+- **Known gaps** (tracked as issues): with `no_training` the energy estimate is fixed for
+  `desk_training` (desk band); for `active` it adds a note and the client reruns with `--pal` if
+  the activity comes from exercise; the dry runs in `docs/examples/` predate the current skills
+  and there is no `/menu` one; the `hold` and `paused` paths of `strength progress` are covered
+  by tests but have not been seen in a real `/plan` run.
 
 ## What is inside
 

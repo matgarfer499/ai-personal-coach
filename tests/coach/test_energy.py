@@ -89,11 +89,19 @@ def test_no_training_keeps_active_with_a_note():
     assert not any("--pal" in n for n in target(man(activity_level="active")).notes)
 
 
-def test_no_training_active_note_goes_after_an_explicit_pal():
+def test_no_training_active_note_only_without_an_explicit_estimate():
     p = man(activity_level="active", screening=OK | {"cardiac_symptoms": True})
-    # as cli.py does: it always passes the estimate, with or without --pal
-    assert any("--pal" in n for n in target(p, tdee_kcal=tdee(p, today=TODAY)).notes)
-    assert not any("--pal" in n for n in target(p, tdee_kcal=tdee(p, 1.6, TODAY)).notes)
+    # as cli.py does: tdee_kcal is None unless --pal or --tdee was given
+    assert any("--pal" in n for n in target(p).notes)
+    assert not any("--pal" in n for n in target(p, tdee_kcal=tdee(p, 1.8, TODAY)).notes)
+
+
+def test_tdee_takes_no_training_from_the_caller():
+    p = man(activity_level="desk_training", screening=OK | {"cardiac_symptoms": True})
+    assert tdee(p, today=TODAY, no_training=False) == pytest.approx(1780 * 1.675)
+    assert tdee(man(activity_level="desk_training"), today=TODAY, no_training=True) == (
+        pytest.approx(1780 * 1.45)
+    )
 
 
 def test_no_training_from_blood_pressure_uses_the_desk_band():

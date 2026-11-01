@@ -72,9 +72,17 @@ def pal(profile: Profile, training: bool = True) -> float:
     return (low + high) / 2
 
 
-def tdee(profile: Profile, multiplier: float | None = None, today: date | None = None) -> float:
+def tdee(
+    profile: Profile,
+    multiplier: float | None = None,
+    today: date | None = None,
+    no_training: bool | None = None,
+) -> float:
+    """`no_training`: the safety flag; callers holding the flags pass it, else it is computed."""
     if multiplier is None:
-        multiplier = pal(profile, training=not safety_flags(profile, today).no_training)
+        if no_training is None:
+            no_training = safety_flags(profile, today).no_training
+        multiplier = pal(profile, training=not no_training)
     elif multiplier < PAL_MIN:
         raise ValueError(
             f"PAL {multiplier} is too low: never 1.2 for ambulatory adults, use at least "
@@ -134,7 +142,11 @@ def calorie_target(
     goal = goal or profile.require("goal")
     if goal not in GOALS:
         raise ValueError(f"goal must be one of {', '.join(GOALS)}, not {goal!r}")
-    maintenance = tdee_kcal if tdee_kcal is not None else tdee(profile, today=today)
+    maintenance = (
+        tdee_kcal
+        if tdee_kcal is not None
+        else tdee(profile, today=today, no_training=flags.no_training)
+    )
     if recalibrated:
         notes = [f"{RECALIBRATE_RULE}: maintenance from the weight trend; re-check in 2-4 weeks"]
     elif flags.no_weight_targets:  # no weigh-ins, so no trend to recalibrate from
@@ -160,14 +172,8 @@ def calorie_target(
         # A surplus aims at weight gain, which is a weight target: blocked by the same flags.
         if not (flags.prescriber_owns_weight or flags.no_weight_targets):
             adjustment = maintenance * SURPLUS_FRACTION
-    # An explicit --pal reaches here as a tdee_kcal that differs from the default estimate.
-    default_estimate = tdee(profile, today=today) if flags.no_training else None
-    if (
-        flags.no_training
-        and not recalibrated
-        and profile.activity_level == "active"
-        and abs(maintenance - default_estimate) < 0.5
-    ):
+    # tdee_kcal is None unless --pal or --tdee was given: then the client has already chosen.
+    if flags.no_training and tdee_kcal is None and profile.activity_level == "active":
         notes.append(
             f"{PAL_RULE}: activity level 'active' is kept while training is on hold: if it comes "
             "from the job, no change is needed; if it comes from exercise, rerun with --pal"

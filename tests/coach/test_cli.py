@@ -83,6 +83,20 @@ def test_energy_pal_reaches_the_target(capsys, data_dir):
     assert out["target"]["kcal"] == round(1780 * 1.6)
 
 
+def test_energy_active_note_under_no_training_and_explicit_pal(capsys, data_dir):
+    profile = load_profile(data_dir / "profile.yaml")
+    profile.activity_level = "active"
+    profile.screening = {"scoff_positive": False, "cardiac_symptoms": True}
+    save_profile(profile, data_dir / "profile.yaml")
+
+    def notes(*extra):
+        return run(capsys, data_dir, "energy", *extra)[1]["target"]["notes"]
+
+    assert any("no change is needed" in n for n in notes())
+    assert not any("no change is needed" in n for n in notes("--pal", "1.8"))  # the band midpoint
+    assert not any("no change is needed" in n for n in notes("--tdee", "2400"))
+
+
 def test_goal_typo_is_rejected(capsys, data_dir):
     assert main(["--data-dir", str(data_dir), "energy", "--goal", "fatloss"]) == 2
     assert "fatloss" in json.loads(capsys.readouterr().out)["message"]
