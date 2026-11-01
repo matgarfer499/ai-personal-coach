@@ -392,7 +392,7 @@ def write(
         else:
             row.append("")
         rows.append(row)
-    side = 1.3 * cm, 2.6 * cm
+    side = 1.6 * cm, 2.6 * cm
     meal_width = (width - sum(side)) / max(len(meal_names), 1)
     week = Table(
         rows, colWidths=[side[0]] + [meal_width] * len(meal_names) + [side[1]], repeatRows=1

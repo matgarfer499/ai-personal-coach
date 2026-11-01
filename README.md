@@ -66,11 +66,12 @@ rule in `knowledge/` with its sources.
 | `/menu` | build dishes you would enjoy for one or more days, from real recipes and the products you buy, that meet your targets; then a shopping list |
 | `/research` | refresh the evidence base on a separate branch for you to review |
 
-`/menu` writes the menu to `data/menus/` and can export it as a PDF, with links (and QR codes)
-to the recipes and a shopping list grouped by shop:
+`/menu` writes the menu to `data/menus/` and can export it as a PDF: the week at a glance, each
+recipe once as a card with a link (and QR code) to its source, and a shopping list grouped by
+shop with boxes to tick:
 
 <p align="center">
-  <img src="assets/menu-pdf.png" alt="Exported menu PDF: a day of meals with recipe QR codes, and the shopping list" width="960">
+  <img src="assets/menu-pdf.png" alt="Exported menu PDF: the week at a glance, recipe cards with QR codes, and the shopping list" width="960">
 </p>
 
 `/menu` can look up supermarket products in [Open Food Facts](https://world.openfoodfacts.org)
