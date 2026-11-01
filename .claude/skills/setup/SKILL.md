@@ -110,9 +110,10 @@ Ask about one step per message. Store each answer as soon as you have it with
      do: fill it in, then send it back or answer the two questions below.
    - If the client sends a filled-in PDF: read it where it is, without copying it. List back only
      the outcome: any YES on the 7 questions, and any YES on the follow-ups (the answers
-     themselves are not stored). Ask the client to confirm, then store the two values below. Ask
-     a field that cannot be read as printed. If its questions or follow-ups do not match the 7
-     standard questions as printed, ask as printed instead. Never store the file in `data/`, and
+     themselves are not stored). Ask the client to confirm, then store the two values below. A
+     field you cannot read: ask the client that question aloud, using the wording of the
+     standard PAR-Q+ question. If the PDF's questions do not match the 7 standard questions, do
+     not map it; ask the client the 7 standard questions instead. Never store the file in `data/`, and
      do not copy its contents, the client's name or its path into notes or the profile; only
      the two screening fields.
    Any YES on the 7 questions? Any YES on the follow-up questions? Store
