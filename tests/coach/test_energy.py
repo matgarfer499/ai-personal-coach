@@ -91,7 +91,7 @@ def test_no_training_keeps_active_with_a_note():
 
 def test_no_training_active_note_only_without_an_explicit_estimate():
     p = man(activity_level="active", screening=OK | {"cardiac_symptoms": True})
-    # as cli.py does: tdee_kcal is None unless --pal or --tdee was given
+    # as cli.py does: estimate_chosen is true only with --pal or --tdee
     assert any("--pal" in n for n in target(p).notes)
     chosen = target(p, tdee_kcal=tdee(p, 1.8, TODAY), estimate_chosen=True)
     assert not any("--pal" in n for n in chosen.notes)

@@ -98,6 +98,19 @@ def test_energy_active_note_under_no_training_and_explicit_pal(capsys, data_dir)
     assert not any("no change is needed" in n for n in notes("--tdee", "2400"))
 
 
+def test_macros_with_the_desk_pal_match_the_energy_rerun(capsys, data_dir):
+    profile = load_profile(data_dir / "profile.yaml")
+    profile.activity_level = "active"
+    profile.screening = {"scoff_positive": False, "cardiac_symptoms": True}
+    save_profile(profile, data_dir / "profile.yaml")
+    _, energy = run(capsys, data_dir, "energy", "--pal", "1.45")
+    kcal = energy["target"]["kcal"]
+    assert kcal == round(1780 * 1.45) - 500
+    _, with_kcal = run(capsys, data_dir, "macros", "--pal", "1.45", "--kcal", str(kcal))
+    _, derived = run(capsys, data_dir, "macros", "--pal", "1.45")
+    assert with_kcal["kcal"] == derived["kcal"] == kcal and derived["in_deficit"] is True
+
+
 def test_goal_typo_is_rejected(capsys, data_dir):
     assert main(["--data-dir", str(data_dir), "energy", "--goal", "fatloss"]) == 2
     assert "fatloss" in json.loads(capsys.readouterr().out)["message"]

@@ -20,8 +20,6 @@ MSJ_SEX_CONSTANT = {"male": 5.0, "female": -161.0}
 # nutrition.md: "Activity multipliers (PAL)": desk 1.4-1.5, desk + about 1 h training most days
 # 1.6-1.75, physically active 1.7-1.9.
 PAL_BANDS = {"desk": (1.4, 1.5), "desk_training": (1.6, 1.75), "active": (1.7, 1.9)}
-# With no_training, exercise has stopped: the desk band's midpoint (convention: band midpoint).
-DESK_PAL = sum(PAL_BANDS["desk"]) / 2
 # nutrition.md: "Activity multipliers (PAL)": never 1.2 for ambulatory adults (1.4 is the
 # guideline's floor), not above about 2.0 for recreational gym-goers.
 PAL_MIN, PAL_MAX = 1.4, 2.0
@@ -61,6 +59,17 @@ def rmr_mifflin(profile: Profile, today: date | None = None) -> float:
     )
 
 
+def band_midpoint(level: str) -> float:
+    """Convention: the band midpoint as the point estimate."""
+    low, high = PAL_BANDS[level]
+    return (low + high) / 2
+
+
+# nutrition.md: "Activity multipliers (PAL)": with no_training exercise has stopped, so the
+# desk band applies; its midpoint is the --pal the `active` note gives.
+DESK_PAL = band_midpoint("desk")
+
+
 def pal(profile: Profile, training: bool = True) -> float:
     """Midpoint of the client's activity band (convention: band midpoint as the point estimate).
 
@@ -70,8 +79,7 @@ def pal(profile: Profile, training: bool = True) -> float:
     level = profile.require("activity_level")
     if not training and level == "desk_training":
         level = "desk"
-    low, high = PAL_BANDS[level]
-    return (low + high) / 2
+    return band_midpoint(level)
 
 
 def tdee(
