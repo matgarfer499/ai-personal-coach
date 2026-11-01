@@ -169,8 +169,9 @@ Knowledge, by situation: run only the lines that apply.
    them: `Fecha: YYYY-MM-DD` (en: `Date:`), `target_kcal: KCAL` and `in_deficit: true|false`
    (`kcal` and `in_deficit` as `coach macros` printed them; `/menu` reads these lines, so
    they keep the CLI's decimal point). When the client has given their training days,
-   `training_schedule` is the fourth header line: `training_schedule: mon 18:30; wed 18:30; sat` (English day tokens mon tue wed
-   thu fri sat sun in any profile language, an optional 24 h start time after each; leave the
+   `training_schedule` is the fourth header line:
+   `training_schedule: mon 18:30; wed 18:30; sat` (English day tokens mon tue wed thu fri sat
+   sun in any profile language, an optional 24 h start time after each; leave the
    line out when the days are not known; `/menu` places pre- and post-workout meals with it).
    An optional line `rep_range: 6-8`, the client's usual rep range (leave it out when they use
    8-12), comes directly after the `training_schedule:` line, or directly after the third
