@@ -30,6 +30,12 @@ Facts by barcode with `coach products add BARCODE --chain CHAIN`. `coach product
 menu shows it as missing; it is never filled with zero or an estimate. OFF requires a contact
 email in the User-Agent, so the commands need `COACH_OFF_CONTACT` set (under `env` in
 `.claude/settings.local.json`; the README's Settings section shows how). Prices are never fetched.
+A product OFF does not have, or any time `COACH_OFF_CONTACT` is not set, goes in by hand from its
+label: `coach products add --label --name NAME --chain CHAIN --per "100 g" --kcal K --protein P
+--carbs C --fat F`, with optional `--fibre`, `--barcode` and `--allergens`. It needs no network.
+The values are the ones printed on the pack, never estimated, and the row says `label (entered by
+hand)` with no URL; without a barcode its key is `label-` plus a slug of the name.
+
 Open Food Facts data is under the Open Database License (ODbL), and the row's URL is its
 attribution. Catalogue rows never move into `products.csv`.
 

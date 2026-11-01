@@ -17,6 +17,7 @@ from pathlib import Path
 from coach.foods import NUMBERS, PER_UNITS, Food
 
 SOURCE = "Open Food Facts (unverified)"
+LABEL_SOURCE = "label (entered by hand)"
 FILE = "catalogue.csv"
 FIELDS = [
     "barcode",

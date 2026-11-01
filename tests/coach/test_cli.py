@@ -596,6 +596,68 @@ def test_foods_search(capsys, data_dir):
     assert out["products"][0]["protein_g"] > 0
 
 
+LABEL = (
+    "products", "add", "--label", "--name", "Proteina chocolate", "--chain", "Mercadona",
+    "--per", "100 g", "--kcal", "380", "--protein", "30", "--carbs", "40", "--fat", "9.5",
+)  # fmt: skip
+
+
+def test_products_add_label_stores_the_label_values_without_network(capsys, data_dir, monkeypatch):
+    import urllib.request
+
+    def no_network(*a, **k):
+        raise AssertionError("the label path must not reach the network")
+
+    monkeypatch.delenv("COACH_OFF_CONTACT", raising=False)
+    monkeypatch.setattr(urllib.request, "urlopen", no_network)
+    code, out = run(capsys, data_dir, *LABEL, "--fibre", "3", "--allergens", "soja, leche;huevo")
+    assert code == 0
+    assert out["added"]["barcode"] == "label-proteina-chocolate"
+    assert out["added"]["source"] == "label (entered by hand)"
+    assert out["added"]["allergens"] == ["soja", "leche", "huevo"]
+    row = catalogue.load(data_dir)[0]
+    assert (row.kcal, row.fibre_g, row.per, row.chain) == (380, 3, "100 g", "Mercadona")
+    code, out = run(
+        capsys, data_dir, *LABEL[:3], "--name", "Otro", *LABEL[5:], "--barcode", "8400000000017"
+    )
+    assert code == 0 and out["added"]["barcode"] == "8400000000017"
+    code, out = run(capsys, data_dir, *LABEL)  # same name again
+    assert code != 0 and "already" in out["message"]
+
+
+@pytest.mark.parametrize(
+    "flag, value",
+    [
+        ("--kcal", "901"),
+        ("--protein", "100.5"),
+        ("--fat", "-1"),
+        ("--carbs", "nan"),
+        ("--fibre", "abc"),
+        ("--barcode", "12ab"),
+        ("--barcode", "../../x"),
+        ("--barcode", "1234567"),
+        ("--barcode", "123456789012345"),
+    ],
+)
+def test_label_values_out_of_range_are_refused(capsys, data_dir, flag, value):
+    code, out = run(capsys, data_dir, *LABEL, flag, value)
+    assert code != 0 and out["error"] == "invalid"
+    assert not (data_dir / "catalogue.csv").exists()
+
+
+def test_label_energy_far_from_the_macros_warns(capsys, data_dir):
+    args = [*LABEL]
+    args[args.index("--kcal") + 1] = "200"
+    _, out = run(capsys, data_dir, *args)
+    assert out["warnings"] and "check the pack" in out["warnings"][0]
+
+
+def test_label_requires_every_value(capsys, data_dir):
+    args = [a for a in LABEL if a not in ("--kcal", "380")]
+    code, out = run(capsys, data_dir, *args)
+    assert code != 0 and "--kcal" in out["message"]
+
+
 def test_bad_arguments_answer_in_json(capsys):
     from coach.cli import main
 

@@ -674,15 +674,65 @@ def _catalogue_entry(p: catalogue.CatalogueProduct) -> dict:
 PER_NAMES = {"100 g": "grams", "100 ml": "millilitres"}
 
 
+def _label_product(args: argparse.Namespace) -> dict:
+    """Values the client read off the pack: no network, same limits as Open Food Facts values."""
+    required = ("name", "per", "kcal", "protein", "carbs", "fat")
+    if missing := [f"--{f}" for f in required if getattr(args, f) is None]:
+        raise ValueError(f"--label also needs {', '.join(missing)}")
+    values = {}
+    for column, flag, raw in (
+        ("kcal", "kcal", args.kcal),
+        ("protein_g", "protein", args.protein),
+        ("carbs_g", "carbs", args.carbs),
+        ("fat_g", "fat", args.fat),
+        ("fibre_g", "fibre", args.fibre),
+    ):
+        if raw is None:
+            values[column] = None
+            continue
+        limit = off.MAX_KCAL_PER_100G if column == "kcal" else off.MAX_G_PER_100G
+        number = off._number(raw, limit)
+        if number is None:
+            raise ValueError(f"--{flag} {raw!r} must be a number from 0 to {limit:g}")
+        values[column] = number
+    if args.label_barcode is not None and not off.BARCODE.fullmatch(args.label_barcode):
+        raise ValueError(f"a barcode is 8 to 14 digits, not {args.label_barcode!r}")
+    name = off._text(args.name)
+    if not name:
+        raise ValueError("--name is empty")
+    allergens = [off._text(a) for a in re.split(r"[,;]", args.allergens or "")]
+    return {
+        # the slug keeps path and CSV structure out of the key
+        "barcode": args.label_barcode or f"label-{recipes.slug(name)}",
+        "name": name,
+        "brand": None,
+        "per": args.per,
+        "values": values,
+        "allergens": list(dict.fromkeys(filter(None, allergens))),
+        "url": "",
+    }
+
+
 def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
     if args.products_cmd == "list":
         return {"products": [_catalogue_entry(p) for p in catalogue.load(args.data_dir)]}
     if args.products_cmd == "search":
         hits = off.search(args.words, args.brand, args.limit, profile.language or "es")
         return {"source": catalogue.SOURCE, "hits": hits}
-    found = off.product(args.barcode)
-    if found is None:
-        raise ValueError(f"{args.barcode} is not in Open Food Facts; check the barcode on the pack")
+    if args.label:
+        if args.barcode:
+            raise ValueError("with --label, give the barcode as --barcode, not as an argument")
+        found = _label_product(args)
+    else:
+        if not args.barcode:
+            raise ValueError("give a BARCODE, or --label to type the values from the pack")
+        found = off.product(args.barcode)
+        if found is None:
+            raise ValueError(
+                f"{args.barcode} is not in Open Food Facts; check the barcode on the pack"
+            )
+        found["barcode"] = args.barcode
+    barcode = found["barcode"]
     name = " ".join((args.name or found["name"] or "").split())
     if not name:
         raise ValueError(f"Open Food Facts has no name for {args.barcode}: give one with --name")
@@ -699,14 +749,14 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
             'give --per "100 g" or --per "100 ml"'
         )
     products = catalogue.load(args.data_dir)
-    if any(p.barcode == args.barcode for p in products) and not args.replace:
-        raise ValueError(f"{args.barcode} is already in the catalogue: add --replace to refresh it")
-    others = [p for p in products if p.barcode != args.barcode]
+    if any(p.barcode == barcode for p in products) and not args.replace:
+        raise ValueError(f"{barcode} is already in the catalogue: add --replace to refresh it")
+    others = [p for p in products if p.barcode != barcode]
     table = regions.menu_table(profile.region) + [p.as_food() for p in others]
     if foods.find(name, table) is not None:
         raise ValueError(f"{name!r} is already a food or product name: choose one with --name")
     product = catalogue.CatalogueProduct(
-        barcode=args.barcode,
+        barcode=barcode,
         product_name=name,
         brand=found["brand"] or "",
         chain=" ".join(args.chain.split()),
@@ -715,6 +765,7 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         allergens=tuple(found["allergens"]),
         url=found["url"],
         fetched_on=args.today or date.today(),
+        source=catalogue.LABEL_SOURCE if args.label else catalogue.SOURCE,
     )
     catalogue.save([*others, product], args.data_dir)
     warnings = []
@@ -873,8 +924,10 @@ def build_parser() -> argparse.ArgumentParser:
     off_search.add_argument("words", nargs="+")
     off_search.add_argument("--brand", default=None, help='e.g. "Hacendado"')
     off_search.add_argument("--limit", type=int, default=off.SEARCH_LIMIT)
-    off_add = products_sub.add_parser("add", parents=[json_flag], help="BARCODE --chain CHAIN")
-    off_add.add_argument("barcode")
+    off_add = products_sub.add_parser(
+        "add", parents=[json_flag], help="BARCODE --chain CHAIN, or --label with the pack's values"
+    )
+    off_add.add_argument("barcode", nargs="?", default=None)
     off_add.add_argument("--chain", required=True, help="the supermarket the client buys it at")
     off_add.add_argument("--name", default=None, help="default: the Open Food Facts name")
     off_add.add_argument("--per", default=None, choices=sorted(off.UNITS.values()))
@@ -884,6 +937,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="keep --per although the pack unit says otherwise (after reading the label)",
     )
     off_add.add_argument("--replace", action="store_true", help="refresh a product already added")
+    off_add.add_argument(
+        "--label", action="store_true", help="type the values from the pack: no Open Food Facts"
+    )
+    for flag in ("kcal", "protein", "carbs", "fat", "fibre"):
+        off_add.add_argument(f"--{flag}", default=None, help="--label: per 100 g or 100 ml")
+    off_add.add_argument("--barcode", dest="label_barcode", default=None, help="--label only")
+    off_add.add_argument("--allergens", default=None, help='--label: "soja, leche"')
     products_sub.add_parser("list", parents=[json_flag])
 
     profile_cmd = add("profile", cmd_profile, "show or set data/profile.yaml fields")

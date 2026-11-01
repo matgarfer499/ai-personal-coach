@@ -276,3 +276,25 @@ def test_foods_search_lists_missing_values_for_every_entry(capsys, data_dir):
     assert out["products"][0]["missing"] == ["fibre_g"]
     _, out = run(capsys, data_dir, "foods", "search", "lentejas")
     assert all(f["missing"] == [] for f in out["foods"])
+
+
+def test_a_label_product_round_trips(tmp_path):
+    product = catalogue.CatalogueProduct(
+        barcode="label-proteina-chocolate",
+        product_name="Proteina chocolate",
+        brand="",
+        chain="Mercadona",
+        per="100 g",
+        kcal=380,
+        protein_g=30,
+        carbs_g=40,
+        fat_g=9.5,
+        fibre_g=None,
+        allergens=("soja",),
+        url="",
+        fetched_on=date(2026, 11, 1),
+        source=catalogue.LABEL_SOURCE,
+    )
+    catalogue.save([product], tmp_path)
+    assert catalogue.load(tmp_path) == [product]
+    assert catalogue.LABEL_SOURCE == "label (entered by hand)"
