@@ -1025,8 +1025,6 @@ def test_label_kcal_with_a_leading_zero_is_a_plain_decimal(capsys, data_dir, kca
         ("piñones", ["piñones"]),
         ("frutos secos (piñones)", ["frutos secos (piñones)"]),
         ("sesamo", ["sesamo"]),
-        ("no sesamo", ["no sesamo"]),
-        ("no semillas", ["no semillas"]),
         ("ilegible", ["unknown"]),
         ("No legible", ["unknown"]),
         ("no indicado", ["unknown"]),
@@ -1046,6 +1044,50 @@ def test_label_sentinels_match_whole_words_only(capsys, data_dir, text, stored):
 def test_label_sin_phrases_are_not_allergen_names(capsys, data_dir, text):
     code, out = run(capsys, data_dir, *_label("--allergens", text))
     assert code != 0 and "--allergens" in out["message"]
+    assert not (data_dir / "catalogue.csv").exists()
+
+
+@pytest.mark.parametrize(
+    "text, stored",
+    [
+        ("ningún alérgeno", []),
+        ("No alérgenos", []),
+        ("sin alérgeno", []),
+        ("nada", []),
+        ("illegible", ["unknown"]),
+        ("N.A.", ["unknown"]),
+        ("nd", ["unknown"]),
+        ("no data", ["unknown"]),
+        ("no info", ["unknown"]),
+        ("no información", ["unknown"]),
+        ("not readable", ["unknown"]),
+        ("soja?", ["unknown", "soja"]),
+        ("soja (no sé)", ["unknown", "soja"]),
+        ("leche, no sé si lleva soja", ["unknown", "leche", "soja"]),
+    ],
+)
+def test_label_allergens_fail_closed_by_structure(capsys, data_dir, text, stored):
+    _, out = run(capsys, data_dir, *_label("--allergens", text))
+    assert out["added"]["allergens"] == stored
+    assert bool(out["warnings"]) == ("unknown" in stored)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "no sesamo",
+        "no semillas",
+        "gluten free",
+        "lactose free",
+        "libre de gluten",
+        "sin lactosa",
+        "sin trazas",
+        "soja, no sesamo",
+    ],
+)
+def test_label_free_from_claims_are_refused(capsys, data_dir, text):
+    code, out = run(capsys, data_dir, *_label("--allergens", text))
+    assert code != 0 and "write only the allergens the pack declares" in out["message"]
     assert not (data_dir / "catalogue.csv").exists()
 
 

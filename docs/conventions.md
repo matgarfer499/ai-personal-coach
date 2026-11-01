@@ -56,6 +56,7 @@ Every one is labelled where it lives: `# convention:` in code, "convention", "he
 | `cli.OUTPUT_DECIMALS` | 2 | numbers a skill quotes verbatim |
 | `tastes.POSTAL_CODE` | 3 to 10 letters, digits, spaces or hyphens | rejects typos; fits any country's format |
 | `cli.LABEL_KEY_HASH_CHARS` | 8 hex digits | suffix of a `--label` product's key when the name's slug is lossy; 32 bits are plenty for one client's few products |
+| `cli.KCAL_THOUSANDS` | `--kcal` shaped 1 or 2 digits, one separator, 3 digits (1.674, 12.500) | below 900 kcal per 100 g, so that shape is kJ or a thousands grouping; a leading 0 (0,125) stays a decimal |
 | `off.BARCODE` | 8 to 14 digits (EAN-8 to GTIN-14) | rejects typos before asking Open Food Facts |
 | `off.OFF_TIMEOUT_S` | 20 s | how long `coach products` waits for Open Food Facts |
 | `off.SEARCH_LIMIT` | 10 hits | enough to spot a product without paging (OFF allows 10 searches a minute) |

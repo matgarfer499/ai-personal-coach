@@ -110,22 +110,26 @@ def label_energy(row: dict) -> float:
     )
 
 
+NO_MACROS = "no_macros"  # kinds of `energy_check`, shared with cli.py
+GAP = "gap"
+
+
 def energy_check(row: dict, typed: bool = False) -> tuple[str, str] | None:
     """None when stated kcal is within 10% of the label factors, else (kind, short reason):
-    kind is "no_macros" (kcal but no energy-yielding macros) or "gap".
+    kind is NO_MACROS (kcal but no energy-yielding macros) or GAP.
 
     `typed`: the kcal was typed from a label, so the reason does not blame a source."""
     stated, computed = float(row["kcal"]), label_energy(row)
     if stated == computed == 0:
         return None
     if computed == 0:
-        return "no_macros", "no energy-yielding macros listed"
+        return NO_MACROS, "no energy-yielding macros listed"
     gap = abs(stated - computed) / computed
     if gap <= ENERGY_TOLERANCE:
         return None
     if typed:
-        return "gap", f"{gap:.0%} from the 4/4/9 factors"
-    return "gap", f"{gap:.0%} from 4/4/9 factors (source uses food-specific factors)"
+        return GAP, f"{gap:.0%} from the 4/4/9 factors"
+    return GAP, f"{gap:.0%} from 4/4/9 factors (source uses food-specific factors)"
 
 
 def energy_exception(row: dict, typed: bool = False) -> str | None:

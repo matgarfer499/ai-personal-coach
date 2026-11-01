@@ -680,47 +680,55 @@ LABEL_KEY_HASH_CHARS = 8
 LABEL_ONLY = ("kcal", "protein", "carbs", "fat", "fibre", "allergens", "label_barcode")
 
 
-# Allergen words, matched on whole words of the folded text (never substrings: "piñones" holds
-# "none", "no sesamo" holds "no se"). A label entry that looks like a "none" phrase but is not
-# exactly one is refused: it must never be stored as an allergen name or as "none".
+# convention: kcal per 100 g is below 900, so a typed 1 or 2 digit prefix, one separator and
+# exactly 3 digits (1.674, 12.500) is a kJ value or a thousands grouping, not kcal. A leading 0
+# (0,125) is a plain decimal.
+KCAL_THOUSANDS = re.compile(r"[1-9][0-9]?[.,][0-9]{3}", re.ASCII)
+# Allergen entries are read by structure, on whole words of the folded text (never substrings:
+# "piñones" holds "none"). An unknown marker keeps any allergen typed beside it and adds
+# `unknown`; an exact none phrase means none; a free-from or negation claim is refused. Nothing
+# unrecognised is ever stored as "none".
 ALLERGEN_UNKNOWN = re.compile(
-    r"(?<!\w)(?:unknown|desconoc\w*|ilegible|no legible|no indicado|no consta|not sure|n/a|\?"
-    r"|sin informacion|no lo se|no se|ns/nc)(?!\w)"
+    r"(?<!\w)(?:unknown|desconoc\w*|illegible|ilegible|no legible|not readable|no indicado"
+    r"|no consta|not sure|n/a|n\.a\.|nd|no data|no info|no informacion|sin informacion"
+    r"|no lo se|no se|ns/nc)(?!\w)|\?"
 )
 ALLERGEN_NONE = {
-    "none", "ninguno", "ninguna", "sin alergenos", "no contiene", "no contiene alergenos",
-    "no allergens", "nothing",
+    "none", "ninguno", "ninguna", "ningun alergeno", "sin alergenos", "sin alergeno",
+    "no alergenos", "no contiene", "no contiene alergenos", "no allergens", "nothing", "nada",
 }  # fmt: skip
-ALLERGEN_NONE_LOOKALIKE = re.compile(
-    r"(?<!\w)(?:none|ningun[oa]|no contiene|no allergens?|nothing)(?!\w)"
+ALLERGEN_FREE_FROM = re.compile(
+    r"(?<!\w)(?:no|sin|libre de|free|none|ningun[oa]?|nothing|nada)(?!\w)"
 )
+ALLERGEN_FILLER = re.compile(r"(?<!\w)(?:si|lleva|tiene|contiene|if|it|has|contains)(?!\w)")
 
 
 def _label_allergens(text: str) -> list[str]:
     """`none` (the pack declares none) is [], `unknown` (cannot be read) leads the list."""
-    items: dict[str, str] = {}  # folded -> first spelling, in first-seen order
-    for piece in re.split(r"[,;]", text):
-        if cleaned := off._text(piece):
-            items.setdefault(fold(cleaned), cleaned)
-    if not items:
+    if not (pieces := [c for p in re.split(r"[,;]", text) if (c := off._text(p))]):
         raise ValueError("--allergens is empty: list them, or say none or unknown")
     unknown = none = False
-    real = []
-    for folded, item in items.items():
+    real: dict[str, str] = {}  # folded -> first spelling, in first-seen order
+    for piece in pieces:
+        folded = fold(piece)
+        if folded in ALLERGEN_NONE:
+            none = True
+            continue
         if ALLERGEN_UNKNOWN.search(folded):
             unknown = True
-        elif folded in ALLERGEN_NONE:
-            none = True
-        elif ALLERGEN_NONE_LOOKALIKE.search(folded) or folded.startswith("sin "):
+            rest = ALLERGEN_FILLER.sub(" ", ALLERGEN_UNKNOWN.sub(" ", folded))
+            piece = folded = " ".join(re.sub(r"[()\[\]:.\-/]", " ", rest).split())
+            if not piece:
+                continue
+        if ALLERGEN_FREE_FROM.search(folded) or re.search(r"(?<!\w)(?:free|libre)(?!\w)", folded):
             raise ValueError(
-                f"--allergens {item!r} is not an allergen name: write the allergens, or exactly "
-                "none (the pack declares none) or unknown (it cannot be read)"
+                f"--allergens {piece!r} is a free-from claim: write only the allergens the pack "
+                "declares, or exactly none (it declares none) or unknown (it cannot be read)"
             )
-        else:
-            real.append(item)
+        real.setdefault(folded, piece)
     if none and (real or unknown):
         raise ValueError(f"--allergens {text!r}: none cannot be combined with other allergens")
-    return ["unknown", *real] if unknown else real
+    return ["unknown", *real.values()] if unknown else list(real.values())
 
 
 def _label_product(args: argparse.Namespace) -> dict:
@@ -741,7 +749,7 @@ def _label_product(args: argparse.Namespace) -> dict:
             continue
         limit = off.MAX_KCAL_PER_100G if column == "kcal" else off.MAX_G_PER_100G
         text = raw.strip()
-        if column == "kcal" and re.fullmatch(r"[1-9][0-9]?[.,][0-9]{3}", text, re.ASCII):
+        if column == "kcal" and KCAL_THOUSANDS.fullmatch(text):
             raise ValueError(f"--kcal {raw!r} looks like kJ or a thousands number: type kcal")
         # ASCII digits, at most one "." or "," ("9,5", ",5", "5.", "9.500"); no "1_0" or "1e1".
         # Limits are below 1000, so one separator is always a decimal point.
@@ -822,7 +830,8 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
     stored = next((p for p in products if p.barcode == barcode), None)
     if stored and not args.label and stored.source == catalogue.LABEL_SOURCE:
         raise ValueError(
-            f"{barcode} is a hand-entered label row: correct it with --label --barcode {barcode}"
+            f"{barcode} is a hand-entered label row: "
+            f"correct it with --label --barcode {barcode} --replace"
         )
     if stored and args.label and stored.source != catalogue.LABEL_SOURCE:
         raise ValueError(
@@ -868,14 +877,15 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         again = (
             ": read the label again, fix it with --replace" if args.label else "; check the pack"
         )
-        if kind == "no_macros":
+        lead = "label kcal" if args.label else "kcal"
+        if kind == foods.NO_MACROS:
             warnings.append(
-                "label lists kcal but no energy-yielding macros" + again
+                f"label lists kcal but no energy-yielding macros{again}"
                 if args.label
-                else "kcal is stated but no energy-yielding macros are listed" + again
+                else f"kcal is stated but no energy-yielding macros are listed{again}"
             )
-        elif kind:
-            warnings.append(f"label kcal is {reason}{again}")
+        elif kind == foods.GAP:
+            warnings.append(f"{lead} is {reason}{again}")
     return {"added": product, "missing": product.missing(), "warnings": warnings}
 
 
