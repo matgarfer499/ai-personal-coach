@@ -30,6 +30,7 @@ Every one is labelled where it lives: `# convention:` in code, "convention", "he
 | `cli.PROGRESS_LOOKBACK_DAYS` | 28 | none | `strength progress` covers lifts trained in the last 4 weeks |
 | `cli.MENU_KCAL_MARGIN` | a /menu day passes from the target up to 5% over, never under | none | close enough to plan meals without arithmetic by the model |
 | `mealplan.NO_REPEAT_DAYS` | 7 | none | decided with the user (2026-10-25): a dish does not come back within 7 consecutive days, so a plan of any length stays varied without needing 100+ distinct dishes |
+| `mealplan.BASE_REPEAT_DAYS` | 3 | none | a dish's `base` (main protein, then carb base, e.g. `[pollo, arroz]`) is not served again by another dish soon after: flagged when the two dishes' dates differ by 3 days or fewer (day 26 and day 29 are flagged, 26 and 30 pass); one plain word each, compared as a set of words, singular or plural alike; a batch counts once, and dishes without `base` (breakfasts, snacks) are not checked. Enough variety for the client, and batch cooking still fits |
 | `servings: N` on a dish (draft) | a dish marked `servings: N` may appear up to N times without the 7-day rule; items are for one serving; the shopping list buys it once at N servings; the N+1th appearance, or an unmarked repeat, is a repeat again; a second batch of the same dish starts at least 7 days after the last serving of the first | "Meal planning" (batch-cook and freeze) | cooking once for several days and repeating a simple breakfast are on purpose, not accidents; grouping by N keeps accidental repeats rejected and never lets a batch hide a day's targets (each appearance is still checked) |
 | `tastes.matches` | a taste or pantry phrase matches a food when every word of the phrase is a whole word of its name (either language), plural or singular, case and accents ignored | none | "tomate" flags "tomate, crudo" and "salsa de tomate", "tomate crudo" only the first; no synonyms or categories ("lactosa" does not match "leche"), so a miss is never proof of safety |
 | `tastes.RAW_WORDS`, `FILLER_WORDS` | crudo, fresco, raw, fresh say a food is raw or fresh; de, la, con and similar words are ignored | none | the table's plain names ("tomate") are the raw food, so a dislike of "tomate crudo" still reaches them but never "salsa de tomate" (a name with other content words is a different food) |
@@ -66,7 +67,10 @@ Every one is labelled where it lives: `# convention:` in code, "convention", "he
 
 ### In the skills (`.claude/skills/`)
 
-- /setup: `desk_training` means about 1 h of training on 4 or more days ("most days" read as 4+).
+- /setup: `desk_training` means about 1 h of training on 4 or more days ("most days" read as 4+);
+  conventions: a self-reported range such as "3-4" takes the lower number, and 4 days in most
+  weeks is `desk_training` (3-4 days is `desk`). If unsure which, `desk`, per nutrition.md
+  "Self-reported activity is noisy".
 - /checkin: one row per day; weight is that morning's, intake the previous day's, sleep the
   night before; the weekly cycle and BP questions are asked when no note of the last 7 days
   records them.

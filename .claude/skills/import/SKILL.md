@@ -60,7 +60,10 @@ Adds an exported workout log to `data/sessions.csv` without duplicates.
    `coach strength sets --week-ending LAST_DAY` (LAST_DAY is `last_day` from step 2): weekly
    hard sets per muscle for the 7 days ending that day; say the dates (`week` in the output).
    Indirect work counts as half a set, so values like 4.5 are expected. List `unmapped` exercises and say they do not count toward
-   weekly sets until someone adds them to `coach/muscle_map.yaml`.
+   weekly sets until someone adds them to the alias list in `coach/muscle_map.yaml` (the fix).
+5. Run `coach injury list`. If `unmatched` lists names, show the logged names from this import's
+   lifts and ask which one each listed lift is. Then run `coach injury add AREA --exercises "..."`
+   again with that logged name. A Spanish or English name the map knows needs no change.
 
 ## Writes
 

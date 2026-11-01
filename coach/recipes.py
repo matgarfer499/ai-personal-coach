@@ -2,8 +2,8 @@
 
 Recipes come from the web, so the library lives in the data directory (gitignored), never in the
 repository; each file keeps the recipe's `source` URL as its attribution. A recipe is saved when
-a dish is rated loved or liked: its steps, seasoning and items are copied from the newest saved
-menu that has the dish, or, for a dish outside the menus, only its name and source are kept.
+a dish is rated loved or liked: its base, steps, seasoning and items are copied from the newest
+saved menu that has the dish, or, for a dish outside the menus, only its name and source are kept.
 Items are written as `NAME=AMOUNT` like a draft's; the library stores no kcal or macros, so
 every figure is checked again by the CLI when the dish goes into a new menu.
 """
@@ -73,7 +73,7 @@ def save(
     entry = find_in_menus(data_dir, dish)
     if entry:
         recipe["dish"] = str(entry["dish"]).strip()
-        for key in ("source", "steps", "seasoning", "items"):
+        for key in ("source", "base", "steps", "seasoning", "items"):
             if entry.get(key):
                 recipe[key] = entry[key]
         if isinstance(entry.get("servings"), int) and entry["servings"] > 1:
@@ -84,7 +84,7 @@ def save(
         return None
     recipe["saved_on"] = saved_on
     path.parent.mkdir(parents=True, exist_ok=True)
-    order = ("dish", "source", "servings", "steps", "seasoning", "items", "saved_on")
+    order = ("dish", "source", "servings", "base", "steps", "seasoning", "items", "saved_on")
     recipe = {k: recipe[k] for k in order if k in recipe} | {
         k: v for k, v in recipe.items() if k not in order
     }

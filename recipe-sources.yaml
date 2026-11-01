@@ -1,0 +1,212 @@
+# Recipe sources for cuisines from anywhere, used by every client, with or without a
+# region (a region's own regions/<code>/recipe-sources.yaml comes first for its cooking).
+# Links and one line on why each source is good only, never recipe text. Format and
+# checks: tests/coach/test_recipe_sources.py.
+
+- id: paulina-cocina
+  name: "Paulina Cocina"
+  url: https://www.paulinacocina.net/
+  kind: site
+  language: es
+  cuisines: [argentinian, latin-american, international]
+  tags: [quick, beginner]
+  why: "Argentine cook with clear, humorous, tested guides; also active on YouTube @PaulinaCocina"
+  checked_on: 2026-11-01
+- id: de-mi-rancho
+  name: "De Mi Rancho a Tu Cocina"
+  url: https://www.youtube.com/@DeMiRanchoaTuCocina
+  kind: youtube
+  language: es
+  cuisines: [mexican]
+  tags: [budget]
+  why: "Doña Ángela cooks traditional rural Mexican food over wood fire, real home technique"
+  checked_on: 2026-11-01
+- id: jauja-cocina-mexicana
+  name: "Jauja Cocina Mexicana"
+  url: https://www.youtube.com/@JaujaCocinaMexicana
+  kind: youtube
+  language: es
+  cuisines: [mexican]
+  tags: [budget, beginner]
+  why: "Large library of home Mexican recipes by Janet; on hiatus since 2026-03 (family health)"
+  checked_on: 2026-11-01
+- id: serious-eats
+  name: "Serious Eats"
+  url: https://www.seriouseats.com/
+  kind: site
+  language: en
+  cuisines: [american, international]
+  tags: []
+  why: "Deeply tested, technique-led recipes; date from sitemap only (site blocks bots, it is free, not paywalled)"
+  checked_on: 2026-11-01
+- id: bbc-good-food
+  name: "BBC Good Food"
+  url: https://www.bbcgoodfood.com/
+  kind: site
+  language: en
+  cuisines: [british, international]
+  tags: [healthy, quick, budget, batch]
+  why: "Test-kitchen recipes with nutrition per serving; some content is behind a Premium tier (partial paywall)"
+  checked_on: 2026-11-01
+- id: recipetin-eats
+  name: "RecipeTin Eats"
+  url: https://www.recipetineats.com/
+  kind: site
+  language: en
+  cuisines: [international, asian, australian]
+  tags: [quick]
+  why: "Nagi's recipes are known for reliable results and big flavour, very well tested"
+  checked_on: 2026-11-01
+- id: eatingwell
+  name: "EatingWell"
+  url: https://www.eatingwell.com/
+  kind: site
+  language: en
+  cuisines: [american, international]
+  tags: [healthy, quick]
+  why: "Healthy recipes from a test kitchen with dietitian review; date from sitemap only (blocks bots)"
+  checked_on: 2026-11-01
+- id: budget-bytes
+  name: "Budget Bytes"
+  url: https://www.budgetbytes.com/
+  kind: site
+  language: en
+  cuisines: [american, international]
+  tags: [budget, batch, beginner]
+  why: "Low-cost recipes with cost per serving, meal-prep friendly, tested"
+  checked_on: 2026-11-01
+- id: ethan-chlebowski
+  name: "Ethan Chlebowski"
+  url: https://www.youtube.com/@EthanChlebowski
+  kind: youtube
+  language: en
+  cuisines: [american, international]
+  tags: [quick, budget]
+  why: "Home cooking technique and flavour building, how to make everyday meals taste better"
+  checked_on: 2026-11-01
+- id: kenji-lopez-alt
+  name: "J. Kenji López-Alt"
+  url: https://www.youtube.com/@JKenjiLopezAlt
+  kind: youtube
+  language: en
+  cuisines: [american, international, asian]
+  tags: [quick]
+  why: "Food-science chef, unedited POV cooking that teaches technique"
+  checked_on: 2026-11-01
+- id: just-one-cookbook
+  name: "Just One Cookbook"
+  url: https://www.justonecookbook.com/
+  kind: site
+  language: en
+  cuisines: [japanese]
+  tags: []
+  why: "Authoritative Japanese home cooking by Namiko Chen, tested with step photos"
+  checked_on: 2026-11-01
+- id: maangchi
+  name: "Maangchi"
+  url: https://www.youtube.com/@Maangchi
+  kind: youtube
+  language: en
+  cuisines: [korean]
+  tags: []
+  why: "The reference for Korean home cooking; written recipes also at maangchi.com (blocks bots)"
+  checked_on: 2026-11-01
+- id: woks-of-life
+  name: "The Woks of Life"
+  url: https://thewoksoflife.com/
+  kind: site
+  language: en
+  cuisines: [chinese]
+  tags: []
+  why: "Chinese family of cooks, tested Chinese and Chinese-American recipes with technique notes"
+  checked_on: 2026-11-01
+- id: made-with-lau
+  name: "Made With Lau"
+  url: https://www.youtube.com/@MadeWithLau
+  kind: youtube
+  language: en
+  cuisines: [chinese, cantonese]
+  tags: []
+  why: "Retired Cantonese restaurant chef teaches home dishes; written recipes at madewithlau.com"
+  checked_on: 2026-11-01
+- id: hot-thai-kitchen
+  name: "Hot Thai Kitchen (Pailin Chongchitnant)"
+  url: https://hot-thai-kitchen.com/
+  kind: site
+  language: en
+  cuisines: [thai]
+  tags: []
+  why: "Trained Thai chef explaining real Thai flavour balance; videos on YouTube @PailinsKitchen"
+  checked_on: 2026-11-01
+- id: pati-jinich
+  name: "Pati Jinich"
+  url: https://patijinich.com/
+  kind: site
+  language: en
+  cuisines: [mexican]
+  tags: []
+  why: "Mexican chef and PBS host, deeply regional Mexican recipes"
+  checked_on: 2026-11-01
+- id: rick-bayless
+  name: "Rick Bayless"
+  url: https://www.youtube.com/@RickBayless
+  kind: youtube
+  language: en
+  cuisines: [mexican]
+  tags: []
+  why: "Chef of Frontera Grill, regional Mexican technique (his website has not posted since 2024)"
+  checked_on: 2026-11-01
+- id: giallo-zafferano
+  name: "GialloZafferano"
+  url: https://www.giallozafferano.it/
+  kind: site
+  language: it
+  cuisines: [italian]
+  tags: [beginner]
+  why: "Italy's main recipe site, own test kitchen, step-by-step photos for every recipe"
+  checked_on: 2026-11-01
+- id: ranveer-brar
+  name: "Chef Ranveer Brar"
+  url: https://www.youtube.com/@RanveerBrar
+  kind: youtube
+  language: hi
+  cuisines: [indian]
+  tags: []
+  why: "Indian chef explaining regional dishes and technique (mostly Hindi); channel also runs a talk show"
+  checked_on: 2026-11-01
+- id: hebbars-kitchen
+  name: "Hebbar's Kitchen"
+  url: https://hebbarskitchen.com/
+  kind: site
+  language: en
+  cuisines: [indian, vegetarian]
+  tags: [quick, beginner]
+  why: "Large library of vegetarian Indian home recipes with short videos"
+  checked_on: 2026-11-01
+- id: ottolenghi
+  name: "Ottolenghi"
+  url: https://ottolenghi.co.uk/pages/recipes/
+  kind: site
+  language: en
+  cuisines: [middle-eastern, mediterranean, plant-based]
+  tags: [healthy]
+  why: "Vegetable-forward recipes famous for flavour; videos on YouTube @Ottolenghi (2026-09)"
+  checked_on: 2026-11-01
+- id: pick-up-limes
+  name: "Pick Up Limes"
+  url: https://www.pickuplimes.com/recipe/
+  kind: site
+  language: en
+  cuisines: [plant-based]
+  tags: [healthy, quick]
+  why: "Dietitian-led vegan recipe index with nutrition info; YouTube is now mostly lifestyle shorts"
+  checked_on: 2026-11-01
+- id: rainbow-plant-life
+  name: "Rainbow Plant Life"
+  url: https://rainbowplantlife.com/
+  kind: site
+  language: en
+  cuisines: [plant-based, international]
+  tags: [healthy, budget]
+  why: "Vegan recipes built for flavour (Nisha Vora), well tested"
+  checked_on: 2026-11-01
