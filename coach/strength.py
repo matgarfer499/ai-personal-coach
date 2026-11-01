@@ -113,8 +113,14 @@ def _candidates(exercise: str) -> list[str]:
     return list(dict.fromkeys(fold(n) for n in (exercise, no_equipment, base)))
 
 
-def _base_name(exercise: str) -> str:
-    return _candidates(exercise)[-1]
+def _as_logged(exercise: str) -> set[str]:
+    """The name as logged and without "(Equipment)", but with any "- variant" part."""
+    return {fold(exercise), fold(re.sub(r"\s*\([^)]*\)\s*$", "", exercise))}
+
+
+def _variant(exercise: str) -> str:
+    no_equipment = re.sub(r"\s*\([^)]*\)\s*$", "", exercise)
+    return fold(no_equipment.split(" - ", 1)[1]) if " - " in no_equipment else ""
 
 
 def lookup(exercise: str, muscle_map: dict[str, dict]) -> dict | None:
@@ -212,13 +218,18 @@ def named_in(exercise: str, names: list[str], muscle_map: dict[str, dict] | None
     With a muscle map, two names for the same mapped lift (an alias such as "press banca" for
     "Bench Press (Barbell)") also match.
     """
-    wanted = {fold(n) for n in names} | {_base_name(n) for n in names}
-    if {fold(exercise), _base_name(exercise)} & wanted:
+    wanted = set().union(*map(_as_logged, names))
+    if _as_logged(exercise) & wanted:
         return True
     if muscle_map is None:
         return False
     entry = lookup(exercise, muscle_map)
-    return entry is not None and any(lookup(n, muscle_map) is entry for n in names)
+    # two different variants of one lift ("- Close Grip" and "- Wide Grip") are not the same lift
+    return entry is not None and any(
+        lookup(n, muscle_map) is entry
+        and not (_variant(n) and _variant(exercise) not in ("", _variant(n)))
+        for n in names
+    )
 
 
 REP_RANGE_FORMAT = "EXERCISE=LOW-HIGH"

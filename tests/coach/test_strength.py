@@ -11,12 +11,14 @@ from coach.strength import (
     hard_set,
     load_muscle_map,
     lookup,
+    named_in,
     parse_rep_range,
     progression,
     rep_range_for,
     unmapped_exercises,
     weekly_hard_sets,
 )
+from coach.text import fold
 
 D0 = date(2026, 3, 2)
 
@@ -406,6 +408,23 @@ def test_a_variant_entry_wins_over_its_base():
     mm = {"row": {"muscles": {"back": 1}}, "row - wide": {"muscles": {"back": 0.5}}}
     assert lookup("Row - Wide", mm) is mm["row - wide"]
     assert lookup("Row - Narrow", mm) is mm["row"]
+
+
+def test_variants_of_one_lift_do_not_match_each_other():
+    mm = load_muscle_map()
+    close = "Lat Pulldown - Close Grip (Cable)"
+    assert not named_in(close, ["Lat Pulldown - Wide Grip"], mm)
+    assert not named_in(close, ["Lat Pulldown - Wide Grip"])
+    assert named_in(close, ["Lat Pulldown - Close Grip"], mm)
+    assert named_in(close, ["Lat Pulldown"], mm)  # a plain name covers its variants
+    assert named_in("Lat Pulldown (Cable)", [close], mm)
+
+
+def test_no_name_is_shared_by_two_muscle_map_entries():
+    owner: dict[str, str] = {}
+    for key, entry in load_muscle_map().items():
+        for name in [key, *entry.get("aliases", [])]:
+            assert owner.setdefault(fold(name), key) == key, f"{name!r}: {owner[fold(name)]}, {key}"
 
 
 def test_injury_pause_matches_a_spanish_name():
