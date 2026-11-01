@@ -146,7 +146,7 @@ def _quantity(amount, comma: bool) -> str:
 
 
 def _date_range(first: date, last: date, words: dict) -> str:
-    """'2 - 8 de noviembre de 2026', naming the month and year only where they change."""
+    """'2 – 8 de noviembre de 2026', naming the month and year only where they change."""
 
     def full(day: date) -> str:
         return words["date"].format(d=day.day, m=words["months"][day.month - 1], y=day.year)
@@ -311,12 +311,13 @@ def write(
         ],
     ]
     if goal:
+        pill = style("pill", textColor=colors.white)
         pills = Table(
             [
                 [
                     Paragraph(
                         f"<b>{_text(value)}</b> {_text(label)}",
-                        style("pill", textColor=colors.white),
+                        pill,
                     )
                     for value, label in goal
                 ]
@@ -505,7 +506,9 @@ def write(
                     f"{_text(_label(n, table, language))} <b>{_quantity(a, comma)}</b>"
                     for n, a in dish.items
                 )
-                quick_style.append(("LINEBELOW", (0, len(rows)), (-1, len(rows)), 0.4, RULE))
+                quick_style.append(
+                    ("LINEBELOW", (0, len(rows)), (-1, len(rows)), 0.4, colour(RULE))
+                )
                 rows.append(
                     [
                         Paragraph(name_cell, cell),
@@ -593,9 +596,13 @@ def write(
             url = web_link(source)
             show_qr = bool(qr and url)
             qr_width = (QR_CM + 0.5) * cm if show_qr else 0
-            widths = [5.4 * cm, width - 5.4 * cm - qr_width] + ([qr_width] if show_qr else [])
+            # a recipe with a source but no steps gives the method column to the ingredients
+            text_widths = [5.4 * cm, width - 5.4 * cm - qr_width] if method else [width - qr_width]
+            widths = text_widths + ([qr_width] if show_qr else [])
             columns = len(widths)
-            content = [ingredients, method] + ([qr_code(url)] if show_qr else [])
+            content = (
+                [ingredients] + ([method] if method else []) + ([qr_code(url)] if show_qr else [])
+            )
             card_rows = [[head] + [""] * (columns - 1), content]
             if url:
                 link = (
@@ -664,6 +671,7 @@ def write(
     story.append(title)
     for chain, lines in shopping["chains"].items():
         story.append(heading(words["any_chain"] if chain == "any" else chain))
+        amount = style("amount", alignment=2)
         entries = [
             (
                 tick_box(),
@@ -671,7 +679,7 @@ def write(
                 Paragraph(
                     f"<b>{_number(line.get('grams', line.get('ml')), comma)} "
                     f"{'g' if 'grams' in line else 'ml'}</b>",
-                    style("amount", alignment=2),
+                    amount,
                 ),
             )
             for line in lines
@@ -707,9 +715,7 @@ def write(
         canvas.line(2 * cm, 1.5 * cm, A4[0] - 2 * cm, 1.5 * cm)
         canvas.setFillColor(colour(MUTED))
         canvas.setFont("Helvetica", 7.5)
-        canvas.drawString(
-            2 * cm, 1.1 * cm, _text(f"{words['menu']} · {dates}").replace("&amp;", "&")
-        )
+        canvas.drawString(2 * cm, 1.1 * cm, f"{words['menu']} · {dates}")
         canvas.drawRightString(A4[0] - 2 * cm, 1.1 * cm, f"{words['page']} {doc.page}")
         canvas.restoreState()
 

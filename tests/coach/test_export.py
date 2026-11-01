@@ -8,6 +8,7 @@ import pytest
 import yaml
 
 from coach import catalogue
+from coach import export as export_module
 from coach.cli import main
 from coach.profile import Profile, save_profile
 
@@ -241,4 +242,17 @@ def test_a_recipe_longer_than_a_page_still_exports(capsys, data_dir):
     code, out = run(capsys, data_dir, "mealplan", "export")
     assert code == 0, out
     data = (data_dir / "menus" / "2026-10-26.pdf").read_bytes()
-    assert b"Paso 39" in data  # the last step is printed, not cut off
+    assert b"(40) Tj" in data and b"Paso 39" in data  # the last step is printed, not cut off
+
+
+@pytest.mark.parametrize(
+    "first, last, text",
+    [
+        (date(2026, 11, 2), date(2026, 11, 8), "2 – 8 de noviembre de 2026"),
+        (date(2026, 10, 30), date(2026, 11, 5), "30 de octubre – 5 de noviembre de 2026"),
+        (date(2025, 12, 29), date(2026, 1, 4), "29 de diciembre de 2025 – 4 de enero de 2026"),
+        (date(2026, 11, 2), date(2026, 11, 2), "2 de noviembre de 2026"),
+    ],
+)
+def test_the_date_range_names_the_month_and_year_only_where_they_change(first, last, text):
+    assert export_module._date_range(first, last, export_module.LABELS["es"]) == text
