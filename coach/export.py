@@ -424,13 +424,15 @@ def write(
         nutrient = nutrients.get(key, key)
         story.append(Paragraph(_text(f"{nutrient}, {words['no_data']}: {', '.join(labels)}"), tiny))
 
-    # Each dish once, with the days it is eaten, under the meal it first appears in.
+    # Each recipe once, with the days it is eaten, under the meal it first appears in.
     groups: dict[tuple, dict] = {}
     for day, entry in zip(days, saved_days, strict=True):
         for meal, raw_meal in zip(day.meals, entry["meals"], strict=True):
             for dish, raw in zip(meal.dishes, raw_meal.get("dishes") or [], strict=True):
                 steps = tuple(str(step) for step in raw.get("steps") or [])
                 source = str(raw.get("source") or "").strip()
+                if not steps and not source:
+                    continue  # no recipe: the week table already names it
                 key = (
                     dish.name,
                     dish.servings,
@@ -469,7 +471,7 @@ def write(
             f'<font color="{MUTED}">{words["seasoning"]}: {_text(", ".join(dish.seasoning))}</font>'
         )
 
-    recipes = [g for g in groups.values() if g["steps"] or g["source"]]
+    recipes = list(groups.values())
     pending: list = []  # headings and the batches table, kept on the page of the next card
     if recipes:
         pending.append(heading(words["recipes"]))
