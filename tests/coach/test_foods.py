@@ -87,6 +87,8 @@ def test_load_foods_merges_base_and_region(tmp_path):
     write_table(tmp_path / "regions" / "es" / "foods.csv", row(name_en="octopus", name_es="pulpo"))
     assert [f.name_en for f in load_foods(None, tmp_path)] == ["rice"]
     assert [f.name_en for f in load_foods("es", tmp_path)] == ["rice", "octopus"]
+    assert [f.name_en for f in load_foods(" es ", tmp_path)] == ["rice", "octopus"]
+    assert [f.name_en for f in load_foods("None", tmp_path)] == ["rice"]
 
 
 def test_load_foods_refuses_duplicate_names(tmp_path):

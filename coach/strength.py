@@ -132,14 +132,28 @@ def _as_logged(exercise: str) -> set[str]:
     return {fold(exercise), fold(_strip_equipment(exercise))}
 
 
+# One folded name-and-alias index per muscle map, built on first use. The map is kept next to its
+# index so a different map never reuses it (and an id is never reused while it is held).
+_INDEXES: dict[int, tuple[dict, dict[str, dict]]] = {}
+
+
+def _index(muscle_map: dict[str, dict]) -> dict[str, dict]:
+    held = _INDEXES.get(id(muscle_map))
+    if held is None or held[0] is not muscle_map:
+        index: dict[str, dict] = {}
+        for key, entry in muscle_map.items():
+            for name in (key, *entry.get("aliases", [])):
+                index.setdefault(fold(name), entry)  # the first entry in map order wins
+        held = _INDEXES[id(muscle_map)] = (muscle_map, index)
+    return held[1]
+
+
 def lookup(exercise: str, muscle_map: dict[str, dict]) -> dict | None:
     """Map entry for a logged name: case, accents, a trailing "(Equipment)" and a "- variant"
-    part do not matter; an entry that names the variant itself wins over its base."""
-    for name in _candidates(exercise):
-        for key, entry in muscle_map.items():
-            if fold(key) == name or name in {fold(a) for a in entry.get("aliases", [])}:
-                return entry
-    return None
+    part do not matter; an entry that names the variant itself wins over its base.
+    (The map is read once: edit it only before the first lookup.)"""
+    index = _index(muscle_map)
+    return next((index[n] for n in _candidates(exercise) if n in index), None)
 
 
 def weekly_hard_sets(sets: list[Any], muscle_map: dict[str, dict]) -> dict[str, float]:
@@ -271,16 +285,30 @@ def parse_rep_range(text: str) -> tuple[str, tuple[int, int]]:
 STAR = "*"  # `*=LOW-HIGH` sets the range for every lift with no range of its own
 
 
+def rep_range_matches(exercise: str, name: str, muscle_map: dict[str, dict] | None) -> bool:
+    """Whether a `--rep-range` name applies to a logged lift; the one matcher for both uses.
+    `*` is not a lift name: it never matches (it is the range for every lift without its own)."""
+    return name != STAR and named_in(exercise, [name], muscle_map, share_variants=False)
+
+
+def unmatched_rep_ranges(
+    ranges: list[tuple[str, tuple[int, int]]], logged: set[str], muscle_map: dict[str, dict] | None
+) -> list[str]:
+    """Range names (not `*`) that apply to none of the logged lifts, in the order given."""
+    names = (n for n, _ in ranges if n != STAR)
+    missing = (n for n in names if not any(rep_range_matches(x, n, muscle_map) for x in logged))
+    return list(dict.fromkeys(missing))
+
+
 def rep_range_for(
-    exercise: str, ranges: list[tuple[str, tuple[int, int]]], default: tuple[int, int] = REP_RANGE
+    exercise: str,
+    ranges: list[tuple[str, tuple[int, int]]],
+    default: tuple[int, int] = REP_RANGE,
+    muscle_map: dict[str, dict] | None = None,
 ) -> tuple[int, int]:
     """The range given for a logged lift (the last one wins), else `*`, else the rule's default."""
-    mapped = load_muscle_map()
-    named = [
-        r
-        for name, r in ranges
-        if name != STAR and named_in(exercise, [name], mapped, share_variants=False)
-    ]
+    mapped = muscle_map if muscle_map is not None else load_muscle_map()
+    named = [r for name, r in ranges if rep_range_matches(exercise, name, mapped)]
     stars = [r for name, r in ranges if name == STAR]
     return (named or stars or [default])[-1]
 

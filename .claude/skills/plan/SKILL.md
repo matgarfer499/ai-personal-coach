@@ -65,7 +65,12 @@ Run these, all with the ground-rule flags:
   `coach strength progress`, adding `--rep-range "*=LOW-HIGH"` from the `rep_range:` line of
   `data/plan.md` (the client's usual range; leave it out when the line is missing, 8-12 applies)
   and one `--rep-range "LIFT=LOW-HIGH"` per lift whose `LIFT: LOW-HIGH reps` line differs (the
-  flag is ignored for a lift with no logged sets).
+  flag is ignored for a lift with no logged sets). The output is `lifts` plus
+  `unmatched_rep_ranges`: names given with `--rep-range` that match no logged lift (so they were
+  not applied). A name the client says is new (never logged) is simply left. Ask which logged
+  lift it is only when the client says they logged it under another name, then rerun with that
+  name. `rep_ranges_outside_lookback` lists names that match a lift logged only before the
+  lookback window (absent from `lifts`): ask whether that lift is back in the plan.
 
 Knowledge, by situation: run only the lines that apply.
 - Always:

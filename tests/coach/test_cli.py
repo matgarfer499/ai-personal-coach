@@ -232,9 +232,9 @@ def test_strength_ignores_sessions_after_today(capsys, data_dir):
 def test_strength_progress_one_and_all(capsys, data_dir):
     _log(data_dir)
     _, out = run(capsys, data_dir, "strength", "progress", "--exercise", "bench press (barbell)")
-    assert out["Bench Press (Barbell)"]["action"] == "increase_load"
+    assert out["lifts"]["Bench Press (Barbell)"]["action"] == "increase_load"
     _, out = run(capsys, data_dir, "strength", "progress")
-    assert set(out) == {"Bench Press (Barbell)", "Zercher Carry"}
+    assert set(out["lifts"]) == {"Bench Press (Barbell)", "Zercher Carry"}
 
 
 def test_strength_progress_uses_the_rep_range_given_per_lift(capsys, data_dir):
@@ -249,15 +249,93 @@ def test_strength_progress_uses_the_rep_range_given_per_lift(capsys, data_dir):
         "--rep-range",
         "squat=5-8",  # a lift with no logged sets is ignored
     )
-    bench = out["Bench Press (Barbell)"]
+    bench = out["lifts"]["Bench Press (Barbell)"]
     assert bench["action"] == "add_reps" and bench["rep_range"] == [10, 15]
     assert "beats 15" in bench["reasons"][0]
-    assert out["Zercher Carry"]["rep_range"] == [8, 12]  # the rule's default
+    assert out["lifts"]["Zercher Carry"]["rep_range"] == [8, 12]  # the rule's default
     _, out = run(capsys, data_dir, "strength", "progress", "--rep-range", "bench press=6-8")
-    assert out["Bench Press (Barbell)"]["rep_range"] == [6, 8]
-    assert out["Bench Press (Barbell)"]["action"] == "increase_load"
+    assert out["lifts"]["Bench Press (Barbell)"]["rep_range"] == [6, 8]
+    assert out["lifts"]["Bench Press (Barbell)"]["action"] == "increase_load"
     _, out = run(capsys, data_dir, "strength", "progress", "--exercise", "zercher carry")
-    assert out["Zercher Carry"]["rep_range"] == [8, 12]
+    assert out["lifts"]["Zercher Carry"]["rep_range"] == [8, 12]
+
+
+def test_progress_reports_rep_range_names_that_match_no_lift(capsys, data_dir):
+    _log(data_dir)
+    pulldown = ExerciseSet(
+        "hevy_csv", datetime(2026, 3, 25, 18, 0), "Lat Pulldown - Close Grip (Cable)", 2, 0
+    )
+    append([pulldown], data_dir / "sessions.csv")
+    _, out = run(
+        capsys,
+        data_dir,
+        "strength",
+        "progress",
+        "--rep-range",
+        "*=6-8",  # the default for every lift is not a name to match
+        "--rep-range",
+        "press banca=5-8",  # a Spanish alias of the logged bench press
+        "--rep-range",
+        "Lat Pulldown - Close Grip=10-12",  # the logged variant
+        "--rep-range",
+        "Lat Pulldown - Wide Grip=10-12",  # another variant of a logged lift
+        "--rep-range",
+        "sentadilla bulgara=8-10",  # no logged lift
+    )
+    assert out["unmatched_rep_ranges"] == ["Lat Pulldown - Wide Grip", "sentadilla bulgara"]
+    assert out["lifts"]["Bench Press (Barbell)"]["rep_range"] == [5, 8]
+    assert out["lifts"]["Zercher Carry"]["rep_range"] == [6, 8]
+    assert out["lifts"]["Lat Pulldown - Close Grip (Cable)"]["rep_range"] == [10, 12]
+
+
+def test_unmatched_rep_ranges_look_at_every_logged_lift(capsys, data_dir):
+    _log(data_dir)
+    old = ExerciseSet(
+        "hevy_csv", datetime(2026, 2, 20, 18, 0), "Barbell Row", 3, 0, weight_kg=50.0, reps=8
+    )
+    append([old], data_dir / "sessions.csv")  # last logged 5 weeks before TODAY
+    _, out = run(
+        capsys,
+        data_dir,
+        "strength",
+        "progress",
+        "--exercise",
+        "zercher carry",
+        "--rep-range",
+        "bench press=6-8",  # logged, only filtered out of this output
+        "--rep-range",
+        "barbell row=6-8",  # logged, but outside the 28-day window
+        "--rep-range",
+        "sentadilla=6-8",
+        "--rep-range",
+        "*=6-8",
+    )
+    assert out["unmatched_rep_ranges"] == ["sentadilla"]  # and `*` is never in the list
+    assert out["rep_ranges_outside_lookback"] == []  # --exercise bypasses the window
+    _, out = run(
+        capsys, data_dir, "strength", "progress", "--rep-range", "barbell row=6-8"
+    )  # logged, but not among the lifts shown: say so, so the skills need not infer it
+    assert out["rep_ranges_outside_lookback"] == ["barbell row"]
+
+
+def test_exercise_bypasses_the_window_so_its_range_is_not_outside_it(capsys, data_dir):
+    _log(data_dir)
+    old = ExerciseSet(
+        "hevy_csv", datetime(2026, 2, 20, 18, 0), "Barbell Row", 3, 0, weight_kg=50.0, reps=8
+    )
+    append([old], data_dir / "sessions.csv")
+    _, out = run(
+        capsys,
+        data_dir,
+        "strength",
+        "progress",
+        "--exercise",
+        "barbell row",
+        "--rep-range",
+        "barbell row=6-8",
+    )
+    assert out["lifts"]["Barbell Row"]["rep_range"] == [6, 8]
+    assert out["rep_ranges_outside_lookback"] == [] and out["unmatched_rep_ranges"] == []
 
 
 def test_strength_progress_rejects_a_bad_rep_range(capsys, data_dir):
@@ -426,6 +504,13 @@ def test_menu_item_needs_grams(capsys, data_dir):
     assert code == 2 and "NAME=GRAMS" in out["message"]
 
 
+def test_profile_show_lists_a_missing_emergency_number(capsys, data_dir):
+    assert "emergency_number" in run(capsys, data_dir, "profile", "show")[1]["missing"]
+    main(["--data-dir", str(data_dir), "profile", "set", "emergency_number", "112", "--json"])
+    capsys.readouterr()
+    assert "emergency_number" not in run(capsys, data_dir, "profile", "show")[1]["missing"]
+
+
 def test_profile_set_and_show(capsys, tmp_path):
     base = ["--data-dir", str(tmp_path), "--json"]
     assert main(["--data-dir", str(tmp_path), "profile", "set", "sex", "female", "--json"]) == 0
@@ -438,6 +523,7 @@ def test_profile_set_and_show(capsys, tmp_path):
         ("screening.scoff_positive", "false"),
         ("screening.menstrual", "normal"),
         ("research_reminder_months", "3"),
+        ("emergency_number", "112"),
     ]:
         assert main(["--data-dir", str(tmp_path), "profile", "set", field, value, "--json"]) == 0
         capsys.readouterr()
@@ -618,7 +704,7 @@ def _stalled_bench(data_dir):
 def test_injury_add_pauses_its_lifts_and_clear_resumes_them(capsys, data_dir):
     _stalled_bench(data_dir)
     assert (
-        run(capsys, data_dir, "strength", "progress")[1]["Bench Press (Barbell)"]["action"]
+        run(capsys, data_dir, "strength", "progress")[1]["lifts"]["Bench Press (Barbell)"]["action"]
         == "stalled"
     )
     code, out = run(
@@ -644,7 +730,7 @@ def test_injury_add_pauses_its_lifts_and_clear_resumes_them(capsys, data_dir):
             "exercises": ["bench press", "Overhead Press"],
         }
     ]
-    progress = run(capsys, data_dir, "strength", "progress")[1]["Bench Press (Barbell)"]
+    progress = run(capsys, data_dir, "strength", "progress")[1]["lifts"]["Bench Press (Barbell)"]
     assert progress["action"] == "paused" and progress["load_kg"] == 60
     assert "fisioterapeuta" in progress["reasons"][0]
     _, flags = run(capsys, data_dir, "safety")
@@ -653,7 +739,7 @@ def test_injury_add_pauses_its_lifts_and_clear_resumes_them(capsys, data_dir):
     _, out = run(capsys, data_dir, "injury", "clear", "Hombro Derecho", "--on", "2026-03-27")
     assert out["injuries"][0]["status"] == "cleared"
     assert out["injuries"][0]["cleared_on"] == "2026-03-27"
-    progress = run(capsys, data_dir, "strength", "progress")[1]["Bench Press (Barbell)"]
+    progress = run(capsys, data_dir, "strength", "progress")[1]["lifts"]["Bench Press (Barbell)"]
     assert progress["action"] == "add_reps"  # the held sessions are not a stall
 
 
@@ -709,7 +795,7 @@ def test_injury_names_match_aliases_and_unmatched_names_are_reported(capsys, dat
         "press banca, press militar",
     )
     assert out["unmatched"] == ["press militar"]
-    progress = run(capsys, data_dir, "strength", "progress")[1]["Bench Press (Barbell)"]
+    progress = run(capsys, data_dir, "strength", "progress")[1]["lifts"]["Bench Press (Barbell)"]
     assert progress["action"] == "paused"
 
 
@@ -742,6 +828,50 @@ def test_vigorous_review_can_be_recorded(capsys, data_dir):
     assert flags["review_before_vigorous"] is False and flags["no_all_out_sprints"] is True
 
 
+def test_an_empty_region_is_an_error_and_codes_are_stored_normalised(capsys, data_dir):
+    for empty in ("", "   "):
+        assert run(capsys, data_dir, "profile", "set", "region", empty)[0] == 2
+    assert run(capsys, data_dir, "profile", "show")[1]["profile"]["region"] is None
+    _, out = run(capsys, data_dir, "profile", "set", "region", "ES ")
+    assert out["profile"]["region"] == "es"
+    path = data_dir / "profile.yaml"
+    text = "".join(
+        line
+        for line in path.read_text(encoding="utf-8").splitlines(True)
+        if not line.startswith("region:")
+    )
+    path.write_text(text + 'region: ""\n', encoding="utf-8")  # empty is unset, not "none"
+    assert "region" in run(capsys, data_dir, "profile", "show")[1]["missing"]
+
+
+def test_a_region_that_is_a_path_is_refused_by_the_cli_and_the_file_loader(capsys, data_dir):
+    for bad in ("../x", "/abs", "es/../es"):
+        code, out = run(capsys, data_dir, "profile", "set", "region", bad)
+        assert code == 2 and "not a region code" in out["message"]
+    path = data_dir / "profile.yaml"
+    path.write_text(path.read_text(encoding="utf-8") + "region: ../x\n", encoding="utf-8")
+    code, out = run(capsys, data_dir, "profile", "show")
+    assert code == 2 and "not a region code" in out["message"]
+
+
+def test_an_empty_region_flag_is_an_error(capsys, data_dir):
+    for args in (("menu", "--item", "pollo=100"), ("foods", "search", "pollo")):
+        code, out = run(capsys, data_dir, *args, "--region", "")
+        assert code == 2 and "region" in out["message"]
+
+
+def test_emergency_number_none_is_a_declined_number(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "emergency_number", "None")
+    show = run(capsys, data_dir, "profile", "show")[1]
+    assert show["profile"]["emergency_number"] == "none"
+    assert "emergency_number" not in show["missing"]
+    assert run(capsys, data_dir, "safety")[1]["emergency_number"] is None
+    run(capsys, data_dir, "profile", "set", "region", "es")
+    assert (
+        run(capsys, data_dir, "safety")[1]["emergency_number"] == "112"
+    )  # the region's still wins
+
+
 def test_a_region_without_its_folder_is_refused_with_a_hint(capsys, data_dir):
     code, out = run(capsys, data_dir, "profile", "set", "region", "mx")
     assert code == 2
@@ -750,10 +880,48 @@ def test_a_region_without_its_folder_is_refused_with_a_hint(capsys, data_dir):
     assert shown["profile"]["region"] is None
 
 
-def test_region_none_clears_it(capsys, data_dir):
+def test_region_none_is_an_explicit_no_region(capsys, data_dir):
     run(capsys, data_dir, "profile", "set", "region", "es")
     code, out = run(capsys, data_dir, "profile", "set", "region", "none")
-    assert code == 0 and out["profile"]["region"] is None
+    assert code == 0 and out["profile"]["region"] == "none"
+
+
+def test_a_profile_with_no_region_chosen_is_complete_and_works_without_a_table(capsys, data_dir):
+    for field, value in [
+        ("experience", "novice"),
+        ("language", "es"),
+        ("emergency_number", "999"),
+    ]:
+        run(capsys, data_dir, "profile", "set", field, value)
+    assert run(capsys, data_dir, "profile", "show")[1]["missing"] == ["region"]  # never chosen
+    run(capsys, data_dir, "profile", "set", "region", "none")
+    assert run(capsys, data_dir, "profile", "show")[1]["missing"] == []
+    assert run(capsys, data_dir, "safety")[1]["emergency_number"] == "999"
+    code, out = run(capsys, data_dir, "menu", "--item", "arroz blanco, cocido=100")
+    assert code == 0 and out["unknown"] == [] and out["kcal"] > 0
+    assert run(capsys, data_dir, "foods", "search", "pollo")[0] == 0
+    assert run(capsys, data_dir, "foods", "search", "pollo", "--region", "none")[0] == 0
+
+
+def test_every_spelling_of_no_region_works_everywhere(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "region", "NONE")
+    assert run(capsys, data_dir, "profile", "show")[1]["profile"]["region"] == "none"
+    for flag in ("none", "NONE", "None"):
+        assert run(capsys, data_dir, "foods", "search", "pollo", "--region", flag)[0] == 0
+        assert run(capsys, data_dir, "menu", "--region", flag, "--item", "pollo=100")[0] == 0
+    path = data_dir / "profile.yaml"
+    path.write_text(path.read_text(encoding="utf-8") + "region: None\n", encoding="utf-8")
+    for spelling in ("region: None", "region: NONE"):
+        text = "".join(
+            line
+            for line in path.read_text(encoding="utf-8").splitlines(True)
+            if not line.startswith("region:")
+        )
+        path.write_text(text + spelling + "\n", encoding="utf-8")
+        code, out = run(capsys, data_dir, "safety")
+        assert code == 0 and out["emergency_number"] is None
+        assert run(capsys, data_dir, "menu", "--item", "pollo=100")[0] == 0
+        assert run(capsys, data_dir, "profile", "show")[1]["missing"].count("region") == 0
 
 
 def test_safety_prints_the_emergency_number(capsys, data_dir):

@@ -43,6 +43,7 @@ from coach.profile import (
     CONDITION_TOKENS,
     GOALS,
     MEDICATION_TOKENS,
+    NO_NUMBER,
     PARQ_ANSWERS,
     SCREENING_KEYS,
     Profile,
@@ -50,6 +51,7 @@ from coach.profile import (
     load_profile,
     save_profile,
 )
+from coach.regioncode import NO_REGION, real_region
 from coach.sessions.importers import base as importers  # the package registers importers
 from coach.sessions.model import ExerciseSet
 from coach.sessions.store import append, read_sets
@@ -170,16 +172,27 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
         names = sorted({s.exercise for s in logged if s.date > recent})
     flags = safety.flags(profile, args.today)
     ranges = [strength.parse_rep_range(text) for text in args.rep_range]
-    return {
+    lifts = {
         name: strength.progression(
             [s for s in logged if s.exercise == name],
             today=today,
-            rep_range=strength.rep_range_for(name, ranges),
+            rep_range=strength.rep_range_for(name, ranges, muscle_map=muscle_map),
             muscle_map=muscle_map,
             flags=flags,
             stall_after=strength.pause_end(name, profile.injuries, muscle_map),
         )
         for name in names
+    }
+    # Every logged lift, not just the ones shown: --exercise and the lookback only filter output.
+    every = {s.exercise for s in logged}
+    unmatched = strength.unmatched_rep_ranges(ranges, every, muscle_map)
+    # Names that match only lifts last logged before the lookback window. --exercise bypasses
+    # the window, so there is nothing outside it to report.
+    outside = [] if args.exercise else strength.unmatched_rep_ranges(ranges, set(names), muscle_map)
+    return {
+        "lifts": lifts,
+        "unmatched_rep_ranges": unmatched,
+        "rep_ranges_outside_lookback": [n for n in outside if n not in unmatched],
     }
 
 
@@ -287,10 +300,16 @@ def _free_meal(day: mealplan.Day, totals: foods.MenuTotals, targets: dict) -> di
     }
 
 
+def _region_for(profile: Profile, args: argparse.Namespace) -> str | None:
+    """`--region` over the profile's; an empty `--region` is an error, as in `profile set`."""
+    given = getattr(args, "region", None)
+    if given is not None and not given.strip():
+        raise ValueError("--region needs a value: a region code, or none for no region")
+    return given or profile.region
+
+
 def _menu_table(profile: Profile, args: argparse.Namespace) -> list[foods.Food]:
-    return regions.menu_table(
-        getattr(args, "region", None) or profile.region, data_dir=args.data_dir
-    )
+    return regions.menu_table(_region_for(profile, args), data_dir=args.data_dir)
 
 
 def cmd_menu(profile: Profile, args: argparse.Namespace) -> foods.MenuTotals | dict:
@@ -435,6 +454,7 @@ PROFILE_REQUIRED = [
     "activity_level",
     "language",
     "region",
+    "emergency_number",
 ]
 _PROFILE_TYPES = {
     "birth_date": date.fromisoformat,
@@ -463,13 +483,20 @@ def _parse_profile_value(field: str, raw: str) -> Any:
         return raw
     if field == "injuries":
         raise ValueError("injuries are set with `coach injury add` and `coach injury clear`")
+    if field == "emergency_number" and raw.strip().lower() == NO_NUMBER:
+        return NO_NUMBER  # declined or not available: counts as set, safety prints none
     if field == "region":
-        if raw.lower() == "none":
-            return None  # no region: the base food table only
+        if not raw.strip():
+            raise ValueError("region needs a value: a region code, or none for no region")
+        code = real_region(raw)
+        if code is None:
+            return NO_REGION  # chosen: no region for this country, the base food table only
+        raw = code
         if not (regions.ROOT / "regions" / raw / "region.yaml").exists():
             raise ValueError(
-                f"there is no region {raw!r} yet (no regions/{raw}/region.yaml): leave the region "
-                "unset, which uses the base food table, or add one as docs/adding-a-region.md says"
+                f"there is no region {raw!r} yet (no regions/{raw}/region.yaml): set the region "
+                "to none, which uses the base food table, or add one as docs/adding-a-region.md "
+                "says"
             )
     if field in ("medications", "conditions"):
         return [item.strip() for item in raw.split(",") if item.strip()]
@@ -626,7 +653,7 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> Checkin:
 
 
 def cmd_foods(profile: Profile, args: argparse.Namespace) -> dict:
-    region = args.region or profile.region
+    region = _region_for(profile, args)
 
     words = [fold(w) for w in args.words if w.strip()]
     if not words:
@@ -638,6 +665,7 @@ def cmd_foods(profile: Profile, args: argparse.Namespace) -> dict:
         found = re.findall(r"\w+", fold(" ".join(names)))
         return all(any(f.startswith(w) for f in found) for w in words)
 
+    region = real_region(region)
     products = regions.load_products(region) if region else []
     return {
         "foods": [

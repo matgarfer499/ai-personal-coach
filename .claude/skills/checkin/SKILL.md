@@ -59,8 +59,9 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
      palpitations, during exercise or at rest:
      `coach profile set screening.cardiac_symptoms true`, tell them to stop training and see a
      doctor (the `emergency_number` from `coach safety`, now, for chest pain at rest, fainting,
-     or chest pain with breathlessness and sweating; with none stored, the local emergency
-     number, 112 in Europe). `coach knowledge section recovery-habits "Cardiac warning symptoms: stop and refer"`.
+     or chest pain with breathlessness and sweating; with none stored, or `none`, the local emergency
+     number for their country: 112 across the EU, 911 in the US, Canada and Mexico, 999 in the
+     UK, 000 in Australia; say it on a separate line before the deferral line). `coach knowledge section recovery-habits "Cardiac warning symptoms: stop and refer"`.
    - Fever, aches all over, or feeling unwell below the neck: no training until better
      (`coach knowledge section recovery-habits "Fever and systemic illness: do not train"`).
      A head cold only: light training is optional (`coach knowledge section recovery-habits

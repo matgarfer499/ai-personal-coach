@@ -15,6 +15,7 @@ from coach.profile import (
     BETA_BLOCKER,
     GLP1,
     HYPERTENSION,
+    NO_NUMBER,
     PLANNING_PREGNANCY,
     PREGNANT,
     Profile,
@@ -91,7 +92,8 @@ class SafetyFlags:
 def flags(profile: Profile, today: date | None = None) -> SafetyFlags:
     screening = profile.screening
     out = SafetyFlags(screened="scoff_positive" in screening or "scoff_yes_count" in screening)
-    out.emergency_number = profile.emergency_number or _regional_emergency_number(profile)
+    own = None if profile.emergency_number == NO_NUMBER else profile.emergency_number
+    out.emergency_number = own or _regional_emergency_number(profile)
 
     if profile.birth_date is not None and profile.age(today) < ADULT_AGE:
         out.no_calorie_targets = out.no_deficit = out.no_weight_targets = out.refer_gp = True

@@ -15,7 +15,9 @@ from coach.strength import (
     parse_rep_range,
     progression,
     rep_range_for,
+    rep_range_matches,
     unmapped_exercises,
+    unmatched_rep_ranges,
     weekly_hard_sets,
 )
 from coach.text import fold
@@ -423,6 +425,29 @@ def test_an_injury_on_one_variant_pauses_every_variant_of_the_lift():
     # without the map only the name as logged or without "(Equipment)" matches
     assert not named_in(close, ["Lat Pulldown - Wide Grip"])
     assert named_in(close, ["Lat Pulldown - Close Grip"])
+
+
+def test_the_star_range_is_never_a_lift_name():
+    mm = load_muscle_map()
+    assert not rep_range_matches("Bench Press (Barbell)", "*", mm)
+    assert not rep_range_matches("*", "*", None)
+    ranges = [
+        parse_rep_range("*=6-8"),
+        parse_rep_range("press banca=5-8"),
+        parse_rep_range("x=1-2"),
+    ]
+    assert unmatched_rep_ranges(ranges, {"Bench Press (Barbell)"}, mm) == ["x"]
+
+
+def test_lookup_uses_one_index_per_map_and_remembers_misses():
+    a = {"Squat": {"aliases": ["Sentadilla"], "muscles": {}}}
+    b = {"Squat": {"aliases": ["Knee Bend"], "muscles": {}}}
+    assert lookup("sentadilla (Barbell)", a) is a["Squat"]
+    assert lookup("sentadilla", a) is a["Squat"] and lookup("sentadilla", b) is None
+    assert lookup("knee bend", b) is b["Squat"] and lookup("knee bend", a) is None
+    assert lookup("nothing", a) is None and lookup("nothing", a) is None
+    mm = load_muscle_map()
+    assert lookup("Press Banca", mm) is lookup("Bench Press (Barbell)", mm) is not None
 
 
 def test_a_rep_range_for_one_variant_does_not_apply_to_another():

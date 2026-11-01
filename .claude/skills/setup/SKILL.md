@@ -36,7 +36,9 @@ the `coach` CLI.
 
 ## When to use
 
-- First contact, `data/profile.yaml` missing, or `coach profile show` lists missing fields.
+- First contact, `data/profile.yaml` missing, or `coach profile show` lists missing fields. When
+  `missing` lists only some fields, ask only for those fields (a profile saved before a field
+  was required, for example, lists just `emergency_number`); do not redo the other steps.
 - The client asks to redo screening or change basic data (then ask only what changes).
 
 ## Reads
@@ -53,13 +55,21 @@ Ask about one step per message. Store each answer as soon as you have it with
 1. **Language and region.** Ask es or en (with nothing from the client yet, ask in one line in
    both languages); set `language` (the coach speaks only these two; say so if they ask for
    another). Ask the country. Set `region es` for Spain, including when they only name a Spanish
-   city. For a country with no `regions/<code>/` folder (the CLI refuses it), leave the region
-   unset and say: menus use the general food table and Open Food Facts products, and a region
-   can be added (docs/adding-a-region.md). Then run `coach safety`: with no `emergency_number`,
-   ask which number they call for an emergency where they live (112 across the EU, 911 in the
-   US, Canada and Mexico, 999 in the UK, 000 in Australia) and store it with
-   `coach profile set emergency_number N`. If they cannot say, use 112 in Europe and tell them
-   to check it.
+   city. For a country with no `regions/<code>/` folder (the CLI refuses it), set `region none`
+   and say: menus use the general food table and Open Food Facts products, and a region can be
+   added (docs/adding-a-region.md).
+   Then run `coach profile show` and look only for `emergency_number` in `missing` (the other
+   fields are asked in later steps, in order); when it is there, ask which number they call for
+   an emergency where they live (112 across the EU, 911 in the US, Canada and Mexico, 999 in the
+   UK, 000 in Australia) and store it with `coach profile set emergency_number N`. If they
+   cannot say and the region is a real one (not `none`), tell them you are storing their
+   region's number (`coach safety` shows it) and that they should check it, then store that
+   number with the same command. If they cannot or do not want to give one, store
+   `coach profile set emergency_number none` (it counts as set, so `missing` clears and they are
+   not asked again); `coach safety` then prints no number of its own, and a red flag gets
+   the local emergency number for their country (112 across the EU, 911 in the US, Canada and
+   Mexico, 999 in the UK, 000 in Australia; ask where they live if unknown), said on a separate
+   line before the deferral line, which stays copied exactly.
 2. **Eating-disorder prompt, before any weight question.** Ask gently, in your own words, in one
    message, as a conversation and never a diagnosis: making yourself sick when uncomfortably full; worry about
    losing control over how much you eat; feeling fat when others say you are thin; food or weight
@@ -130,7 +140,9 @@ Ask about one step per message. Store each answer as soon as you have it with
    describe it once more; if still unsure, store `false` and tell them to stop and see a doctor
    if it appears. If any are happening now or at rest, stop the setup and
    tell them to seek care (the `emergency_number` from `coach safety` for chest pain at rest,
-   fainting, or chest pain with breathlessness and sweating).
+   fainting, or chest pain with breathlessness and sweating; with none stored, the local
+   emergency number for their country, 112 across the EU, 911 in the US, Canada and Mexico, 999 in
+   the UK, 000 in Australia).
 6. **Medications and conditions.** Ask what they take and any diagnoses. Map to tokens with the
    table in `docs/safety.md` and store them as `medications` and `conditions`, each list in one
    `coach profile set` (it replaces the list, so give every item, comma-separated). Store unknown
@@ -173,7 +185,9 @@ Ask about one step per message. Store each answer as soon as you have it with
    `desk`, per `coach knowledge section nutrition "Self-reported activity is noisy"` ("choose
    the lower plausible multiplier when unsure"). Say so in one line: the weight trend corrects
    it after 2-4 weeks.
-9. **Check.** `coach profile show`: `missing` must be empty; mention any `unrecognised` items.
+9. **Check.** `coach profile show`: `missing` must be empty. Ask as in step 1 only if
+   `emergency_number` is listed; if the client declines, store `none` and do not ask again. Go on
+   to step 10 when `missing` is empty. Mention any `unrecognised` items.
 10. **Targets.** Run `coach safety`, then `coach energy`, `coach macros` and `coach zones`.
     Only when `use_rpe_not_hr` is false, ask for a morning resting pulse (`--hr-rest N`) and an
     observed all-out peak (`--hr-max N`); skip either if unknown.
