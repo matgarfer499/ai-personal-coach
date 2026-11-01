@@ -232,9 +232,9 @@ def test_strength_ignores_sessions_after_today(capsys, data_dir):
 def test_strength_progress_one_and_all(capsys, data_dir):
     _log(data_dir)
     _, out = run(capsys, data_dir, "strength", "progress", "--exercise", "bench press (barbell)")
-    assert out["Bench Press (Barbell)"]["action"] == "increase_load"
+    assert out["lifts"]["Bench Press (Barbell)"]["action"] == "increase_load"
     _, out = run(capsys, data_dir, "strength", "progress")
-    assert set(out) == {"Bench Press (Barbell)", "Zercher Carry"}
+    assert set(out["lifts"]) == {"Bench Press (Barbell)", "Zercher Carry"}
 
 
 def test_strength_progress_uses_the_rep_range_given_per_lift(capsys, data_dir):
@@ -249,15 +249,43 @@ def test_strength_progress_uses_the_rep_range_given_per_lift(capsys, data_dir):
         "--rep-range",
         "squat=5-8",  # a lift with no logged sets is ignored
     )
-    bench = out["Bench Press (Barbell)"]
+    bench = out["lifts"]["Bench Press (Barbell)"]
     assert bench["action"] == "add_reps" and bench["rep_range"] == [10, 15]
     assert "beats 15" in bench["reasons"][0]
-    assert out["Zercher Carry"]["rep_range"] == [8, 12]  # the rule's default
+    assert out["lifts"]["Zercher Carry"]["rep_range"] == [8, 12]  # the rule's default
     _, out = run(capsys, data_dir, "strength", "progress", "--rep-range", "bench press=6-8")
-    assert out["Bench Press (Barbell)"]["rep_range"] == [6, 8]
-    assert out["Bench Press (Barbell)"]["action"] == "increase_load"
+    assert out["lifts"]["Bench Press (Barbell)"]["rep_range"] == [6, 8]
+    assert out["lifts"]["Bench Press (Barbell)"]["action"] == "increase_load"
     _, out = run(capsys, data_dir, "strength", "progress", "--exercise", "zercher carry")
-    assert out["Zercher Carry"]["rep_range"] == [8, 12]
+    assert out["lifts"]["Zercher Carry"]["rep_range"] == [8, 12]
+
+
+def test_progress_reports_rep_range_names_that_match_no_lift(capsys, data_dir):
+    _log(data_dir)
+    pulldown = ExerciseSet(
+        "hevy_csv", datetime(2026, 3, 25, 18, 0), "Lat Pulldown - Close Grip (Cable)", 2, 0
+    )
+    append([pulldown], data_dir / "sessions.csv")
+    _, out = run(
+        capsys,
+        data_dir,
+        "strength",
+        "progress",
+        "--rep-range",
+        "*=6-8",  # the default for every lift is not a name to match
+        "--rep-range",
+        "press banca=5-8",  # a Spanish alias of the logged bench press
+        "--rep-range",
+        "Lat Pulldown - Close Grip=10-12",  # the logged variant
+        "--rep-range",
+        "Lat Pulldown - Wide Grip=10-12",  # another variant of a logged lift
+        "--rep-range",
+        "sentadilla bulgara=8-10",  # no logged lift
+    )
+    assert out["unmatched_rep_ranges"] == ["Lat Pulldown - Wide Grip", "sentadilla bulgara"]
+    assert out["lifts"]["Bench Press (Barbell)"]["rep_range"] == [5, 8]
+    assert out["lifts"]["Zercher Carry"]["rep_range"] == [6, 8]
+    assert out["lifts"]["Lat Pulldown - Close Grip (Cable)"]["rep_range"] == [10, 12]
 
 
 def test_strength_progress_rejects_a_bad_rep_range(capsys, data_dir):
@@ -426,6 +454,13 @@ def test_menu_item_needs_grams(capsys, data_dir):
     assert code == 2 and "NAME=GRAMS" in out["message"]
 
 
+def test_profile_show_lists_a_missing_emergency_number(capsys, data_dir):
+    assert "emergency_number" in run(capsys, data_dir, "profile", "show")[1]["missing"]
+    main(["--data-dir", str(data_dir), "profile", "set", "emergency_number", "112", "--json"])
+    capsys.readouterr()
+    assert "emergency_number" not in run(capsys, data_dir, "profile", "show")[1]["missing"]
+
+
 def test_profile_set_and_show(capsys, tmp_path):
     base = ["--data-dir", str(tmp_path), "--json"]
     assert main(["--data-dir", str(tmp_path), "profile", "set", "sex", "female", "--json"]) == 0
@@ -438,6 +473,7 @@ def test_profile_set_and_show(capsys, tmp_path):
         ("screening.scoff_positive", "false"),
         ("screening.menstrual", "normal"),
         ("research_reminder_months", "3"),
+        ("emergency_number", "112"),
     ]:
         assert main(["--data-dir", str(tmp_path), "profile", "set", field, value, "--json"]) == 0
         capsys.readouterr()
@@ -618,7 +654,7 @@ def _stalled_bench(data_dir):
 def test_injury_add_pauses_its_lifts_and_clear_resumes_them(capsys, data_dir):
     _stalled_bench(data_dir)
     assert (
-        run(capsys, data_dir, "strength", "progress")[1]["Bench Press (Barbell)"]["action"]
+        run(capsys, data_dir, "strength", "progress")[1]["lifts"]["Bench Press (Barbell)"]["action"]
         == "stalled"
     )
     code, out = run(
@@ -644,7 +680,7 @@ def test_injury_add_pauses_its_lifts_and_clear_resumes_them(capsys, data_dir):
             "exercises": ["bench press", "Overhead Press"],
         }
     ]
-    progress = run(capsys, data_dir, "strength", "progress")[1]["Bench Press (Barbell)"]
+    progress = run(capsys, data_dir, "strength", "progress")[1]["lifts"]["Bench Press (Barbell)"]
     assert progress["action"] == "paused" and progress["load_kg"] == 60
     assert "fisioterapeuta" in progress["reasons"][0]
     _, flags = run(capsys, data_dir, "safety")
@@ -653,7 +689,7 @@ def test_injury_add_pauses_its_lifts_and_clear_resumes_them(capsys, data_dir):
     _, out = run(capsys, data_dir, "injury", "clear", "Hombro Derecho", "--on", "2026-03-27")
     assert out["injuries"][0]["status"] == "cleared"
     assert out["injuries"][0]["cleared_on"] == "2026-03-27"
-    progress = run(capsys, data_dir, "strength", "progress")[1]["Bench Press (Barbell)"]
+    progress = run(capsys, data_dir, "strength", "progress")[1]["lifts"]["Bench Press (Barbell)"]
     assert progress["action"] == "add_reps"  # the held sessions are not a stall
 
 
@@ -709,7 +745,7 @@ def test_injury_names_match_aliases_and_unmatched_names_are_reported(capsys, dat
         "press banca, press militar",
     )
     assert out["unmatched"] == ["press militar"]
-    progress = run(capsys, data_dir, "strength", "progress")[1]["Bench Press (Barbell)"]
+    progress = run(capsys, data_dir, "strength", "progress")[1]["lifts"]["Bench Press (Barbell)"]
     assert progress["action"] == "paused"
 
 

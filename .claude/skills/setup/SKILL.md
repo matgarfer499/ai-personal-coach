@@ -58,8 +58,9 @@ Ask about one step per message. Store each answer as soon as you have it with
    can be added (docs/adding-a-region.md). Then run `coach safety`: with no `emergency_number`,
    ask which number they call for an emergency where they live (112 across the EU, 911 in the
    US, Canada and Mexico, 999 in the UK, 000 in Australia) and store it with
-   `coach profile set emergency_number N`. If they cannot say, use 112 in Europe and tell them
-   to check it.
+   `coach profile set emergency_number N`. If they cannot say, tell them you are storing their
+   region's number (`coach safety` shows it) and that they should check it, then store it so
+   `missing` clears.
 2. **Eating-disorder prompt, before any weight question.** Ask gently, in your own words, in one
    message, as a conversation and never a diagnosis: making yourself sick when uncomfortably full; worry about
    losing control over how much you eat; feeling fat when others say you are thin; food or weight
@@ -173,7 +174,7 @@ Ask about one step per message. Store each answer as soon as you have it with
    `desk`, per `coach knowledge section nutrition "Self-reported activity is noisy"` ("choose
    the lower plausible multiplier when unsure"). Say so in one line: the weight trend corrects
    it after 2-4 weeks.
-9. **Check.** `coach profile show`: `missing` must be empty; mention any `unrecognised` items.
+9. **Check.** `coach profile show`: `missing` must be empty (`emergency_number` included: go back to step 1 if it is listed); mention any `unrecognised` items.
 10. **Targets.** Run `coach safety`, then `coach energy`, `coach macros` and `coach zones`.
     Only when `use_rpe_not_hr` is false, ask for a morning resting pulse (`--hr-rest N`) and an
     observed all-out peak (`--hr-max N`); skip either if unknown.

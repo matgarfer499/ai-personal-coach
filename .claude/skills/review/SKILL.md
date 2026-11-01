@@ -45,7 +45,9 @@ END is the last day of the week under review (default: today). When END is befor
 - `coach trend` (weight trend and, after 4 weeks, `recalibrated_tdee`).
 - `coach strength sets --week-ending END` and `coach strength progress`, adding
   `--rep-range "*=LOW-HIGH"` from the `rep_range:` line of `data/plan.md` (none when missing) and
-  one `--rep-range "LIFT=LOW-HIGH"` per lift whose `LIFT: LOW-HIGH reps` line differs.
+  one `--rep-range "LIFT=LOW-HIGH"` per lift whose `LIFT: LOW-HIGH reps` line differs. The
+  output is `lifts` plus `unmatched_rep_ranges`: names that match no logged lift were not
+  applied; ask which logged lift each one is and rerun with that name.
 - `data/checkins.csv` rows of the week (sleep, notes), and `data/plan.md` if it exists.
 
 Knowledge, by situation: run only the lines that apply.

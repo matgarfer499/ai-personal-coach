@@ -170,7 +170,7 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
         names = sorted({s.exercise for s in logged if s.date > recent})
     flags = safety.flags(profile, args.today)
     ranges = [strength.parse_rep_range(text) for text in args.rep_range]
-    return {
+    lifts = {
         name: strength.progression(
             [s for s in logged if s.exercise == name],
             today=today,
@@ -181,6 +181,16 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
         )
         for name in names
     }
+    # Same matcher as rep_range_for, so a name is never reported unmatched yet applied.
+    unmatched = [
+        name
+        for name, _ in ranges
+        if name != strength.STAR
+        and not any(
+            strength.named_in(lift, [name], muscle_map, share_variants=False) for lift in names
+        )
+    ]
+    return {"lifts": lifts, "unmatched_rep_ranges": list(dict.fromkeys(unmatched))}
 
 
 def _leftover_warning(leftovers: list[ExerciseSet]) -> str:
@@ -435,6 +445,7 @@ PROFILE_REQUIRED = [
     "activity_level",
     "language",
     "region",
+    "emergency_number",
 ]
 _PROFILE_TYPES = {
     "birth_date": date.fromisoformat,
