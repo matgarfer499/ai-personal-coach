@@ -868,7 +868,7 @@ def test_a_free_meal_takes_no_eat_out_or_people(data_dir, flags):
 
 def test_eaten_out_names_each_dish_once(capsys, data_dir):
     def bar(d):
-        dish = ("Menú del bar", ["Comida de prueba=1900", "lentejas, cocidas=100"])
+        dish = ("Menú del bar" if d == 26 else "menu del bar", ["Comida de prueba=1900", "lentejas, cocidas=100"])
         return meals_day(oct_(d), meal("Comida", dish, eat_out=True))
 
     assert check(capsys, data_dir, {"days": [bar(26), bar(34)]}, "save")[0] == 0

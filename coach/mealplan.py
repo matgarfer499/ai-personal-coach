@@ -426,7 +426,7 @@ def shopping(
     eaten_out: list[str] = []
     for group in batches(days):
         if group.eat_out:
-            if group.dish not in eaten_out:
+            if fold(group.dish) not in {fold(d) for d in eaten_out}:
                 eaten_out.append(group.dish)
             continue
         times = (group.servings if group.servings > 1 else 1) * group.people
