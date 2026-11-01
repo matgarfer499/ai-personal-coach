@@ -9,6 +9,8 @@
   the label (`label_quote`). No prices. Empty in this template: no chain's terms of use clearly
   allow its product data to be redistributed, so rows read from a chain's website stay in your
   private copy (or use the Open Food Facts catalogue below, whose data is openly licensed).
+- `recipe-sources.yaml`: Spanish recipe sites and cooking channels /menu searches first for
+  Spanish dishes (links and why each is good, checked 2026-11-01; never recipe text).
 
 ## Rules for products
 

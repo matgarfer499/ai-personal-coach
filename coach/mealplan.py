@@ -9,6 +9,10 @@ saves an accepted plan to data/menus/<first date>.yaml with each day's totals an
 `servings: N` on a dish says it comes back on purpose, up to N times (a batch cooked once, or a
 simple breakfast made again each day): the repeats within its N servings are allowed, the shopping
 list buys it once at N servings, and an appearance beyond N is an accidental repeat again.
+
+`base: [PROTEIN, CARB]` on a dish names its main protein and carbohydrate base (one or two
+words, e.g. `[pollo, arroz]` or `[garbanzos]`): two different dishes on the same base within
+BASE_REPEAT_DAYS are a repeat too. A dish without `base` (a breakfast, a snack) is not checked.
 """
 
 from __future__ import annotations
@@ -21,13 +25,16 @@ from pathlib import Path
 import yaml
 
 from coach.foods import Food, find, parse_item
-from coach.tastes import Tastes, matches
+from coach.tastes import Tastes, _forms, matches
 from coach.text import fold
 
 MENUS_DIR = "menus"
 # convention: chosen when the coach was designed (2026-10-25): a dish does not come back
 # within 7 consecutive days; a longer plan may cycle its weeks.
 NO_REPEAT_DAYS = 7
+# convention: two dishes on the same protein and carb base are not served within 3 consecutive
+# days (see docs/conventions.md): enough variety, and a batch still counts once.
+BASE_REPEAT_DAYS = 3
 # A free meal is the client's choice, never a prescription; with a positive eating-disorder screen
 # the CLI refuses it (loss-of-control eating is the risk the rule names).
 FREE_MEAL_RULE = 'nutrition.md: "Refeeds and cheat meals"'
@@ -44,6 +51,7 @@ class Dish:
     servings: int  # 1 unless the dish is a batch or a deliberate repeat
     items: list[tuple[str, float]]  # for one serving: what is eaten
     seasoning: list[str] = field(default_factory=list)
+    base: list[str] = field(default_factory=list)  # main protein, then carb base; may be empty
 
 
 @dataclass
@@ -142,12 +150,24 @@ def parse(data) -> tuple[dict, list[Day]]:
                     f"{when} {name}: `servings:` must be a whole number, 1 or more, not "
                     f"{servings!r}",
                 )
+                base = dish.get("base")
+                _need(
+                    base is None
+                    or (
+                        isinstance(base, list)
+                        and len(base) in (1, 2)
+                        and all(isinstance(w, str) and w.strip() for w in base)
+                    ),
+                    f"{when} {name.strip()}: `base:` must list one or two words, the main protein "
+                    f"then the carb base, e.g. [pollo, arroz], not {base!r}",
+                )
                 dishes.append(
                     Dish(
                         name.strip(),
                         servings,
                         [parse_item(str(x)) for x in lines],
                         list(dish.get("seasoning") or []),
+                        [w.strip() for w in base or []],
                     )
                 )
             meals.append(Meal(str(meal.get("meal", "")).strip(), tupper, False, dishes))
@@ -180,6 +200,7 @@ class Batch:
     servings: int
     dates: list[date]
     items: list[tuple[str, float]]
+    base: list[str] = field(default_factory=list)  # from the group's first appearance
 
 
 def _signature(items: list[tuple[str, float]]) -> list[tuple[str, float, str]]:
@@ -214,28 +235,55 @@ def batches(days: list[Day]) -> list[Batch]:
                     if dish.servings == 1:
                         group.items += dish.items  # same day twice: both are eaten
                     continue
-                group = Batch(dish.name, dish.servings, [day.date], list(dish.items))
+                group = Batch(dish.name, dish.servings, [day.date], list(dish.items), dish.base)
                 groups.append(group)
                 last[key] = group
     return groups
 
 
+def same_base(a: list[str], b: list[str]) -> bool:
+    """Two bases name the same foods in any order: each word of one is a word of the other,
+    singular or plural, case and accents ignored (as in `tastes.matches`)."""
+    x, y = ([_forms(fold(w)) for w in base] for base in (a, b))
+    return all(any(f & g for g in y) for f in x) and all(any(f & g for f in x) for g in y)
+
+
 def repeats(days: list[Day]) -> list[dict]:
-    """Dishes (case and accents ignored) served again within NO_REPEAT_DAYS: between one dish's
-    groups (see `batches`), from the last serving of one to the first of the next."""
+    """Dishes (case and accents ignored) served again within NO_REPEAT_DAYS (`kind: dish`), then
+    different dishes on the same `base` within BASE_REPEAT_DAYS (`kind: base`). Both count
+    between groups (see `batches`, so a batch is one appearance), from the last serving of one to
+    the first of the next."""
+    groups = batches(days)
     by_dish: dict[str, list[Batch]] = defaultdict(list)
-    for group in batches(days):
+    for group in groups:
         by_dish[fold(group.dish)].append(group)
     found = []
-    for groups in by_dish.values():
+    for same in by_dish.values():
         close = {
             when
-            for a, b in zip(groups, groups[1:], strict=False)
+            for a, b in zip(same, same[1:], strict=False)
             if (b.dates[0] - a.dates[-1]).days < NO_REPEAT_DAYS
             for when in (a.dates[-1], b.dates[0])
         }
         if close:
-            found.append({"dish": groups[0].dish, "dates": sorted(close)})
+            found.append({"kind": "dish", "dish": same[0].dish, "dates": sorted(close)})
+    by_base: list[tuple[list[str], set[date]]] = []
+    based = [g for g in groups if g.base]
+    for i, a in enumerate(based):
+        for b in based[i + 1 :]:
+            # the same dish again is already a dish repeat (NO_REPEAT_DAYS is longer)
+            if fold(a.dish) == fold(b.dish) or not same_base(a.base, b.base):
+                continue
+            if (b.dates[0] - a.dates[-1]).days < BASE_REPEAT_DAYS:
+                entry = next((e for e in by_base if same_base(e[0], a.base)), None)
+                if entry is None:
+                    entry = (a.base, set())
+                    by_base.append(entry)
+                entry[1].update((a.dates[-1], b.dates[0]))
+    found += [
+        {"kind": "base", "dish": " + ".join(base), "base": base, "dates": sorted(dates)}
+        for base, dates in by_base
+    ]
     return found
 
 

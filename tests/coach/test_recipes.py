@@ -178,3 +178,24 @@ def test_the_library_lives_in_the_gitignored_data_dir(data_dir):
 
     ignore = (Path(__file__).parent.parent.parent / ".gitignore").read_text()
     assert "data/*" in ignore  # recipes/ is under data/, never committed
+
+
+def test_saved_recipe_keeps_its_base(capsys, data_dir):
+    dish = {
+        "dish": "Merluza en salsa verde",
+        "source": "https://example.org/merluza",
+        "base": ["merluza", "patata"],
+        "steps": ["Pochar el ajo", "Cocer la merluza 5 min"],
+        "items": ["merluza=150", "patata=200"],
+    }
+    document = {
+        "saved_on": date(2026, 10, 25),
+        "days": [{"date": date(2026, 10, 26), "meals": [{"meal": "Cena", "dishes": [dish]}]}],
+    }
+    path = data_dir / "menus" / "2026-10-26.yaml"
+    path.parent.mkdir(parents=True)
+    path.write_text(yaml.safe_dump(document, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    _, out = run(capsys, data_dir, "tastes", "rate", "Merluza en salsa verde", "liked")
+    saved = yaml.safe_load((data_dir / out["recipe_saved"]).read_text(encoding="utf-8"))
+    assert saved["base"] == ["merluza", "patata"]
+    assert list(saved)[:5] == ["dish", "source", "base", "steps", "items"]
