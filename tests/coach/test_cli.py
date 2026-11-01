@@ -824,3 +824,82 @@ def test_safety_prints_the_emergency_number(capsys, data_dir):
     assert run(capsys, data_dir, "safety")[1]["emergency_number"] == "112"
     run(capsys, data_dir, "profile", "set", "emergency_number", "061")
     assert run(capsys, data_dir, "safety")[1]["emergency_number"] == "061"
+
+
+def _label(*extra, name="Proteina chocolate"):
+    args = list(LABEL)
+    args[args.index("--name") + 1] = name
+    return [*args, *extra]
+
+
+def test_label_slug_collision_is_a_different_product_not_a_replace(capsys, data_dir):
+    assert run(capsys, data_dir, *_label(name="Yogur 0%"))[0] == 0
+    code, out = run(capsys, data_dir, *_label(name="Yogur 0"))
+    assert code != 0
+    assert "DIFFERENT product" in out["message"] and "--barcode" in out["message"]
+    assert "--replace" not in out["message"]
+    assert [p.product_name for p in catalogue.load(data_dir)] == ["Yogur 0%"]
+
+
+def test_label_same_name_again_may_be_replaced(capsys, data_dir):
+    run(capsys, data_dir, *_label())
+    code, out = run(capsys, data_dir, *_label())
+    assert code != 0 and "--replace" in out["message"]
+    assert run(capsys, data_dir, *_label("--replace"))[0] == 0
+
+
+def test_label_non_latin_names_get_a_stable_hash_key(capsys, data_dir):
+    import hashlib
+
+    _, out = run(capsys, data_dir, *_label(name="豆腐"))
+    assert out["added"]["barcode"] == "label-" + hashlib.sha1("豆腐".encode()).hexdigest()[:8]
+    code, out = run(capsys, data_dir, *_label(name="牛奶"))
+    assert code == 0 and out["added"]["barcode"] != "label-dish"
+
+
+@pytest.mark.parametrize(
+    "extra",
+    [["--kcal", "1"], ["--fibre", "1"], ["--allergens", "soja"], ["--barcode", "8400000000017"]],
+)
+def test_label_only_flags_without_label_are_refused(capsys, data_dir, extra):
+    code, out = run(capsys, data_dir, "products", "add", "8400000000017", "--chain", "X", *extra)
+    assert code != 0 and extra[0] in out["message"] and "--label" in out["message"]
+
+
+def test_label_with_a_positional_barcode_is_refused(capsys, data_dir):
+    code, out = run(capsys, data_dir, *LABEL[:3], "8400000000017", *LABEL[3:])
+    assert code != 0 and "--barcode" in out["message"]
+
+
+def test_label_barcode_must_be_ascii_digits(capsys, data_dir):
+    code, _ = run(capsys, data_dir, *_label("--barcode", "٨٤٠٠٠٠٠٠٠٠٠١٧"))
+    assert code != 0 and not (data_dir / "catalogue.csv").exists()
+
+
+def test_label_stores_the_cleaned_name(capsys, data_dir):
+    _, out = run(capsys, data_dir, *_label(name="Prote\x00ina\x1b choco"))
+    assert out["added"]["product_name"] == "Prote ina choco"
+    assert "\x00" not in (data_dir / "catalogue.csv").read_text(encoding="utf-8")
+
+
+def test_label_numbers_take_a_decimal_comma_and_refuse_underscores(capsys, data_dir):
+    code, out = run(capsys, data_dir, *_label("--fibre", "2,5"))
+    assert code == 0 and out["added"]["fibre_g"] == 2.5
+    for bad in ("1_0", "1,2,3", ".5", "1e1", " "):
+        code, _ = run(capsys, data_dir, *_label("--fibre", bad, name="Otro"))
+        assert code != 0, bad
+
+
+def test_label_name_clash_with_a_known_food_via_another_barcode(capsys, data_dir):
+    code, out = run(capsys, data_dir, *_label(name="pechuga de pollo, cruda"))
+    assert code != 0 and "already a food or product name" in out["message"]
+    run(capsys, data_dir, *_label("--barcode", "8400000000017"))
+    code, out = run(capsys, data_dir, *_label("--barcode", "8400000000024"))
+    assert code != 0 and "already a food or product name" in out["message"]
+
+
+def test_label_energy_warning_does_not_blame_the_source(capsys, data_dir):
+    args = _label()
+    args[args.index("--kcal") + 1] = "200"
+    _, out = run(capsys, data_dir, *args)
+    assert "source uses" not in out["warnings"][0] and "re-read" in out["warnings"][0]

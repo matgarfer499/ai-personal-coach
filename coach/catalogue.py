@@ -1,7 +1,9 @@
 """The client's personal product catalogue: data/catalogue.csv.
 
-Products the client buys, read from Open Food Facts by barcode (`coach products add`). OFF is
-crowd-sourced, so every row says "Open Food Facts (unverified)"; `regions/<code>/products.csv`
+Products the client buys, read from Open Food Facts by barcode (`coach products add`) or typed
+from the pack's label (`--label`). OFF is crowd-sourced, so its rows say "Open Food Facts
+(unverified)"; label rows say "label (entered by hand)" and hold the values from the label;
+`regions/<code>/products.csv`
 keeps its own stricter rule (values read on the chain's page). A blank value is missing, never
 zero. A product is per 100 g or per 100 ml; menu items for it are written in that unit (`NAME=200`
 or `NAME=15ml`) and never converted, because the coach has no densities.

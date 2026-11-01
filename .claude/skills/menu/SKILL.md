@@ -167,8 +167,11 @@ Every lunch and dinner dish, whatever its source:
      `coach products add --label --name NAME --chain CHAIN --per "100 g" --kcal K --protein P
      --carbs C --fat F` (optional `--fibre FI`, `--barcode B`, `--allergens "a, b"`). Read each
      value from the label with the client, per 100 g or per 100 ml, carbohydrate as printed;
-     never estimate one, and leave `--fibre` out when the label has none. Say the product is
-     "values from the label". If the CLI warns that kcal and macros disagree, re-read the label.
+     never estimate one, and leave `--fibre` out when the label has none. Read the allergen
+     declaration on the pack too and always pass `--allergens`; if the client cannot read it,
+     tell them the allergens are unknown and do not use the product for anyone with an allergy
+     or intolerance. Say the product is "values from the label". If the CLI warns that kcal and
+     macros disagree, read the label again and fix the entry with `--replace`.
    - Exit code 2 naming `COACH_OFF_CONTACT`: use `--label` as above, and tell the person running
      the coach that Open Food Facts lookups need a contact email in that variable (set it under
      `env` in `.claude/settings.local.json`, see the README, then restart Claude Code).
@@ -273,7 +276,7 @@ In the profile language, one compact table per day: meal, dish, and the day's kc
 from `coach mealplan check` (or `coach menu`), then one line with any day that is not ok. Steps,
 items and seasoning only for a dish the client asks about. Name any value in `missing` as "sin
 dato", never as a number. Mark products from Open Food Facts as unverified data from a public
-database. After saving: the PDF path from `coach mealplan export`; the recipes and the shopping
+database, and products added with `--label` as "values from the label". After saving: the PDF path from `coach mealplan export`; the recipes and the shopping
 list are in the PDF (step 9 says what to do without the `pdf` extra).
 
 ## Safety

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import hashlib
 import json
 import os
 import re
@@ -691,7 +692,9 @@ def _label_product(args: argparse.Namespace) -> dict:
             values[column] = None
             continue
         limit = off.MAX_KCAL_PER_100G if column == "kcal" else off.MAX_G_PER_100G
-        number = off._number(raw, limit)
+        # ASCII digits with an optional decimal point or comma ("9,5"); no "1_0", "1e1" or "nan"
+        strict = re.fullmatch(r"[0-9]+(?:[.,][0-9]+)?", raw.strip(), re.ASCII)
+        number = off._number(strict.group().replace(",", ".") if strict else None, limit)
         if number is None:
             raise ValueError(f"--{flag} {raw!r} must be a number from 0 to {limit:g}")
         values[column] = number
@@ -700,10 +703,16 @@ def _label_product(args: argparse.Namespace) -> dict:
     name = off._text(args.name)
     if not name:
         raise ValueError("--name is empty")
+    # No ASCII letter or digit to slug (e.g. a Chinese name): a short stable hash of the name.
+    stem = (
+        recipes.slug(name)
+        if re.search("[a-z0-9]", fold(name))
+        else hashlib.sha1(name.encode()).hexdigest()[:8]
+    )
     allergens = [off._text(a) for a in re.split(r"[,;]", args.allergens or "")]
     return {
         # the slug keeps path and CSV structure out of the key
-        "barcode": args.label_barcode or f"label-{recipes.slug(name)}",
+        "barcode": args.label_barcode or f"label-{stem}",
         "name": name,
         "brand": None,
         "per": args.per,
@@ -719,6 +728,14 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
     if args.products_cmd == "search":
         hits = off.search(args.words, args.brand, args.limit, profile.language or "es")
         return {"source": catalogue.SOURCE, "hits": hits}
+    if not args.label:
+        stray = [
+            "--" + f.replace("label_", "")
+            for f in ("kcal", "protein", "carbs", "fat", "fibre", "allergens", "label_barcode")
+            if getattr(args, f) is not None
+        ]
+        if stray:
+            raise ValueError(f"{', '.join(stray)} only work with --label")
     if args.label:
         if args.barcode:
             raise ValueError("with --label, give the barcode as --barcode, not as an argument")
@@ -733,7 +750,7 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
             )
         found["barcode"] = args.barcode
     barcode = found["barcode"]
-    name = " ".join((args.name or found["name"] or "").split())
+    name = " ".join(((found["name"] if args.label else args.name or found["name"]) or "").split())
     if not name:
         raise ValueError(f"Open Food Facts has no name for {args.barcode}: give one with --name")
     per = args.per or found["per"]
@@ -749,7 +766,14 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
             'give --per "100 g" or --per "100 ml"'
         )
     products = catalogue.load(args.data_dir)
-    if any(p.barcode == barcode for p in products) and not args.replace:
+    stored = next((p for p in products if p.barcode == barcode), None)
+    if stored and args.label and fold(stored.product_name) != fold(name):
+        raise ValueError(
+            f"{barcode} is already in the catalogue as a DIFFERENT product "
+            f"({stored.product_name!r}, not {name!r}): pass --barcode with the pack's barcode, "
+            "or --name with a more specific name"
+        )
+    if stored and not args.replace:
         raise ValueError(f"{barcode} is already in the catalogue: add --replace to refresh it")
     others = [p for p in products if p.barcode != barcode]
     table = regions.menu_table(profile.region) + [p.as_food() for p in others]
@@ -772,6 +796,8 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
     if None not in (product.kcal, product.protein_g, product.carbs_g, product.fat_g):
         gap = foods.energy_exception(product.to_row())
         if gap:
+            if args.label:  # the 4/4/9 caveat blames the source; here the typed value is suspect
+                gap = f"{gap.split(' (')[0]}; re-read the label and fix it with --replace"
             warnings.append(f"label kcal is {gap}; check the pack")
     return {"added": product, "missing": product.missing(), "warnings": warnings}
 
@@ -917,7 +943,9 @@ def build_parser() -> argparse.ArgumentParser:
     search_cmd.add_argument("--region", default=None, help="default: the profile's region")
 
     products_cmd = add(
-        "products", cmd_products, "Open Food Facts products in data/catalogue.csv (unverified)"
+        "products",
+        cmd_products,
+        "products in data/catalogue.csv: Open Food Facts (unverified) or values from the label",
     )
     products_sub = products_cmd.add_subparsers(dest="products_cmd", required=True)
     off_search = products_sub.add_parser("search", parents=[json_flag], help="WORD [WORD...]")

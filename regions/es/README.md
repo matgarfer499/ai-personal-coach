@@ -26,7 +26,7 @@ These rules cover `products.csv` only. Products a client buys that are not liste
 personal catalogue in the data directory (`data/catalogue.csv`, gitignored), read from Open Food
 Facts by barcode with `coach products add BARCODE --chain CHAIN`. `coach products search WORD
 --brand BRAND` finds the barcode. Those rows are crowd-sourced, so each one says `Open Food Facts
-(unverified)` and keeps the OFF page URL and the fetch date. A value OFF lacks stays blank and the
+(unverified)` (label rows say `label (entered by hand)`: values from the label) and keeps the OFF page URL and the fetch date. A value OFF lacks stays blank and the
 menu shows it as missing; it is never filled with zero or an estimate. OFF requires a contact
 email in the User-Agent, so the commands need `COACH_OFF_CONTACT` set (under `env` in
 `.claude/settings.local.json`; the README's Settings section shows how). Prices are never fetched.
