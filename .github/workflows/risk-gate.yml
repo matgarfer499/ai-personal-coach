@@ -25,7 +25,6 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
           ACTION: ${{ github.event.action }}
-          BASE_CHANGED: ${{ github.event.changes.base != null }}
         run: |
           # A missing list or a failed request fails the step, so the gate fails closed.
           gh api -H "Accept: application/vnd.github.raw" \
@@ -54,11 +53,10 @@ jobs:
           # Live labels, not the event payload, which can predate another run's removal.
           approved=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/labels" \
             --jq 'any(.[]; .name == "human-ok")')
-          # Label changes and title/body edits keep the approval; new commits, a reopen or a
-          # new base void it.
+          # Only label changes (maintainer-only) keep the approval. Any author event voids it,
+          # edits too: an edit racing a push could otherwise read the label before it is dropped.
           case "$ACTION" in
             labeled | unlabeled) stale=false ;;
-            edited) stale=$BASE_CHANGED ;;
             *) stale=true ;;
           esac
           if [ "$approved" = "true" ] && [ "$stale" = "true" ]; then
