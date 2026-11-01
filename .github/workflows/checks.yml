@@ -10,6 +10,10 @@ permissions:
 jobs:
   checks:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
@@ -48,8 +52,14 @@ jobs:
         run: uv run python scripts/check_knowledge.py
 
       - name: Index and README counts are fresh
-        # bash: the default shell on Windows (pwsh) would not stop on the first failing line.
-        shell: bash
         run: |
           uv run python scripts/build_knowledge_index.py
           git diff --exit-code
+
+  # Stable name for branch protection: the matrix job names change with the OS list.
+  checks-ok:
+    needs: checks
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.checks.result }}" = success
