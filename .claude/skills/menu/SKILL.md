@@ -213,7 +213,9 @@ Every lunch and dinner dish, whatever its source:
    bought once at N servings however many days it is eaten (`batches` lists them with
    `left_over` servings), a meal's `people` multiplies its items, `eaten_out` names the dishes
    of `eat_out` meals (not bought), and `pantry_skipped` the foods left out because the client
-   has them at home.
+   has them at home. After saving, name the dishes in `eaten_out` as not bought, and when a
+   meal has `people` above 1 say the shopping amounts are multiplied for it (the PDF's day
+   pages show per-serving amounts).
 10. Feedback. When the client says how a dish went, run
     `coach tastes rate "DISH" RATING --source URL`: `loved` ("me encantó"), `liked` ("estaba
     bien"), `disliked` ("no me gustó"), `never_again` ("no lo repetiría"). Ask when unclear.

@@ -142,6 +142,10 @@ def parse(data) -> tuple[dict, list[Day]]:
             free = _flag(meal, "free", f"{when}")
             eat_out = _flag(meal, "eat_out", f"{when}")
             _need(
+                not free or (not eat_out and meal.get("people", 1) == 1),
+                f"{when}: free meals have no dishes, so `eat_out:` and `people:` do not apply",
+            )
+            _need(
                 not (eat_out and tupper),
                 f"{when}: a meal cannot be both `eat_out:` and `tupper:` (a lunchbox is from home)",
             )
@@ -254,6 +258,11 @@ def batches(days: list[Day]) -> list[Batch]:
                 else:
                     joins = False
                 if joins:
+                    if dish.eat_out != group.eat_out:
+                        raise ValueError(
+                            f"{day.date} {dish.name}: every appearance of a dish that comes "
+                            "back needs the same `eat_out:` (eaten out or cooked at home)"
+                        )
                     if dish.people != group.people:
                         raise ValueError(
                             f"{day.date} {dish.name}: every appearance of a batch needs the same "
@@ -417,7 +426,8 @@ def shopping(
     eaten_out: list[str] = []
     for group in batches(days):
         if group.eat_out:
-            eaten_out.append(group.dish)
+            if group.dish not in eaten_out:
+                eaten_out.append(group.dish)
             continue
         times = (group.servings if group.servings > 1 else 1) * group.people
         if group.servings > 1:

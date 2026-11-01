@@ -840,3 +840,36 @@ def test_people_must_be_a_whole_number_and_shared_by_a_batch(data_dir):
     ]
     with pytest.raises(ValueError, match="Lentejas.*people"):
         mealplan.load_draft(write(data_dir, {"days": mixed}))
+
+
+@pytest.mark.parametrize("first_out", [True, False])
+def test_a_batch_cannot_mix_eaten_out_and_home_appearances(data_dir, first_out):
+    dish = ("Lentejas", ["lentejas, cocidas=100"], {"servings": 2})
+    mixed = [
+        meals_day(date(2026, 10, 26), meal("Comida", dish, eat_out=first_out)),
+        meals_day(date(2026, 10, 27), meal("Comida", dish, eat_out=not first_out)),
+    ]
+    with pytest.raises(ValueError, match="Lentejas.*eat_out"):
+        mealplan.load_draft(write(data_dir, {"days": mixed}))
+
+
+@pytest.mark.parametrize(
+    "flags", [{"eat_out": True}, {"people": 2}, {"eat_out": True, "tupper": True}]
+)
+def test_a_free_meal_takes_no_eat_out_or_people(data_dir, flags):
+    day = meals_day(
+        date(2026, 10, 26),
+        meal("Comida", ("A", ["Comida de prueba=1000"])),
+        meal("Cena", free=True, **flags),
+    )
+    with pytest.raises(ValueError, match="free meals have no dishes"):
+        mealplan.load_draft(write(data_dir, {"days": [day]}))
+
+
+def test_eaten_out_names_each_dish_once(capsys, data_dir):
+    def bar(d):
+        dish = ("Menú del bar", ["Comida de prueba=1900", "lentejas, cocidas=100"])
+        return meals_day(oct_(d), meal("Comida", dish, eat_out=True))
+
+    assert check(capsys, data_dir, {"days": [bar(26), bar(34)]}, "save")[0] == 0
+    assert run(capsys, data_dir, "shopping")[1]["eaten_out"] == ["Menú del bar"]
