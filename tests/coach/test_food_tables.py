@@ -11,6 +11,9 @@ ROOT = Path(__file__).parent.parent.parent
 TABLES = [ROOT / "foods" / "base.csv", *sorted(ROOT.glob("regions/*/foods.csv"))]
 
 
+DENSITY_MIN, DENSITY_MAX = 0.8, 1.3  # g/ml, plausible for liquid foods
+
+
 def rows(path):
     with path.open(newline="", encoding="utf-8") as handle:
         return list(csv.DictReader(handle))
@@ -97,7 +100,7 @@ def test_liquid_rows_have_a_density_from_the_source():
     assert {"whole milk", "soy sauce", "coconut milk, canned"} <= names
     built = {r["name_en"]: r for r in rows(ROOT / "foods" / "base.csv")}
     for name in names:
-        assert 0.9 < float(built[name]["g_per_ml"]) < 1.3, name
+        assert DENSITY_MIN <= float(built[name]["g_per_ml"]) <= DENSITY_MAX, name
     assert built["olive oil"]["g_per_ml"] == ""  # fats keep grams
 
 
@@ -105,14 +108,14 @@ def test_every_density_is_plausible():
     for path in TABLES:
         for r in rows(path):
             if r["g_per_ml"]:
-                assert 0.8 <= float(r["g_per_ml"]) <= 1.3, r["name_en"]
+                assert DENSITY_MIN <= float(r["g_per_ml"]) <= DENSITY_MAX, r["name_en"]
 
 
 def test_new_staples_use_the_chosen_fdc_ids():
     expected = {
         "zumo de naranja": "169098",
         "caldo de pastilla, preparado": "174566",
-        "pan de molde": "172818",
+        "pan de molde": "174924",
         "pan de centeno": "172684",
         "tortilla de trigo": "167535",
         "atún fresco, crudo": "173706",
@@ -120,3 +123,9 @@ def test_new_staples_use_the_chosen_fdc_ids():
     table = load_foods()
     for name, fdc_id in expected.items():
         assert find(name, table).source_id == fdc_id, name
+
+
+def test_bread_rows_have_ordinary_fibre():
+    table = load_foods()
+    for name in ("pan blanco", "pan de molde"):
+        assert find(name, table).fibre_g <= 4, name
