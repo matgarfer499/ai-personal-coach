@@ -11,7 +11,7 @@ BAD = FIXTURES / "bad"
 
 def test_rule_files_skip_sources_and_index(tmp_path):
     for name in ("a.md", "sources.md", "index.md"):
-        (tmp_path / name).write_text("# x\n")
+        (tmp_path / name).write_text("# x\n", encoding="utf-8")
     assert [p.name for p in ck.rule_files(tmp_path)] == ["a.md"]
 
 
@@ -52,27 +52,29 @@ def test_check_checked_date():
 
 
 def test_checked_date_parses():
-    assert ck.checked_date((GOOD / "widgets.md").read_text()) == date(2026, 1, 15)
+    assert ck.checked_date((GOOD / "widgets.md").read_text(encoding="utf-8")) == date(2026, 1, 15)
     assert ck.checked_date("no date here") is None
 
 
 def test_index_fresh_passes_on_fixture_and_missing_index_is_an_error(tmp_path):
     assert ck.check_index_fresh(GOOD) == []
-    (tmp_path / "sources.md").write_text("# Sources\n")
+    (tmp_path / "sources.md").write_text("# Sources\n", encoding="utf-8")
     errors = ck.check_index_fresh(tmp_path)
     assert len(errors) == 1 and "missing" in errors[0]
 
 
 def test_check_checked_date_reports_invalid_date_without_crashing(tmp_path):
     path = tmp_path / "x.md"
-    path.write_text("# X\n\n> Evidence checked on 2026-02-30.\n")
+    path.write_text("# X\n\n> Evidence checked on 2026-02-30.\n", encoding="utf-8")
     errors = ck.check_checked_date(path)
     assert len(errors) == 1 and "invalid date" in errors[0]
 
 
 def test_check_checked_date_ignores_a_date_outside_the_header(tmp_path):
     path = tmp_path / "x.md"
-    path.write_text("# X\n\n> header\n\n## A\n\nEvidence checked on 2026-01-01.\n")
+    path.write_text(
+        "# X\n\n> header\n\n## A\n\nEvidence checked on 2026-01-01.\n", encoding="utf-8"
+    )
     assert "no 'Evidence checked on" in ck.check_checked_date(path)[0]
 
 
@@ -80,7 +82,8 @@ def test_check_duplicate_headings(tmp_path):
     path = tmp_path / "x.md"
     path.write_text(
         "# X\n\n## A\n\n### Same\n**Grade:** strong\n\n## B\n\n### Same\n**Grade:** strong\n"
-        "\n```\n### Same\n```\n"
+        "\n```\n### Same\n```\n",
+        encoding="utf-8",
     )
     errors = ck.check_duplicate_headings(path)
     assert errors == [f"{path}:10: heading 'Same' repeats line 5"]
