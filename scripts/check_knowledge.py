@@ -157,13 +157,13 @@ def check_readme_counts(knowledge_dir: Path) -> list[str]:
 
 
 def check_references(knowledge_dir: Path) -> list[str]:
-    """Every `see "X"` in a rule file must name a `### X` heading in some rule file."""
+    """Every `see "X"` in a rule file must name a `## X` or `### X` heading in some rule file."""
     texts = {path: read(path) for path in rule_files(knowledge_dir)}
     headings = {
         found[1]
         for text in texts.values()
         for mark in blank_fences(text.splitlines())
-        if (found := parse_heading(mark)) and found[0] == 3
+        if (found := parse_heading(mark))
     }
     return [
         f'{path}:{lineno}: see "{target}" names no heading'

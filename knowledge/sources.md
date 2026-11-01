@@ -131,7 +131,7 @@ Bull FC et al., 2020. World Health Organization 2020 guidelines on physical acti
 Type: Guideline · DOI: [10.1136/bjsports-2020-102955](https://doi.org/10.1136/bjsports-2020-102955) · Files: strength-hypertrophy, cardio-health, recovery-habits  
 URL: <https://pubmed.ncbi.nlm.nih.gov/33239350/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=PMC7719906&rettype=xml>  
-Supports: Adults: muscle-strengthening at moderate or greater intensity, all major muscle groups, 2 or more days a week; strong recommendation. 'There was no evidence to support a dose-response association with higher volumes of muscle-strengthening activities.' Older adults: 'As for adults, plus ... varied multicomponent physical activity that emphasises functional balance and strength training at moderate or greater intensity on 3 or more days a week ...'.
+Supports: Adults: muscle-strengthening at moderate or greater intensity, all major muscle groups, 2 or more days a week; a strong recommendation supported by moderate-certainty evidence. 'There was no evidence to support a dose-response association with higher volumes of muscle-strengthening activities.' Older adults: 'As for adults, plus ... multicomponent physical activity that emphasises functional balance and strength training at moderate or greater intensity on 3 or more days a week ...'.
 
 ### S017
 Borde R, Hortobagyi T, Granacher U, 2015. Dose-Response Relationships of Resistance Training in Healthy Old Adults: A Systematic Review and Meta-Analysis. Sports Med 45(12):1693-1720  
@@ -529,7 +529,7 @@ Schoenfeld BJ, Grgic J, Haun C, Itagaki T, Helms ER. 2019. Calculating Set-Volum
 Type: Narrative review · DOI: [10.3390/sports7070177](https://doi.org/10.3390/sports7070177) · Files: strength-hypertrophy  
 URL: <https://pubmed.ncbi.nlm.nih.gov/31336594/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=6681288&rettype=xml>  
-Supports: Abstract: 'sets for a MJ exercise should be counted fractionally for select muscles'; hamstring activation 'markedly lower than that of the quadriceps ... a 1:1 ratio cannot be assumed'; longitudinal evidence 'limited to the elbow flexors and ... somewhat conflicting'. Full text: hamstring EMG '~twofold lower' than quadriceps in squat and leg press; rectus femoris 68% MVC in leg extension vs 39% in leg press and 27% in squat; pec major ~twofold greater EMG than triceps in bench press.
+Supports: 'we propose the best advice would be to view set-volume prescription on a 1:1 basis'; hamstring activation 'a 1:1 ratio cannot be assumed'; longitudinal evidence 'limited to the elbow flexors and ... somewhat conflicting'. hamstring EMG '~twofold lower' than quadriceps in squat and leg press; rectus femoris 68% MVC (leg extension), 39% (leg press), 27% (squat); pec major ~twofold greater EMG than triceps in bench press; 'likely depends on the individual and the technical execution'.
 
 ### S074
 Lanza MB, Prado GC, Lacerda LT, ..., Martins-Costa HC. 2024. Muscle hypertrophy response across four muscles involved in the bench press exercise: Randomized 10 weeks training intervention. J Bodyw Mov Ther 40:1417-1422.  
@@ -2430,7 +2430,7 @@ Williams NI, De Souza MJ et al., 2026 (Epub 2025). 2025 Update to the Female Ath
 Type: Position stand · DOI: [10.1007/s40279-025-02332-0](https://doi.org/10.1007/s40279-025-02332-0) · Files: nutrition, recovery-habits  
 URL: <https://pubmed.ncbi.nlm.nih.gov/41474492/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=PMC12982345&rettype=xml>  
-Supports: Abstract: 'moving away from the concept of an energy-availability threshold'. Full text: 'the use of an EA "threshold" (e.g. < 30 kcal/kg FFM/day), is not recommended due to more recent data demonstrating that menstrual disturbances occur in exercising women at EA levels above this threshold'; 'EA is difficult to reliably estimate and can fluctuate widely from day to day'; indicators include mRMR/pRMR ratio, TT3, IGF-1, leptin, weight/BMI. ...
+Supports: 'the use of an EA "threshold" (e.g. < 30 kcal/kg FFM/day), is not recommended due to more recent data demonstrating that menstrual disturbances occur in exercising women at EA levels above this threshold'; 'EA is difficult to reliably estimate and can fluctuate widely from day to day'; indicators include mRMR/pRMR ratio, TT3, IGF-1, leptin, weight/BMI; CRA updates 'may improve the risk stratification process among exercising and physically active women'.
 
 ### S349
 Feltner C et al., 2022. Screening for Eating Disorders in Adolescents and Adults: Evidence Report and Systematic Review for the US Preventive Services Task Force. JAMA 327(11):1068-1082  
@@ -2574,7 +2574,7 @@ Pessoa de Lima LV, Oliveira NM, Siqueira Garcia LR, da Silva Ribeiro KD, 2026. N
 Type: Systematic review · DOI: [10.1177/08903344261476731](https://doi.org/10.1177/08903344261476731) · Files: nutrition  
 URL: <https://pubmed.ncbi.nlm.nih.gov/42799596/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=42799596&rettype=abstract&retmode=text>  
-Supports: 'Seven clinical trials... durations ranging from 11 days to 12 months. Caloric restriction (deficit of 500 kcal/day) combined with macronutrient adjustment was associated with significant postpartum weight loss'; 'caloric restriction for durations exceeding 1 month appears to promote weight loss... without self-reported adverse effects on breastfeeding performance. However, caution is important...'
+Supports: 'Seven clinical trials... durations ranging from 11 days to 12 months. Caloric restriction (deficit of 500 kcal/day) combined with macronutrient adjustment was associated with significant postpartum weight loss'; 'caloric restriction for durations exceeding 1 month appears to promote weight loss... without self-reported adverse effects on breastfeeding performance. caution is important... knowledge gap concerning its impacts on the mother-infant dyad and breast milk composition.'
 
 ### S370
 Golden NH, Schneider M, Wood C; AAP Committee on Nutrition, Committee on Adolescence, Section on Obesity, 2016. Preventing Obesity and Eating Disorders in Adolescents. Pediatrics 138(3):e20161649  
@@ -2649,7 +2649,7 @@ Hew-Butler T, Loi V, Pani A, Rosner MH, 2017. Exercise-Associated Hyponatremia: 
 Type: Narrative review · DOI: [10.3389/fmed.2017.00021](https://doi.org/10.3389/fmed.2017.00021) · Files: nutrition  
 URL: <https://pubmed.ncbi.nlm.nih.gov/28316971/>  
 Opened: <https://pmc.ncbi.nlm.nih.gov/articles/PMC5334560/>  
-Supports: Diagnostic threshold: any blood [Na+] below 135 mmol/L. 'overdrinking beyond thirst and non-osmotic arginine vasopressin release are the most common etiologic factors'. The 2015 consensus: 'the primary etiology and mechanism leading to EAH was the overconsumption of hypotonic fluids'. 'Following thirst as a real-time guide appears safe and effective'; sodium 'cannot prevent EAH in the setting of excessive fluid intake'.
+Supports: Diagnostic threshold: any blood [Na+] below 135 mmol/L. 'overdrinking beyond thirst ... most common etiologic factors'. The 2015 consensus: 'overconsumption of hypotonic fluids'. 'Following thirst as a real-time guide appears safe and effective'; 'athletes should not gain weight during the event'; sodium 'cannot prevent EAH in the setting of excessive fluid intake'; 'Sodium-containing sports drinks, which are hypotonic, will not prevent EAH in athletes who overdrink'.
 
 ### S381
 World Health Organization. Salt reduction (fact sheet), current version; based on WHO Guideline: Sodium intake for adults and children, 2012  
@@ -2726,7 +2726,7 @@ Supports: '10 gramos de alcohol o 1 Unidad de Bebida Estándar (UBE)'. 'Evita su
 WHO Regional Office for Europe, 4 Jan 2023. No level of alcohol consumption is safe for our health (news release on WHO statement in Lancet Public Health)  
 Type: Guideline · DOI: none · Files: nutrition  
 URL: <https://www.who.int/europe/news/item/04-01-2023-no-level-of-alcohol-consumption-is-safe-for-our-health>  
-Supports: 'there is no safe amount that does not affect health'. 'around half of all alcohol-attributable cancers in the WHO European Region occur among people whose alcohol consumption does not meet the definition of heavy drinking'. 'there are no studies that would demonstrate that the potential beneficial effects of light and moderate drinking on cardiovascular diseases and type 2 diabetes outweigh the cancer risk ... for individual consumers'. ...
+Supports: 'there is no safe amount that does not affect health'. 'around half of all alcohol-attributable cancers in the WHO European Region occur among people whose alcohol consumption does not meet the definition of heavy drinking'. 'there are no studies that would demonstrate that the potential beneficial effects of light and moderate drinking on cardiovascular diseases and type 2 diabetes outweigh the cancer risk'. Protective effects 'tightly connected with the comparison groups chosen'.
 
 ### S393
 Kwok A, Dordevic AL, Paton G, Page MJ, Truby H, 2019. Effect of alcohol consumption on food energy intake: a systematic review and meta-analysis. Br J Nutr 121(5):481-495  
@@ -2754,7 +2754,7 @@ Garber CE et al., 2011. ACSM position stand: Quantity and quality of exercise fo
 Type: Position stand · DOI: [10.1249/MSS.0b013e318213fefb](https://doi.org/10.1249/MSS.0b013e318213fefb) · Files: cardio-health, strength-hypertrophy  
 URL: <https://pubmed.ncbi.nlm.nih.gov/21694556/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=21694556&rettype=abstract&retmode=text>; full text: <https://acikders.ankara.edu.tr/mod/resource/view.php?id=4289>  
-Supports: At least 30 min/day on 5 days a week (150 min/week) moderate or 20 min/day on 3 days (75 min/week) vigorous; 500-1000 MET-min/week; resistance 2-3 days/week. Table 5 (p. 1341): light 30-39% HRR/VO2R, 57-63% HRmax, RPE 9-11; moderate 40-59, 64-76, RPE 12-13, 3.0-5.9 METs; vigorous 60-89, 77-95, RPE 14-17, 6.0-8.7 METs; near-maximal >=90, >=96, RPE >=18; moderate METs by age 4.8-7.1, 4.0-5.9, 3.2-4.7. HRR or VO2R 'may be preferable'.
+Supports: 30 min on 5 days (150 min/week) moderate or 20 min/day on 3 days (75 min/week) vigorous; 500-1000 MET-min/week. light 30-39% HRR/VO2R, 57-63% HRmax, RPE 9-11; moderate 40-59, 64-76, RPE 12-13, 3.0-5.9 METs; vigorous 60-89, 77-95, RPE 14-17, 6.0-8.7 METs; near-maximal >=90, >=96, RPE >=18; moderate METs by age 4.8-7.1, 4.0-5.9, 3.2-4.7. 'cannot be assumed that one method ... is necessarily equivalent'; HRR or VO2R 'may be preferable'; advantage 'has not been supported by all studies'.
 
 ### S397
 Jakicic JM et al., 2019. Association between bout duration of physical activity and health: systematic review. Med Sci Sports Exerc  
@@ -4669,7 +4669,7 @@ NICE NG69, 2017 (updated 16 Dec 2020). Eating disorders: recognition and treatme
 Type: Guideline · DOI: none · Files: recovery-habits  
 URL: <https://www.nice.org.uk/guidance/ng69>  
 Opened: <https://www.nice.org.uk/guidance/ng69/chapter/Recommendations>  
-Supports: 1.2.6 list (unusually low or high BMI; rapid weight loss; dieting or restrictive eating; social withdrawal; concern about weight or shape; menstrual or endocrine disturbances; malnutrition signs; 'excessive exercise'; 'professional sport, fashion, dance, or modelling'). 1.2.10 'If an eating disorder is suspected after an initial assessment, refer immediately'. 1.2.5: SCOFF-type tools should not be the sole method. 'Last updated: 16 December 2020'.
+Supports: 1.2.6 list (low or high BMI; rapid weight loss; dieting or restrictive eating; social withdrawal; concern about weight or shape; menstrual or endocrine disturbances; malnutrition signs: dizziness, palpitations, fainting, pallor; compensatory behaviours incl. 'excessive exercise'; atypical dental wear; 'professional sport, fashion, dance, modelling'). 1.2.10 refer immediately. 1.1.1 difficult or distressing to discuss; 1.2.1 earliest opportunity; 1.2.5 SCOFF not sole method. 2020.
 
 ### S672
 Academy for Eating Disorders, 2021. Eating Disorders: A Guide to Medical Care, 4th ed.  
@@ -5022,7 +5022,7 @@ Supports: Rounds of 120/105/95 participants; consensus (≥75%) on 46/49 stateme
 Goom T, Donnelly G, Brockwell E, 2019. Returning to running postnatal - guidelines for medical, health and fitness professionals managing this population  
 Type: Guideline · DOI: none · Files: recovery-habits  
 URL: <https://athleticsni.org/download/files/Returning_to_running_postnatal_guideline_for_medical_health_and_fitness_professionals_managing_this_population.05.pdf>  
-Supports: Evidence-Based Recommendation 2 (Level 4): 'Return to running is not advisable prior to 3 months postnatal or beyond this if any symptoms of pelvic floor dysfunction'. 'return to running between 3-6 months postnatal, at the earliest'. Load-and-impact tests: walk 30 min, SL balance 10 s, SL squat 10 each side, jog 1 min, 10 bounds, 10 hops each leg, running man 10 each side, all without pain, heaviness, dragging or incontinence. Strength tests: 20 reps each.
+Supports: Rec 2 (Level 4): 'Return to running is not advisable prior to 3 months postnatal or beyond this if any symptoms of pelvic floor dysfunction'. 'return to running between 3-6 months postnatal, at the earliest'. Tests: walk 30 min, SL balance 10 s, SL squat 10 each side, jog 1 min, 10 bounds, 10 hops each leg, running man 10 each side, all without pain, heaviness, dragging or incontinence. Strength tests: 20 reps each; 'Weakness ... not a barrier'. Table 2 risk factors.
 
 ### S724
 Kimber ML et al., 2021. Health Outcomes after Pregnancy in Elite Athletes: A Systematic Review and Meta-analysis. Med Sci Sports Exerc 53(8):1739-1747  
@@ -5447,7 +5447,7 @@ Brooke-Wavell K et al., 2022. Strong, steady and straight: UK consensus statemen
 Type: Guideline · DOI: [10.1136/bjsports-2021-104634](https://doi.org/10.1136/bjsports-2021-104634) · Files: strength-hypertrophy, cardio-health  
 URL: <https://pubmed.ncbi.nlm.nih.gov/35577538/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=9304091&rettype=xml>  
-Supports: Muscle strengthening 2 or 3 days a week, progressive resistance up to 3 sets of the maximum load that can be lifted 8-12 times [E]; moderate impact (stamping, jogging, low-level jumping, hopping) on most days, at least 50 impacts per session, e.g. 5 sets of 10 [C]. Australian guidance: 50 jumps in 3-5 sets on 4-7 days at more than 4 times body weight if no osteoporosis; with vertebral fracture, impact only up to brisk walking.
+Supports: Strengthening 2 or 3 days a week, progressive resistance up to 3 sets of the maximum load that can be lifted 8-12 times [E]; moderate impact (stamping, jogging, jumping, hopping) most days, at least 50 impacts per session, 5 sets of 10 [C]. Australia: 50 jumps, 3-5 sets, 4-7 days, over 4 times body weight if no osteoporosis. Little evidence of significant harm, benefits generally outweigh risks; with vertebral or multiple low-trauma fractures, impact usually only up to brisk walking.
 
 ### S785
 Beck BR, Daly RM, Singh MA, Taaffe DR, 2017. Exercise and Sports Science Australia (ESSA) position statement on exercise prescription for the prevention and management of osteoporosis. J Sci Med Sport 20(5):438-445  
@@ -5733,7 +5733,7 @@ Prokopidis K, Giannos P, Katsikas Triantafyllidis K, Kechagias KS, Mesinovic J, 
 Type: Meta-analysis · DOI: [10.1002/jcsm.12976](https://doi.org/10.1002/jcsm.12976) · Files: nutrition  
 URL: <https://pubmed.ncbi.nlm.nih.gov/35261183/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=35261183&rettype=abstract&retmode=text>  
-Supports: Abstract: 'Ten RCTs were included in the meta-analysis [older adults >50 years]. A significant decrease in SPPB scores was observed with vitamin D supplementation compared with placebo (MD: -0.23; 95% CI -0.40 to -0.06; P = 0.007). Vitamin D supplementation conferred no effect on HGS (MD: -0.07 kg ...), TUG (MD: 0.07 s) ... may compromise some aspects of physical performance.'. Added by research 2026-10-24 (dropped claim D077).
+Supports: Abstract: 'Ten RCTs ... community-dwelling older adults >50 years. A significant decrease in SPPB scores was observed with vitamin D supplementation compared with placebo (MD: -0.23; 95% CI -0.40 to -0.06; P = 0.007). Vitamin D supplementation conferred no effect on HGS (MD: -0.07 kg ...), TUG (MD: 0.07 s), ALM (MD: 0.06 kg/m2; 95% CI: -0.32 to 0.44) ... may compromise some aspects of physical performance.'. Added by research 2026-10-24 (dropped claim D077).
 
 ### S826
 Wilke J, Muller AL, Giesche F, Power G, Ahmedi H, Behm DG. 2020. Acute Effects of Foam Rolling on Range of Motion in Healthy Adults: A Systematic Review with Multilevel Meta-analysis. Sports Med 50(2):387-402  
@@ -5747,7 +5747,7 @@ Warneke K, Ploschberger G, Lohmann LH, Lichtenstein E, Jochum D, Siegel SD, Zech
 Type: Meta-analysis · DOI: [10.1016/j.jshs.2024.01.006](https://doi.org/10.1016/j.jshs.2024.01.006) · Files: recovery-habits  
 URL: <https://pubmed.ncbi.nlm.nih.gov/38244921/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=38244921&rettype=abstract&retmode=text>  
-Supports: Abstract: '38 studies comparing the effects of stretching and foam rolling with several other interventions on ROM and passive properties were included ... 1134 participants in total ... Results showed no significant differences in ROM (ES = 0.01, p = 0.88), stiffness (ES = 0.09, p = 0.67), or passive peak torque (ES = -0.30, p = 0.14)'. Added by research 2026-10-24 (dropped claim D177).
+Supports: Abstract: '38 studies comparing the effects of stretching and foam rolling with several other interventions on ROM and passive properties ... 1134 participants ... quality fair (PEDro score = 4.58) with low to moderate certainty of evidence. Results showed no significant differences in ROM (ES = 0.01, p = 0.88), stiffness (ES = 0.09, p = 0.67), or passive peak torque (ES = -0.30, p = 0.14) ...'. Added by research 2026-10-24 (dropped claim D177).
 
 ### S828
 Glanzel MH, Rodrigues DR, Petter GN, Pozzobon D, Vaz MA, Geremia JM. 2023. Foam Rolling Acute Effects on Myofascial Tissue Stiffness and Muscle Strength: A Systematic Review and Meta-Analysis. J Strength Cond Res 37(4):951-968  
@@ -5761,49 +5761,49 @@ National Institute for Health and Care Excellence. 2014. Behaviour change: indiv
 Type: Guideline · DOI: none · Files: recovery-habits  
 URL: <https://www.nice.org.uk/guidance/ph49>  
 Opened: <https://www.nice.org.uk/guidance/ph49/chapter/1-Recommendations>  
-Supports: Full text: 'Interventions should include techniques to address relapse and recognise that it is common. ... Recommendation 10 Ensure behaviour change is maintained for at least a year ... feedback and monitoring at regular intervals for a minimum of 1 year after they complete the intervention ... well-rehearsed action plans (such as 'if-then' plans)' [covers people aged 16 and over]. Added by research 2026-10-24 (dropped claim D180).
+Supports: 'techniques to address relapse and recognise that it is common ... agree goals ... develop coping plans to prevent and manage relapses ... support self-monitoring ... provide feedback ... Plan at what point ... a review will be undertaken to assess progress towards goals ... Recommendation 10 ... at least a year ... feedback and monitoring at regular intervals for a minimum of 1 year ... 'if-then' plans' [aged 16 and over]. Added by research 2026-10-24 (dropped claim D180).
 
 ### S830
 de Villarreal ES, Kellis E, Kraemer WJ, Izquierdo M. 2009. Determining variables of plyometric training for improving vertical jump height performance: a meta-analysis. J Strength Cond Res 23(2):495-506  
 Type: Meta-analysis · DOI: [10.1519/JSC.0b013e318196b7c6](https://doi.org/10.1519/JSC.0b013e318196b7c6) · Files: strength-hypertrophy  
 URL: <https://pubmed.ncbi.nlm.nih.gov/19197203/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=19197203&rettype=abstract&retmode=text>  
-Supports: Abstract: 'A meta-analysis of 56 studies with a total of 225 effect sizes (ESs) ... training volumes of more than 10 weeks and more than 20 sessions, using high-intensity programs (with more than 50 jumps per session), seemed to maximize the probability of significantly greater improvements (p < 0.05). ... no extra benefits were found to be gained from doing plyometrics with added weight.'. Added by research 2026-10-24 (power balance core agility).
+Supports: Abstract: '56 studies, 225 effect sizes ... more than 10 weeks and more than 20 sessions, high-intensity programs (more than 50 jumps per session) seemed to maximize the probability of greater improvements (p < 0.05). ... combination of plyometrics (squat jump + countermovement jump + drop jump) is recommended rather than using only 1 form (p < 0.05). ... no extra benefits ... added weight.' Added by research 2026-10-24 (power balance core agility).
 
 ### S831
 Ramirez-Campillo R, Thapa RK, Afonso J, Perez-Castilla A, Bishop C, Byrne PJ, Granacher U. 2023. Effects of Plyometric Jump Training on the Reactive Strength Index in Healthy Individuals Across the Lifespan: A Systematic Review with Meta-analysis. Sports Med 53(5):1029-1053  
 Type: Meta-analysis · DOI: [10.1007/s40279-023-01825-0](https://doi.org/10.1007/s40279-023-01825-0) · Files: strength-hypertrophy  
 URL: <https://pubmed.ncbi.nlm.nih.gov/36906633/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=36906633&rettype=abstract&retmode=text>  
-Supports: '61 articles ... 2576 participants aged 8.1-73.1 years (males ~78%; under 18 ~60%); 42 studies with a sport background ... RSI gains greater (p = 0.023) for adults. PJT more effective with > 7 weeks versus <= 7, > 14 sessions versus <= 14, 3 weekly sessions versus < 3 (p = 0.027-0.060). Similar after <= 1080 versus > 1080 total jumps ... meta-regression no training variable explained the effects (p = 0.714-0.984, R2 = 0.0).'. Added by research 2026-10-24 (power balance core agility).
+Supports: '61 articles, 2576 participants ... aged 8.1-73.1 years (males ~78%; under 18 ~60%); 42 studies with a sport background ... RSI gains greater (p = 0.023) for adults. PJT better with > 7 weeks versus <= 7, > 14 sessions versus <= 14, 3 weekly sessions versus < 3 (p = 0.027-0.060). Similar after <= 1080 versus > 1080 jumps ... meta-regression p = 0.714-0.984, R2 = 0.0. Certainty moderate (main), low-to-moderate (moderators).' Added by research 2026-10-24 (power balance core agility).
 
 ### S832
 Oxfeldt M, Overgaard K, Hvid LG, Dalgas U. 2019. Effects of plyometric training on jumping, sprint performance, and lower body muscle strength in healthy adults: A systematic review and meta-analyses. Scand J Med Sci Sports 29(10):1453-1465  
 Type: Meta-analysis · DOI: [10.1111/sms.13487](https://doi.org/10.1111/sms.13487) · Files: strength-hypertrophy  
 URL: <https://pubmed.ncbi.nlm.nih.gov/31136014/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=31136014&rettype=abstract&retmode=text>  
-Supports: Abstract: '(c) included healthy individuals >=18 years ... 25 fulfilled the inclusion criteria ... improvements for all three performance variables after 4-12 weeks of PLY. The SMD (CI95%) for jump height, sprint time, and muscle strength were 0.45 (0.16: 0.75), -0.59 (-1.01: -0.17), and 0.33 (0.03: 0.63) ...'. Added by research 2026-10-24 (power balance core agility).
+Supports: Abstract: '(c) included healthy individuals >=18 years ... 25 fulfilled the inclusion criteria ... improvements for all three performance variables after 4-12 weeks of PLY. The SMD (CI95%) for jump height, sprint time, and muscle strength were 0.45 (0.16: 0.75), -0.59 (-1.01: -0.17), and 0.33 (0.03: 0.63) ... small-to-moderate positive effect ... in healthy adults being recreationally active or athletes.' Added by research 2026-10-24 (power balance core agility).
 
 ### S833
 Thapa RK, Uysal HS, Clemente FM, Afonso J, Ramirez-Campillo R. 2024. Effects of complex training compared to resistance training alone on physical fitness of healthy individuals: A systematic review with meta-analysis. J Sports Sci 42(14):1367-1389  
 Type: Meta-analysis · DOI: [10.1080/02640414.2024.2391657](https://doi.org/10.1080/02640414.2024.2391657) · Files: strength-hypertrophy  
 URL: <https://pubmed.ncbi.nlm.nih.gov/39163393/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=39163393&rettype=abstract&retmode=text>  
-Supports: Abstract: 'Thirty-two studies involving 726 participants ... Compared to RT, CT favoured 5-m (ES = 0.96) and 20-m linear sprint (ES = 0.52), change-of-direction speed (ES = 0.39), and countermovement jump height (ES = 0.36). ... longer interventions (>=7 weeks), with ~ 3 weekly training sessions'. Added by research 2026-10-24 (power balance core agility).
+Supports: '32 studies, 726 participants ... Both RT and CT similarly improved 1RM squat and bench press ... Compared to RT, CT favoured 5-m (ES = 0.96) and 20-m linear sprint (ES = 0.52), change-of-direction speed (ES = 0.39), and countermovement jump height (ES = 0.36). ... Certainty low for 5-m and 20-m sprints and CODS, very low for other outcomes. ... longer interventions (>=7 weeks), ~ 3 weekly sessions'. Added by research 2026-10-24 (power balance core agility).
 
 ### S834
 Bauer P, Uebellacker F, Mitter B, Aigner AJ, Hasenoehrl T, Ristl R, Tschan H, Seitz LB. 2019. Combining higher-load and lower-load resistance training exercises: A systematic review and meta-analysis of findings from complex training studies. J Sci Med Sport 22(7):838-851  
 Type: Meta-analysis · DOI: [10.1016/j.jsams.2019.01.006](https://doi.org/10.1016/j.jsams.2019.01.006) · Files: strength-hypertrophy  
 URL: <https://pubmed.ncbi.nlm.nih.gov/30683485/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=30683485&rettype=abstract&retmode=text>  
-Supports: Abstract: 'The analysis comprised 33 studies and a total of 1064 healthy participants. ... when directly compared to traditional training methods, only 1-RM squat strength performance and 20m sprint time were superior following CT interventions ... CT is an acceptable method for improving jump, strength and sprint performance in athletes'. Added by research 2026-10-24 (power balance core agility).
+Supports: Abstract: 'The analysis comprised 33 studies and a total of 1064 healthy participants. ... when directly compared to traditional training methods, only 1-RM squat strength performance and 20m sprint time were superior following CT interventions ... CT is an acceptable method for improving jump, strength and sprint performance in athletes ... these findings were influenced by single studies'. Added by research 2026-10-24 (power balance core agility).
 
 ### S835
 Thapa RK, Bagchi A, Uysal HS, Talukdar K, Afonso J, Ramirez-Campillo R. 2026. Effects of Complex Training Versus Ballistic Training on Physical Fitness Abilities of Athletes and Healthy Individuals: A Systematic Review with Meta-analysis. Sports Med 56(5):1213-1234  
 Type: Meta-analysis · DOI: [10.1007/s40279-026-02395-7](https://doi.org/10.1007/s40279-026-02395-7) · Files: strength-hypertrophy  
 URL: <https://pubmed.ncbi.nlm.nih.gov/41731268/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=41731268&rettype=abstract&retmode=text>  
-Supports: Abstract: '19 studies involving 537 participants ... Compared with ballistic training, significantly greater improvements were reported after complex training for one-repetition maximum (ES = 1.12, p = 0.010), squat jump (ES = 0.37, p = 0.004), 10 m (ES = 0.67, p = 0.033), and 40 m (ES = 0.72, p = 0.005) linear sprint. ... The certainty of the evidence was low for the squat jump and very low for all other outcomes.'. Added by research 2026-10-24 (power balance core agility).
+Supports: '19 studies involving 537 participants ranging from "tier 0" (i.e., sedentary) to "tier 3" (i.e., highly trained) ... Compared with ballistic training, significantly greater improvements after complex training for 1RM (ES = 1.12), squat jump (ES = 0.37), 10 m (ES = 0.67), and 40 m (ES = 0.72) linear sprint. ... The certainty of the evidence was low for the squat jump and very low for all other outcomes.'. Added by research 2026-10-24 (power balance core agility).
 
 ### S836
 Zhao C, Zhu Y, Zhang Y. 2026. Effects of combined resistance and plyometric training modalities on vertical jump and sprint: a systematic review and network meta-analysis. BMC Sports Sci Med Rehabil 18(1):82  
@@ -5831,7 +5831,7 @@ Swinton PA, Schoenfeld BJ, Murphy A. 2024. Dose-Response Modelling of Resistance
 Type: Meta-analysis · DOI: [10.1007/s40279-024-02006-3](https://doi.org/10.1007/s40279-024-02006-3) · Files: strength-hypertrophy  
 URL: <https://pubmed.ncbi.nlm.nih.gov/38652410/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=PMC11239729&retmode=xml>  
-Supports: Full text: '... 295 studies comprising 535 groups and 6,710 participants ... time points <= 26 weeks. ... maximum strength likely to be maximised with the heaviest loads, vertical jump performance likely to be maximised with relatively light loads (~ 30% 1RM), and power likely to be maximised with low to moderate loads (40-70% 1RM). ... only 12% of the studies included here conducted with female-only groups.'. Added by research 2026-10-24 (power balance core agility).
+Supports: '295 studies, 535 groups, 6,710 participants ... time points <= 26 weeks. ... maximum strength likely to be maximised with the heaviest loads, vertical jump performance with relatively light loads (~ 30% 1RM), and power with low to moderate loads (40-70% 1RM). ... loads lifted with maximum intent ... may provide the greatest transfer to improvements in jump performance ... only 12% of the studies ... female-only groups.'. Added by research 2026-10-24 (power balance core agility).
 
 ### S840
 Liao KF, Wang XX, Han MY, Li LL, Nassis GP, Li YM. 2021. Effects of velocity based training vs. traditional 1RM percentage-based training on improving strength, jump, linear sprint and change of direction speed performance: A Systematic review with meta-analysis. PLoS One 16(11):e0259790  
@@ -5852,7 +5852,7 @@ Lesinski M, Hortobagyi T, Muehlbauer T, Gollhofer A, Granacher U. 2015. Dose-res
 Type: Meta-analysis · DOI: [10.1007/s40279-014-0284-5](https://doi.org/10.1007/s40279-014-0284-5) · Files: strength-hypertrophy  
 URL: <https://pubmed.ncbi.nlm.nih.gov/25430598/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=25430598&rettype=abstract&retmode=text>  
-Supports: Abstract: '25 studies: BT is an effective means to improve steady-state (ESdb = 0.73) and proactive balance (ESdb = 0.92). Elite athletes 1.29, sub-elite 0.32, recreational 0.69, untrained 0.82. ... 11-12 weeks (1.09), three (0.72) or six (1.84) sessions per week, 16-19 sessions (1.12), 11-15 min per session (1.11), four exercises (1.29), two sets (1.63), 21-40 s per exercise (1.06) most effective ... mean PEDro score of 5.'. Added by research 2026-10-24 (power balance core agility).
+Supports: '25 studies: BT improves steady-state (ESdb = 0.73) and proactive balance (ESdb = 0.92). Elite 1.29, sub-elite 0.32, recreational 0.69, untrained 0.82. ... 11-12 weeks (1.09), three (0.72) or six (single 1.84) sessions per week, 16-19 sessions (1.12), 11-15 min per session (1.11), four exercises (1.29), two sets (1.63), 21-40 s (1.06) most effective ... hard to separate one modality from the others ... mean PEDro score of 5.'. Added by research 2026-10-24 (power balance core agility).
 
 ### S843
 Navaratnarajah S, Razman R, Goh SL. 2026. Effects of Single- Versus Multicomponent Neuromuscular Training on Balance Performance in Recreational Athletes: A Systematic Review and Network Meta-Analysis. J Sport Rehabil 35(4):292-300  
@@ -5866,21 +5866,21 @@ Kummel J, Kramer A, Giboin LS, Gruber M. 2016. Specificity of Balance Training i
 Type: Meta-analysis · DOI: [10.1007/s40279-016-0515-z](https://doi.org/10.1007/s40279-016-0515-z) · Files: strength-hypertrophy  
 URL: <https://pubmed.ncbi.nlm.nih.gov/26993132/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=26993132&rettype=abstract&retmode=text>  
-Supports: Abstract: 'Six studies with a total of 102 subjects ... The effect of balance training on the performance of the trained balance tasks reached an SMDbs of 0.79 [95% CI 0.48-1.10] ... The SMDbs in non-trained categories reached values between -0.07 (95% CI -0.53 to 0.38) and 0.18 (95% CI -0.27 to 0.64) ... no effect on non-trained balance tasks'. Added by research 2026-10-24 (power balance core agility).
+Supports: Abstract: 'Six studies with a total of 102 subjects ... trained balance tasks reached an SMDbs of 0.79 [95% CI 0.48-1.10] ... non-trained categories reached values between -0.07 (95% CI -0.53 to 0.38) and 0.18 (95% CI -0.27 to 0.64) ... no effect on non-trained balance tasks. ... Generic balance tasks-such as one-leg stance-may have little value as overall balance measures'. Added by research 2026-10-24 (power balance core agility).
 
 ### S845
 Zech A, Hubscher M, Vogt L, Banzer W, Hansel F, Pfeifer K. 2010. Balance training for neuromuscular control and performance enhancement: a systematic review. J Athl Train 45(4):392-403  
 Type: Systematic review · DOI: [10.4085/1062-6050-45.4.392](https://doi.org/10.4085/1062-6050-45.4.392) · Files: strength-hypertrophy  
 URL: <https://pubmed.ncbi.nlm.nih.gov/20617915/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=20617915&rettype=abstract&retmode=text>  
-Supports: Abstract: '... healthy and physically active participants aged up to 40 years old ... In total, 20 randomized clinical trials met the inclusion criteria. Balance training was effective in improving postural sway and functional balance when compared with untrained control participants. ... conflicting results or no effects of balance training were reported for strength improvements and changes in sprint performance.'. Added by research 2026-10-24 (power balance core agility).
+Supports: Abstract: '... physically active participants aged up to 40 years ... 20 randomized clinical trials ... Balance training was effective in improving postural sway and functional balance versus untrained controls. ... controversial findings for jumping, agility and neuromuscular control, but indications of effectiveness. Compared with plyometric or strength training, conflicting results or no effects for strength and sprint.' Added by research 2026-10-24 (power balance core agility).
 
 ### S846
 Hubscher M, Zech A, Pfeifer K, Hansel F, Vogt L, Banzer W. 2010. Neuromuscular training for sports injury prevention: a systematic review. Med Sci Sports Exerc 42(3):413-21  
 Type: Systematic review · DOI: [10.1249/MSS.0b013e3181b88d37](https://doi.org/10.1249/MSS.0b013e3181b88d37) · Files: recovery-habits  
 URL: <https://pubmed.ncbi.nlm.nih.gov/19952811/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=19952811&rettype=abstract&retmode=text>  
-Supports: Abstract: '7 methodologically well-conducted studies ... multi-intervention training reduced the risk of lower limb injuries (RR = 0.61, 95% CI = 0.49-0.77), acute knee injuries (RR = 0.46, 0.28-0.76), and ankle sprain injuries (RR = 0.50, 0.31-0.79). Balance training alone reduced ankle sprain injuries (RR = 0.64, 0.46-0.9) and, nonsignificantly, injuries overall (RR = 0.49, 0.13-1.8).'. Added by research 2026-10-24 (power balance core agility).
+Supports: '7 studies ... multi-intervention training reduced lower limb injuries (RR = 0.61, 0.49-0.77), acute knee injuries (RR = 0.46, 0.28-0.76) and ankle sprains (RR = 0.50, 0.31-0.79). Balance training alone reduced ankle sprains (RR = 0.64, 0.46-0.9) and, n.s., injuries overall (RR = 0.49, 0.13-1.8). Exercise was more effective in athletes with a history of sports injury ... adolescent and young adult athletes in pivoting sports.' Added by research 2026-10-24 (power balance core agility).
 
 ### S847
 Schiftan GS, Ross LA, Hahne AJ. 2015. The effectiveness of proprioceptive training in preventing ankle sprains in sporting populations: a systematic review and meta-analysis. J Sci Med Sport 18(3):238-44  
@@ -5894,7 +5894,7 @@ Wang F, Guan Y, Bamber Z, Cao X, Qi Q, Niu W, Chen B. 2023. Preventive intervent
 Type: Meta-analysis · DOI: [10.1177/02692155221137640](https://doi.org/10.1177/02692155221137640) · Files: recovery-habits  
 URL: <https://pubmed.ncbi.nlm.nih.gov/36630892/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=36630892&rettype=abstract&retmode=text>  
-Supports: Abstract: '... Seventeen studies met the inclusion criteria. Proprioceptive training exhibited better effects on preventing future lateral ankle sprain compared with the control group (risk ratio = 0.59, p < 0.001), and a stronger preventive effect was observed in participants with a history of lateral ankle sprain in the subgroup analysis (risk ratio = 0.49, p = 0.02).'. Added by research 2026-10-24 (power balance core agility).
+Supports: '... lateral ankle sprain in the general population. ... Seventeen studies ... Proprioceptive training exhibited better effects on preventing future lateral ankle sprain compared with the control group (risk ratio = 0.59, p < 0.001), and a stronger preventive effect was observed in participants with a history of lateral ankle sprain in the subgroup analysis (risk ratio = 0.49, p = 0.02).'. Added by research 2026-10-24 (power balance core agility).
 
 ### S849
 Saeterbakken AH, Stien N, Andersen V, Scott S, Cumming KT, Behm DG, Granacher U, Prieske O. 2022. The Effects of Trunk Muscle Training on Physical Fitness and Sport-Specific Performance in Young and Adult Athletes: A Systematic Review and Meta-Analysis. Sports Med 52(7):1599-1622  
@@ -5936,7 +5936,7 @@ Martuscello JM, Nuzzo JL, Ashley CD, Campbell BI, Orriola JJ, Mayer JM. 2013. Sy
 Type: Systematic review · DOI: [10.1519/JSC.0b013e318291b8da](https://doi.org/10.1519/JSC.0b013e318291b8da) · Files: strength-hypertrophy  
 URL: <https://pubmed.ncbi.nlm.nih.gov/23542879/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&rettype=abstract&retmode=text&id=23542879>  
-Supports: Abstract: 'Seventeen studies enrolling 252 participants ... lumbar multifidus EMG activity is greater during free weight exercises compared with ball/device exercises and is similar during core stability and ball/device exercises. ... strength and conditioning specialists should focus on implementing multijoint free weight exercises, rather than core-specific exercises'. Added by research 2026-10-24 (power balance core agility).
+Supports: 'Seventeen studies, 252 participants ... moderate levels of evidence ... lumbar multifidus EMG activity is greater during free weight exercises than ball/device exercises ... Transverse abdominis EMG activity is similar during core stability and ball/device exercises. No studies ... for quadratus lumborum EMG activity ... focus on multijoint free weight exercises, rather than core-specific exercises'. Added by research 2026-10-24 (power balance core agility).
 
 ### S855
 Rogan S, Riesen J, Taeymans J. 2014. Core muscle chains activation during core exercises determined by EMG: a systematic review. Praxis (Bern 1994) 103(21):1263-70  
@@ -5950,14 +5950,14 @@ Oliva-Lozano JM, Muyor JM. 2020. Core Muscle Activity During Physical Fitness Ex
 Type: Systematic review · DOI: [10.3390/ijerph17124306](https://doi.org/10.3390/ijerph17124306) · Files: strength-hypertrophy  
 URL: <https://pubmed.ncbi.nlm.nih.gov/32560185/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=PMC7345922&rettype=xml>  
-Supports: Full text: 'The main findings indicate that the greatest activity of the RA, EO, and ES muscles was found in free-weight exercises. The greatest IO activity was observed in core stability exercises, while traditional exercises showed the greatest MUL activation.'. 'free-weight exercises (e.g., deadlift, hip-thrust, or back squat) showed the greatest ES muscle activation'. Added by research 2026-10-24 (power balance core agility).
+Supports: 'greatest activity of the RA, EO, and ES muscles was found in free-weight exercises. The greatest IO activity was observed in core stability exercises, while traditional exercises showed the greatest MUL activation. ... lack of consistency ... measure EMG. ... RA ... Bulgarian squat and back squat with six maximum repetitions ... free-weight exercises (deadlift, hip-thrust, back squat) showed the greatest ES activation'. Added by research 2026-10-24 (power balance core agility).
 
 ### S857
 Johnson R. 2006. Abdominal wall injuries: rectus abdominis strains, oblique strains, rectus sheath hematoma. Curr Sports Med Rep 5(2):99-103  
 Type: Narrative review · DOI: [10.1097/01.csmr.0000306528.74500.bf](https://doi.org/10.1097/01.csmr.0000306528.74500.bf) · Files: recovery-habits  
 URL: <https://doi.org/10.1097/01.csmr.0000306528.74500.bf>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&rettype=abstract&retmode=text&id=16529681>  
-Supports: Abstract: 'The abdominal wall muscles are injured by direct blows to the abdomen or by sudden or repetitive trunk movement, either rotation or flexion/extension. With the exception of the rare rectus sheath hematoma that does not self-tamponade, the treatment for these problems is nonoperative'. PMID 16529681; the URL is the Crossref DOI, so the online check skips PubMed. Added by research 2026-10-24 (power balance core agility).
+Supports: 'Abdominal wall muscles (rectus abdominis, external and internal obliques, and transverse abdominis) are injured by direct blows or sudden or repetitive trunk rotation or flexion/extension. With the exception of the rare rectus sheath hematoma that does not self-tamponade, the treatment is nonoperative with symptoms guiding rehabilitation and return to play.'. PMID 16529681; URL is the Crossref DOI (PubMed's is retired). Added by research 2026-10-24 (power balance core agility).
 
 ### S858
 Liao ED, Puckett Y. 2021. A Proposed Algorithm on the Modern Management of Rectus Sheath Hematoma: A Literature Review. Cureus 13(11):e20008  
@@ -5971,14 +5971,14 @@ Drager J, Rasio J, Newhouse A. 2020. Athletic Pubalgia (Sports Hernia): Presenta
 Type: Narrative review · DOI: [10.1016/j.arthro.2020.09.022](https://doi.org/10.1016/j.arthro.2020.09.022) · Files: recovery-habits  
 URL: <https://pubmed.ncbi.nlm.nih.gov/33276883/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&rettype=abstract&retmode=text&id=33276883>  
-Supports: Abstract: 'It is characterized by abdominal and groin pain likely from weakening or tearing of the abdominal wall without evidence of a true hernia. Symptoms can appear acutely or insidiously, ... Symptoms can be reproduced during a resisted sit-up or with a forced cough or sneeze. ... First-line treatment consists of a period of rest and anti-inflammatories, followed by a course of focused physical therapy.' Added by research 2026-10-24 (power balance core agility).
+Supports: 'It is characterized by abdominal and groin pain likely from weakening or tearing of the abdominal wall. ... Symptoms can be reproduced during a resisted sit-up or with a forced cough or sneeze. ... First-line treatment consists of a period of rest and anti-inflammatories, followed by a course of focused physical therapy. If conservative therapy fails ..., a variety of open or laparoscopic surgical techniques can be used.' Added by research 2026-10-24 (power balance core agility).
 
 ### S860
 Singh U, Ramachandran AK, Ramirez-Campillo R, Perez-Castilla A, Afonso J, Manuel Clemente F, Oliver J. 2022. Jump rope training effects on health- and sport-related physical fitness in young participants: A systematic review with meta-analysis. J Sports Sci 40(16):1801-1814  
 Type: Meta-analysis · DOI: [10.1080/02640414.2022.2099161](https://doi.org/10.1080/02640414.2022.2099161) · Files: cardio-health  
 URL: <https://pubmed.ncbi.nlm.nih.gov/36121177/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=36121177&rettype=abstract&retmode=text>  
-Supports: Abstract: 'Twenty-one studies, 1,021 participants ... 18 of 21 had a mean age <18 years. The duration of the JRT interventions ranged from 6 to 40 weeks. ... improvements (ES = 0.23-1.19) in resting heart rate, body mass index, fat mass, cardiorespiratory endurance, maximal strength, jumping, range of motion, and sprinting. No significant effects for blood pressure, bone or lean mass, or muscle endurance.'. Added by research 2026-10-24 (power balance core agility).
+Supports: '21 moderate-high quality studies, 1,021 participants ... 18 of 21 had a mean age <18 years; 6 to 40 weeks. ... compared to active and passive controls, improvements (ES = 0.23-1.19) in resting HR, BMI, fat mass, cardiorespiratory endurance, maximal strength, jumping, range of motion, and sprinting. No significant effects for blood pressure, waist-hip circumference, bone or lean mass, or muscle endurance.' Added by research 2026-10-24 (power balance core agility).
 
 ### S861
 Town GP, Sol N, Sinning WE. 1980. The effect of rope skipping rate on energy expenditure of males and females. Med Sci Sports Exerc 12(4):295-8  
