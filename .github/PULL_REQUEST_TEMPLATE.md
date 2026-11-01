@@ -8,3 +8,7 @@
 - [ ] `uv run ruff check .`
 - [ ] `uv run python scripts/check_knowledge.py` (if `knowledge/` changed: also `build_knowledge_index.py`)
 - [ ] `docs/safety.md` updated, if a safety rule or flag changed
+
+**Risk** (Low, or which paths of `.github/risk-paths` it touches)
+
+**How to revert**

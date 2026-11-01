@@ -1,0 +1,59 @@
+name: Risk gate
+
+# Holds PRs that touch .github/risk-paths until Matías adds the human-ok label.
+# pull_request_target runs this file and the path list from the base branch, so a PR cannot
+# loosen its own gate. It never checks out or runs PR code: changed files come from the API.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: write # to drop a stale human-ok label
+
+jobs:
+  risk-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check risky paths
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          ACTION: ${{ github.event.action }}
+          APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'human-ok') }}
+        run: |
+          # A missing list fails the step (bash -e), so the gate fails closed.
+          gh api -H "Accept: application/vnd.github.raw" \
+            "repos/$GITHUB_REPOSITORY/contents/.github/risk-paths?ref=$BASE" \
+            | grep -v '^#' | grep -v '^$' > "$RUNNER_TEMP/patterns"
+          files_url="repos/$GITHUB_REPOSITORY/pulls/$PR/files"
+          gh api --paginate "$files_url" --jq '.[].filename' > "$RUNNER_TEMP/files"
+          # The files API stops at 3000 entries: a short list fails closed.
+          expected=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq .changed_files)
+          got=$(wc -l < "$RUNNER_TEMP/files")
+          if [ "$got" -ne "$expected" ]; then
+            echo "::error::Got $got of $expected changed files; cannot check the full PR."
+            exit 1
+          fi
+          # previous_filename catches a risky file renamed out of its path.
+          gh api --paginate "$files_url" --jq '.[].previous_filename // empty' >> "$RUNNER_TEMP/files"
+          # grep exits 1 on no match (fine) and 2 on a bad pattern (fail closed).
+          risky=$(grep -E -f "$RUNNER_TEMP/patterns" "$RUNNER_TEMP/files" || [ $? -eq 1 ])
+          if [ -z "$risky" ]; then
+            echo "No risky paths touched."
+            exit 0
+          fi
+          echo "Risky paths touched:"
+          echo "$risky" | sed 's/^/  /'
+          if [ "$APPROVED" = "true" ] && [ "$ACTION" = "synchronize" ]; then
+            gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --remove-label human-ok
+            echo "::error::New commits after human-ok: label removed, Matías must review again."
+            exit 1
+          fi
+          if [ "$APPROVED" = "true" ]; then
+            echo "Approved with the human-ok label."
+            exit 0
+          fi
+          echo "::error::This PR touches risky paths and needs Matías's human-ok label."
+          exit 1
