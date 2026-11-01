@@ -12,6 +12,8 @@ What matters when reviewing this repo. Reviewers read this before reporting.
   without the deferral line from `docs/safety.md`.
 - Personal data in the repo: anything from `data/` or a real workout export or food log in
   fixtures, docs, issues or commits.
+- A risk-gate change that lets a risky PR pass: an approval not tied to the commit Matías
+  reviewed, or an error (failed API call, cut-off file list) that passes instead of failing.
 
 ## How to report
 
