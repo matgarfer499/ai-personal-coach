@@ -441,6 +441,7 @@ _PROFILE_TYPES = {
     "birth_date": date.fromisoformat,
     "height_cm": float,
     "weight_kg": float,
+    "pal_override": float,
     "research_reminder_months": int,
 }
 
@@ -462,6 +463,8 @@ def _parse_profile_value(field: str, raw: str) -> Any:
                 raise ValueError(f"{field} must be a whole number, not {raw!r}")
             return int(raw)
         return raw
+    if field == "pal_override" and raw.lower() == "none":
+        return None
     if field == "injuries":
         raise ValueError("injuries are set with `coach injury add` and `coach injury clear`")
     if field == "region":

@@ -178,12 +178,12 @@ Ask about one step per message. Store each answer as soon as you have it with
     Only when `use_rpe_not_hr` is false, ask for a morning resting pulse (`--hr-rest N`) and an
     observed all-out peak (`--hr-max N`); skip either if unknown.
     When the `coach energy` `notes` hold the `active` `no_training` note, ask whether the activity
-    comes from the job or from exercise, and never pass the note's `--pal` before they answer.
-    Only when it was exercise that has stopped: rerun `coach energy` with the `--pal` value the
-    note gives (never a value you chose or computed), then `coach macros` with the same `--pal`;
-    pass it to every later `coach energy` and `coach macros` call. From the job, or a mix of
-    both: do not pass it; offer `--tdee` only if the coach or a clinician sets it, never a value
-    you choose. Tell them to keep training on hold until a clinician clears it.
+    comes from the job or from exercise. Only when it was exercise that has stopped, run
+    `coach profile set pal_override VALUE` with the value the note gives (never one you chose or
+    computed), then rerun `coach energy` and `coach macros`: the choice applies to every path
+    while `no_training` holds and is ignored once it clears. From the job, or a mix of both:
+    store nothing, and say the coach cannot model a mix yet (they may tell a clinician). Tell
+    them to keep training on hold until a clinician clears it.
 11. **Reminder.** Say the coach will suggest refreshing its evidence every 6 months
     (`research_reminder_months`); set another number only if they ask.
 

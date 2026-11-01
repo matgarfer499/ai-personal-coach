@@ -9,7 +9,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date
 
-from coach.profile import GLP1, GOALS, WEIGHT_RELATED_CONDITION, Profile, ProfileIncomplete
+from coach.profile import (
+    GLP1,
+    GOALS,
+    PAL_MAX,
+    PAL_MIN,
+    WEIGHT_RELATED_CONDITION,
+    Profile,
+    ProfileIncomplete,
+)
 from coach.safety import GLP1_RULE, SafetyFlags, calorie_block_reason
 from coach.safety import flags as safety_flags
 
@@ -20,9 +28,7 @@ MSJ_SEX_CONSTANT = {"male": 5.0, "female": -161.0}
 # nutrition.md: "Activity multipliers (PAL)": desk 1.4-1.5, desk + about 1 h training most days
 # 1.6-1.75, physically active 1.7-1.9.
 PAL_BANDS = {"desk": (1.4, 1.5), "desk_training": (1.6, 1.75), "active": (1.7, 1.9)}
-# nutrition.md: "Activity multipliers (PAL)": never 1.2 for ambulatory adults (1.4 is the
-# guideline's floor), not above about 2.0 for recreational gym-goers.
-PAL_MIN, PAL_MAX = 1.4, 2.0
+# PAL_MIN and PAL_MAX (profile.py): nutrition.md "Activity multipliers (PAL)" limits.
 
 # nutrition.md: "Deficit size for weight loss (overweight and obesity)" (500-750 kcal) and
 # "Deficit size when keeping or building muscle" (at or below about 500): every coach client
@@ -65,8 +71,8 @@ def band_midpoint(level: str) -> float:
     return (low + high) / 2
 
 
-# nutrition.md: "Activity multipliers (PAL)": with no_training exercise has stopped, so the
-# desk band applies; its midpoint is the --pal the `active` note gives.
+# nutrition.md: "Activity multipliers (PAL)" desk band, which applies once exercise has stopped
+# (no_training). convention: its midpoint is the --pal the `active` note gives.
 DESK_PAL = band_midpoint("desk")
 
 
@@ -92,6 +98,9 @@ def tdee(
     if multiplier is None:
         if no_training is None:
             no_training = safety_flags(profile, today).no_training
+        # The stored choice is ignored once no_training clears.
+        multiplier = profile.pal_override if no_training and profile.pal_override else None
+    if multiplier is None:
         multiplier = pal(profile, training=not no_training)
     elif multiplier < PAL_MIN:
         raise ValueError(
@@ -185,11 +194,17 @@ def calorie_target(
         # A surplus aims at weight gain, which is a weight target: blocked by the same flags.
         if not (flags.prescriber_owns_weight or flags.no_weight_targets):
             adjustment = maintenance * SURPLUS_FRACTION
-    if flags.no_training and not estimate_chosen and profile.activity_level == "active":
+    if (
+        flags.no_training
+        and not estimate_chosen
+        and profile.pal_override is None
+        and profile.activity_level == "active"
+    ):
         notes.append(
             f"{PAL_RULE}: activity level 'active' is kept while training is on hold: if it comes "
             "from the job, no change is needed; if it comes from exercise (stopped while "
-            f"training is on hold), rerun with --pal {DESK_PAL:g}"
+            f"training is on hold), set it with `coach profile set pal_override {DESK_PAL:g}`; "
+            "the coach cannot model a mix of both yet, so make no change"
         )
     notes += [r for r in flags.reasons if r not in notes]
 

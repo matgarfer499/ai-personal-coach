@@ -12,7 +12,7 @@ Every one is labelled where it lives: `# convention:` in code, "convention", "he
 
 | Constant | Value | Rule it builds on | Why this value |
 |---|---|---|---|
-| `energy.DESK_PAL` | desk band midpoint (1.45) | nutrition.md "Activity multipliers (PAL)" | the `--pal` the `active` no_training note gives: exercise has stopped, so the desk band applies |
+| `energy.DESK_PAL` | desk band midpoint | nutrition.md "Activity multipliers (PAL)" | convention: the value the `active` no_training note gives for `pal_override`; exercise has stopped, so the desk band applies |
 | `energy.pal` | band midpoint | nutrition.md "Activity multipliers (PAL)" | midpoint as the point estimate; with `no_training`, `desk_training` uses the `desk` band and `active` keeps its band with a note (text: `energy.calorie_target`, rule "Activity multipliers (PAL)") |
 | `macros.PROTEIN_DEFICIT`, `PROTEIN_OLDER`, `PROTEIN_GLP1` | midpoints 2.0, 1.4, 1.4 g/kg | "Protein during fat loss", "Older adults: protein targets", "GLP-1 users: protein, training and red flags" | midpoint of the rule's range |
 | `macros.REFERENCE_BMI` | 25 | "Daily protein target for people who lift" (use fat-free mass or goal weight with obesity) | the coach knows neither, so it uses the weight at BMI 25 for the client's height |

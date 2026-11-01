@@ -50,12 +50,12 @@ Run these, all with the ground-rule flags:
   3. Otherwise run `coach energy` (with `hold_deficit`, ask what they eat now and add
      `--current-kcal KCAL`); `target_kcal` is its `kcal`, `in_deficit` is whether `deficit` is
      above 0. When its `notes` hold the `active` `no_training` note, ask whether the activity comes
-     from the job or from exercise, and never pass the note's `--pal` before they answer. Only
-     when it was exercise that has stopped: rerun `coach energy` with the `--pal` value the note
-     gives (never a value you chose or computed), then `coach macros` with the same `--pal`, and
-     pass it to every later `coach energy` and `coach macros` call. From the job, or a mix of
-     both: do not pass it; offer `--tdee` only if the coach or a clinician sets it, never a value
-     you choose. Tell them to keep training on hold until a clinician clears it.
+     from the job or from exercise. Only when it was exercise that has stopped, run
+     `coach profile set pal_override VALUE` with the value the note gives (never one you chose or
+     computed) and rerun `coach energy`; the choice applies to every path while `no_training`
+     holds. From the job, or a mix of both: store nothing, and say the coach cannot model a mix
+     yet (they may tell a clinician). Tell them to keep training on hold until a clinician
+     clears it.
   Then `coach macros --kcal TARGET` (add `--in-deficit` when `in_deficit` is true): the CLI
   raises a stored target that the current flags no longer allow.
 - `coach zones`.

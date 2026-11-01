@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from coach import catalogue
+from coach import catalogue, energy
 from coach.checkins import Checkin, append_checkin
 from coach.cli import main
 from coach.profile import Profile, load_profile, save_profile
@@ -83,31 +83,57 @@ def test_energy_pal_reaches_the_target(capsys, data_dir):
     assert out["target"]["kcal"] == round(1780 * 1.6)
 
 
-def test_energy_active_note_under_no_training_and_explicit_pal(capsys, data_dir):
+def _stopped_active(data_dir):
     profile = load_profile(data_dir / "profile.yaml")
     profile.activity_level = "active"
     profile.screening = {"scoff_positive": False, "cardiac_symptoms": True}
     save_profile(profile, data_dir / "profile.yaml")
+
+
+def _rmr(data_dir):
+    return energy.rmr_mifflin(load_profile(data_dir / "profile.yaml"), date(2026, 4, 1))
+
+
+def test_energy_active_note_under_no_training_and_explicit_pal(capsys, data_dir):
+    _stopped_active(data_dir)
 
     def notes(*extra):
         return run(capsys, data_dir, "energy", *extra)[1]["target"]["notes"]
 
     assert any("no change is needed" in n for n in notes())
-    assert any("--pal 1.45" in n for n in notes())
-    assert not any("no change is needed" in n for n in notes("--pal", "1.8"))  # the band midpoint
+    assert any(f"pal_override {energy.DESK_PAL:g}`" in n for n in notes())
+    assert not any("no change is needed" in n for n in notes("--pal", "1.8"))
     assert not any("no change is needed" in n for n in notes("--tdee", "2400"))
 
 
+def test_pal_override_reaches_energy_and_macros(capsys, data_dir):
+    _stopped_active(data_dir)
+    run(capsys, data_dir, "profile", "set", "pal_override", str(energy.DESK_PAL))
+    _, out = run(capsys, data_dir, "energy")
+    kcal = round(_rmr(data_dir) * energy.DESK_PAL) - energy.DEFICIT_KCAL
+    assert out["target"]["kcal"] == kcal
+    assert not any("pal_override" in n for n in out["target"]["notes"])
+    _, macros = run(capsys, data_dir, "macros")
+    assert macros["kcal"] == kcal
+    _, shown = run(capsys, data_dir, "profile", "show")
+    assert shown["profile"]["pal_override"] == energy.DESK_PAL
+    assert "pal_override" not in shown["missing"]
+    # The flag clears: the stored choice is ignored, never silently kept in force.
+    run(capsys, data_dir, "profile", "set", "screening.cardiac_symptoms", "false")
+    _, out = run(capsys, data_dir, "energy")
+    assert out["tdee"] == pytest.approx(_rmr(data_dir) * energy.band_midpoint("active"))
+    run(capsys, data_dir, "profile", "set", "pal_override", "none")
+    assert load_profile(data_dir / "profile.yaml").pal_override is None
+
+
 def test_macros_with_the_desk_pal_match_the_energy_rerun(capsys, data_dir):
-    profile = load_profile(data_dir / "profile.yaml")
-    profile.activity_level = "active"
-    profile.screening = {"scoff_positive": False, "cardiac_symptoms": True}
-    save_profile(profile, data_dir / "profile.yaml")
-    _, energy = run(capsys, data_dir, "energy", "--pal", "1.45")
-    kcal = energy["target"]["kcal"]
-    assert kcal == round(1780 * 1.45) - 500
-    _, with_kcal = run(capsys, data_dir, "macros", "--pal", "1.45", "--kcal", str(kcal))
-    _, derived = run(capsys, data_dir, "macros", "--pal", "1.45")
+    _stopped_active(data_dir)
+    pal = str(energy.DESK_PAL)
+    _, rerun = run(capsys, data_dir, "energy", "--pal", pal)
+    kcal = rerun["target"]["kcal"]
+    assert kcal == round(_rmr(data_dir) * energy.DESK_PAL) - energy.DEFICIT_KCAL
+    _, with_kcal = run(capsys, data_dir, "macros", "--pal", pal, "--kcal", str(kcal))
+    _, derived = run(capsys, data_dir, "macros", "--pal", pal)
     assert with_kcal["kcal"] == derived["kcal"] == kcal and derived["in_deficit"] is True
 
 

@@ -73,44 +73,54 @@ def test_tdee_needs_activity_level():
         tdee(man(activity_level=None), today=TODAY)
 
 
+RMR = rmr_mifflin(man(), today=TODAY)
+
+
 # nutrition.md "Activity multipliers (PAL)": desk work with little exercise is 1.4-1.5
 def test_no_training_uses_the_desk_band_for_desk_training():
     p = man(activity_level="desk_training", screening=OK | {"cardiac_symptoms": True})
     assert flags(p, TODAY).no_training
-    assert tdee(p, today=TODAY) == pytest.approx(1780 * 1.45)
-    assert tdee(p, multiplier=1.7, today=TODAY) == pytest.approx(1780 * 1.7)  # --pal still wins
-    assert tdee(man(activity_level="desk_training"), today=TODAY) == pytest.approx(1780 * 1.675)
+    assert tdee(p, today=TODAY) == pytest.approx(RMR * energy.DESK_PAL)
+    assert tdee(p, multiplier=1.7, today=TODAY) == pytest.approx(RMR * 1.7)  # --pal still wins
+    assert tdee(man(activity_level="desk_training"), today=TODAY) == pytest.approx(
+        RMR * energy.band_midpoint("desk_training")
+    )
 
 
 def test_no_training_keeps_active_with_a_note():
     p = man(activity_level="active", screening=OK | {"cardiac_symptoms": True})
-    assert tdee(p, today=TODAY) == pytest.approx(1780 * 1.8)
+    assert tdee(p, today=TODAY) == pytest.approx(RMR * energy.band_midpoint("active"))
     assert any("if it comes from the job, no change is needed" in n for n in target(p).notes)
-    assert not any("--pal" in n for n in target(man(activity_level="active")).notes)
+    assert not any("pal_override" in n for n in target(man(activity_level="active")).notes)
 
 
 def test_no_training_active_note_only_without_an_explicit_estimate():
     p = man(activity_level="active", screening=OK | {"cardiac_symptoms": True})
     # as cli.py does: estimate_chosen is true only with --pal or --tdee
-    assert any("--pal" in n for n in target(p).notes)
-    chosen = target(p, tdee_kcal=tdee(p, 1.8, TODAY), estimate_chosen=True)
-    assert not any("--pal" in n for n in chosen.notes)
+    assert any("pal_override" in n for n in target(p).notes)
+    chosen = target(
+        p, tdee_kcal=tdee(p, energy.band_midpoint("active"), TODAY), estimate_chosen=True
+    )
+    assert not any("pal_override" in n for n in chosen.notes)
 
 
 # The rerun value is the desk midpoint (training stopped), taken from the PAL bands in code.
 def test_active_note_carries_the_desk_midpoint_as_the_pal():
     p = man(activity_level="active", screening=OK | {"cardiac_symptoms": True})
-    note = next(n for n in target(p).notes if "--pal" in n)
-    assert note.endswith("--pal 1.45") and "stopped while training is on hold" in note
-    assert energy.DESK_PAL == pytest.approx(1.45)
-    assert tdee(p, energy.DESK_PAL, TODAY) == pytest.approx(1780 * 1.45)
+    note = next(n for n in target(p).notes if "pal_override" in n)
+    assert f"pal_override {energy.DESK_PAL:g}`" in note
+    assert "stopped while training is on hold" in note
+    assert energy.DESK_PAL == energy.band_midpoint("desk")
+    assert tdee(p, energy.DESK_PAL, TODAY) == pytest.approx(RMR * energy.DESK_PAL)
 
 
 def test_tdee_takes_no_training_from_the_caller():
     p = man(activity_level="desk_training", screening=OK | {"cardiac_symptoms": True})
-    assert tdee(p, today=TODAY, no_training=False) == pytest.approx(1780 * 1.675)
+    assert tdee(p, today=TODAY, no_training=False) == pytest.approx(
+        RMR * energy.band_midpoint("desk_training")
+    )
     assert tdee(man(activity_level="desk_training"), today=TODAY, no_training=True) == (
-        pytest.approx(1780 * 1.45)
+        pytest.approx(RMR * energy.DESK_PAL)
     )
 
 
@@ -118,7 +128,7 @@ def test_no_training_from_blood_pressure_uses_the_desk_band():
     bp = OK | {"bp_systolic": 185, "bp_diastolic": 100}
     p = man(activity_level="desk_training", screening=bp)
     assert flags(p, TODAY).no_training
-    assert tdee(p, today=TODAY) == pytest.approx(1780 * 1.45)
+    assert tdee(p, today=TODAY) == pytest.approx(RMR * energy.DESK_PAL)
 
 
 def test_no_training_desk_band_still_respects_the_floor_and_no_deficit():
@@ -128,7 +138,25 @@ def test_no_training_desk_band_still_respects_the_floor_and_no_deficit():
     assert t.kcal == energy.FLOOR_KCAL["female"] and t.clamped
     ed = man(activity_level="desk_training", screening=cardiac | {"scoff_positive": True})
     t = target(ed, tdee_kcal=tdee(ed, today=TODAY))
-    assert t.kcal == round(1780 * 1.45) and t.deficit == 0
+    assert t.kcal == round(RMR * energy.DESK_PAL) and t.deficit == 0
+
+
+# profile.pal_override: the client's chosen PAL, applied only while no_training is set.
+def test_pal_override_applies_only_under_no_training():
+    stopped = OK | {"cardiac_symptoms": True}
+    p = man(activity_level="active", screening=stopped, pal_override=energy.DESK_PAL)
+    assert tdee(p, today=TODAY) == pytest.approx(RMR * energy.DESK_PAL)
+    assert tdee(p, multiplier=1.7, today=TODAY) == pytest.approx(RMR * 1.7)  # --pal wins
+    assert not any("pal_override" in n for n in target(p).notes)  # counted as an explicit estimate
+    cleared = man(activity_level="active", pal_override=energy.DESK_PAL)
+    assert tdee(cleared, today=TODAY) == pytest.approx(RMR * energy.band_midpoint("active"))
+    assert target(p, tdee_kcal=2400, estimate_chosen=True).maintenance == 2400  # --tdee wins
+
+
+def test_active_note_mentions_the_mixed_case():
+    p = man(activity_level="active", screening=OK | {"cardiac_symptoms": True})
+    note = next(n for n in target(p).notes if "pal_override" in n)
+    assert "mix" in note and "cannot model" in note
 
 
 # nutrition.md "Deficit size for weight loss" (500-750) and "Deficit size when keeping or

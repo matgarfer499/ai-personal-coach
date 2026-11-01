@@ -103,10 +103,13 @@ Computed by `coach safety` from the profile; the calculators obey them.
   with little exercise).
 - Only `active` is kept, with a note, because it may come from the job: its text is in
   `energy.calorie_target`. It tells the client that if the activity comes from exercise (stopped
-  while training is on hold) to rerun with `--pal` set to the desk midpoint (`energy.DESK_PAL`),
-  and that if it comes from the job nothing changes. It is skipped when `--pal` or `--tdee` was
-  given.
-- An explicit `--pal` always wins.
+  while training is on hold) to store the desk midpoint (`energy.DESK_PAL`) with
+  `coach profile set pal_override`, that if it comes from the job nothing changes, and that the
+  coach cannot model a mix of both yet. It is skipped when `--pal`, `--tdee` or a stored
+  `pal_override` applies.
+- `profile.pal_override` applies only while `no_training` is set (every path: `coach energy`,
+  `coach macros`, menus); once the flag clears it is ignored. An explicit `--pal` or `--tdee`
+  still wins.
 
 ## Red flags
 
