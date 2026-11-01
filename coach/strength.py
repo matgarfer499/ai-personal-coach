@@ -128,10 +128,6 @@ def _as_logged(exercise: str) -> set[str]:
     return {fold(exercise), fold(_strip_equipment(exercise))}
 
 
-def _variant(exercise: str) -> str:
-    return fold(_split_variant(_strip_equipment(exercise))[1])
-
-
 def lookup(exercise: str, muscle_map: dict[str, dict]) -> dict | None:
     """Map entry for a logged name: case, accents, a trailing "(Equipment)" and a "- variant"
     part do not matter; an entry that names the variant itself wins over its base."""
@@ -233,12 +229,8 @@ def named_in(exercise: str, names: list[str], muscle_map: dict[str, dict] | None
     if muscle_map is None:
         return False
     entry = lookup(exercise, muscle_map)
-    # two different variants of one lift ("- Close Grip" and "- Wide Grip") are not the same lift
-    return entry is not None and any(
-        lookup(n, muscle_map) is entry
-        and not (_variant(n) and _variant(exercise) not in ("", _variant(n)))
-        for n in names
-    )
+    # variants of one lift share a pause: over-pausing is the safe direction
+    return entry is not None and any(lookup(n, muscle_map) is entry for n in names)
 
 
 REP_RANGE_FORMAT = "EXERCISE=LOW-HIGH"

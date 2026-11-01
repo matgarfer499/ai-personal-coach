@@ -410,20 +410,19 @@ def test_a_variant_entry_wins_over_its_base():
     assert lookup("Row - Narrow", mm) is mm["row"]
 
 
-def test_variants_of_one_lift_do_not_match_each_other():
+def test_an_injury_on_one_variant_pauses_every_variant_of_the_lift():
     mm = load_muscle_map()
     close = "Lat Pulldown - Close Grip (Cable)"
-    assert not named_in(close, ["Lat Pulldown - Wide Grip"], mm)
+    for injured in [
+        "Jalón al Pecho - Agarre Cerrado",
+        "Lat Pulldown  -  Wide Grip",
+        "Lat Pulldown",
+    ]:
+        assert named_in(close, [injured], mm)
+    assert not named_in(close, ["Squat - Wide Stance"], mm)
+    # without the map only the name as logged or without "(Equipment)" matches
     assert not named_in(close, ["Lat Pulldown - Wide Grip"])
-    assert named_in(close, ["Lat Pulldown - Close Grip"], mm)
-    assert named_in(close, ["Lat Pulldown"], mm)  # a plain name covers its variants
-    assert named_in("Lat Pulldown (Cable)", [close], mm)
-    # spacing around the dash does not change how a name splits
-    wide = "Lat Pulldown  -  Wide Grip"
-    assert not named_in(close, [wide], mm)
-    assert not named_in("Lat Pulldown\t-\tClose Grip", [wide], mm)
-    assert named_in(wide, ["Lat Pulldown"], mm)
-    assert lookup(wide, mm) is mm["lat pulldown"]
+    assert named_in(close, ["Lat Pulldown - Close Grip"])
 
 
 def test_no_name_is_shared_by_two_muscle_map_entries():
