@@ -1,4 +1,4 @@
-"""Print a saved menu as a PDF: the week at a glance, each dish once, shopping list.
+"""Print a saved menu as a PDF: the week at a glance, each recipe once, shopping list.
 
 Needs the optional `pdf` extra (reportlab): `uv sync --extra pdf`. The text comes from the saved
 menu and `coach shopping`; nothing is computed here. The file goes to the data directory, because
@@ -48,8 +48,6 @@ LABELS = {
         "source": "Receta original",
         "page": "Página",
         "daily_target": "Objetivo diario",
-        "quick": "Platos rápidos",
-        "dish": "Plato",
         "ingredients": "Ingredientes",
         "one_serving": "1 ración",
         "method": "Preparación",
@@ -95,8 +93,6 @@ LABELS = {
         "source": "Original recipe",
         "page": "Page",
         "daily_target": "Daily target",
-        "quick": "Quick dishes",
-        "dish": "Dish",
         "ingredients": "Ingredients",
         "one_serving": "1 serving",
         "method": "Method",
@@ -180,9 +176,9 @@ def write(
 ) -> None:
     """Write the PDF; raises ValueError naming the extra to install when reportlab is missing.
 
-    Page one is the week at a glance; then each dish once, however many days it is eaten, grouped
-    by meal: quick dishes (no steps, no source) in one table, recipes as cards with their steps and
-    source; then the shopping list with a box to tick per line.
+    Page one is the week at a glance; then each recipe (a dish with steps or a source) once, however
+    many days it is eaten, as a card grouped by meal; then the shopping list with a box to tick per
+    line. Dishes without a recipe (a sandwich, a yoghurt bowl) appear only in the week table.
     """
     try:
         from reportlab.graphics.barcode.qr import QrCodeWidget
@@ -472,53 +468,6 @@ def write(
         return (
             f'<font color="{MUTED}">{words["seasoning"]}: {_text(", ".join(dish.seasoning))}</font>'
         )
-
-    quick = [g for g in groups.values() if not g["steps"] and not g["source"]]
-    if quick:
-        story.append(heading(words["quick"]))
-        rows = [
-            [
-                Paragraph(words["dish"], on_dark),
-                Paragraph(words["ingredients"], on_dark),
-                Paragraph(words["on_days"], on_dark),
-            ]
-        ]
-        quick_style = [
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("TOPPADDING", (0, 0), (-1, -1), 4),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-            ("BACKGROUND", (0, 0), (-1, 0), colour(PRIMARY)),
-            ("ROUNDEDCORNERS", [6, 6, 6, 6]),
-        ]
-        for name, selected in by_meal(quick):
-            hex_code = meal_colour[name]
-            quick_style += [
-                ("SPAN", (0, len(rows)), (-1, len(rows))),
-                ("BACKGROUND", (0, len(rows)), (-1, len(rows)), tint(hex_code)),
-            ]
-            rows.append([Paragraph(f'<font color="{hex_code}"><b>{_text(name)}</b></font>', cell)])
-            for group in selected:
-                dish = group["dish"]
-                name_cell = f"<b>{_text(dish.name)}</b>"
-                if dish.seasoning:
-                    name_cell += f"<br/>{seasoning(dish)}"
-                items = " &nbsp;&middot;&nbsp; ".join(
-                    f"{_text(_label(n, table, language))} <b>{_quantity(a, comma)}</b>"
-                    for n, a in dish.items
-                )
-                quick_style.append(
-                    ("LINEBELOW", (0, len(rows)), (-1, len(rows)), 0.4, colour(RULE))
-                )
-                rows.append(
-                    [
-                        Paragraph(name_cell, cell),
-                        Paragraph(items, cell),
-                        Paragraph(on_days(group), muted),
-                    ]
-                )
-        grid = Table(rows, colWidths=[5.2 * cm, width - 8 * cm, 2.8 * cm], repeatRows=1)
-        grid.setStyle(TableStyle(quick_style))
-        story.append(grid)
 
     recipes = [g for g in groups.values() if g["steps"] or g["source"]]
     pending: list = []  # headings and the batches table, kept on the page of the next card

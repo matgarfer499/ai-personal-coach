@@ -256,3 +256,9 @@ def test_a_recipe_longer_than_a_page_still_exports(capsys, data_dir):
 )
 def test_the_date_range_names_the_month_and_year_only_where_they_change(first, last, text):
     assert export_module._date_range(first, last, export_module.LABELS["es"]) == text
+
+
+def test_a_dish_without_a_recipe_is_only_in_the_week_table(capsys, data_dir):
+    data = export(capsys, data_dir)
+    assert data.count(b"Bocadillo de prueba") == 1
+    assert b"Platos r" not in data
