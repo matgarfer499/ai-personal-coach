@@ -133,6 +133,14 @@ def test_product_nutrition_basis_beats_the_pack_unit(monkeypatch):
     assert off.product("8400000000086")["per"] == "100 ml"
 
 
+def test_product_request_has_no_fields_parameter(monkeypatch):
+    # OFF's v3 `fields=` filter omits nutrition_data_per (live check 2026-11-01).
+    calls = []
+    monkeypatch.setattr(off, "_get_json", fake_get(["product_found.json"], calls))
+    off.product("8400000000017")
+    assert "fields" not in urllib.parse.parse_qs(urllib.parse.urlsplit(calls[0]).query)
+
+
 @pytest.mark.parametrize(
     ("basis", "expected"),
     [("serving", "100 ml"), (None, "100 ml"), ("100g", "100 g"), ("100ml", "100 ml")],

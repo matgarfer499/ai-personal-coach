@@ -123,10 +123,11 @@ def _product(raw: dict) -> dict:
         "name": _text(raw.get("product_name_es")) or _text(raw.get("product_name")),
         "brand": _text(raw.get("brands")),
         "stores": _text(raw.get("stores")),
-        # A missing or "serving" basis falls back to the pack unit: cli.py accepts a None `per`
-        # without --confirm-per when --per is given, so None would drop the guard.
-        # The label basis wins over the pack unit: a per-100 g label on a pack sold in ml is per
-        # 100 g. `coach products add` then asks for --confirm-per when --per says otherwise.
+        # The label basis wins (BASES): a per-100 g label on a pack sold in ml is per 100 g, and
+        # `coach products add` then asks for --confirm-per when --per says otherwise. Else the
+        # pack unit (UNITS), because cli.py skips the --per guard when per is None: "serving" and
+        # a missing field behave as before (pre-existing limit; improving it needs cli.py, a
+        # risk path).
         "per": BASES.get(raw.get("nutrition_data_per"))
         or UNITS.get(raw.get("product_quantity_unit")),
         "values": values,
