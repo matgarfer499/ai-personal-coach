@@ -311,7 +311,7 @@ def test_reference_scan_details_are_exact(tmp_path):
         "Prose (see Table 2) (see S012) (see Real heading for details) (see Below).\n"
         'We foresee "x" and (see Activity multipliers (PAL)) and see "Activity multipliers (PAL)"\n'
         '```\n(see Fenced Fake Reference) see "fenced"\n```\n'
-        "A wrapped (see Real\nheading) reference is not checked.\n"
+        "A wrapped (see Real\nheading) reference is checked and passes.\n"
         '(see Gone Missing) twice (see Gone Missing) and see "Quoted gone".\n',
         encoding="utf-8",
     )
@@ -322,4 +322,21 @@ def test_reference_scan_details_are_exact(tmp_path):
         f"{tmp_path / 'a.md'}:14: see Gone Missing names no heading",
         f"{tmp_path / 'a.md'}:14: see Gone Missing names no heading",
         f"{tmp_path / 'b.md'}:3: see real heading for more names no heading",
+    ]
+
+
+def test_wrapped_references_and_heading_boundaries(tmp_path):
+    (tmp_path / "a.md").write_text(
+        "### Protein\n\n### Protein intake\n\n### Protein targets\n\n### Alpha\n\n"
+        "Fine (see Protein\n  targets) and (see Protein intake targets) and (see Alpha for more)\n"
+        "(see Protein intakes) (see above) (see ABOVE)\n"
+        "(see Protein\n  tragets) and (see Protein for athletes).\n\n"
+        "(see Table 2) (see Figure 3) (see Below)\n",
+        encoding="utf-8",
+    )
+    errors = ck.check_references(tmp_path)
+    assert [(e.split(":")[-2], _target(e)) for e in errors] == [
+        ("11", "Protein intakes"),
+        ("12", "Protein tragets"),
+        ("13", "Protein for athletes"),
     ]

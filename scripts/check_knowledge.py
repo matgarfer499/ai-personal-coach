@@ -184,7 +184,17 @@ def _clause(rest: str) -> str | None:
 def _unquoted_target(rest: str, headings: set[str]) -> str | None:
     """The dangling target in the text after an unquoted `see`, or None if it is fine or prose."""
     for heading in sorted(headings, key=len, reverse=True):  # headings may contain parentheses
-        if rest.startswith(heading) and not rest[len(heading) :][:1].isalnum():
+        if not rest.startswith(heading):
+            continue
+        tail = rest[len(heading) :]
+        if not tail or tail[0] in ");," or (tail[0] == "." and tail[1:2] in ("", " ")):
+            return None
+        # Trailing lowercase prose is fine unless a longer heading starts with the same words.
+        if (
+            tail[0] == " "
+            and tail[1:2].islower()
+            and not any(other.startswith(heading + " ") for other in headings)
+        ):
             return None
     target = _clause(rest)
     if not target or PROSE_SEE_RE.match(target):
@@ -212,9 +222,14 @@ def check_references(knowledge_dir: Path) -> list[str]:
     Fenced code blocks are skipped. The message shows the target as written (quoted only if it
     was quoted).
 
+    A hard-wrapped reference is joined with the following lines of its paragraph before matching.
+    Prose after an exact heading passes only if it starts lowercase and no longer heading starts
+    with the heading plus a space.
+
     Still not seen: a lowercase unquoted target that is not near a heading, a reference without
     `see` (for example "refer to X"), a reference outside parentheses and not after `;`/`,`, a
-    reference wrapped across two lines, a heading in the wrong file (any rule file satisfies it),
+    reference with no closing boundary before the paragraph ends, a quoted reference split across
+    lines, a heading in the wrong file (any rule file satisfies it),
     and references in `sources.md`, `index.md` or `README.md`.
     """
     texts = {path: read(path) for path in rule_files(knowledge_dir)}
@@ -226,13 +241,16 @@ def check_references(knowledge_dir: Path) -> list[str]:
     }
     errors = []
     for path, text in texts.items():
-        for lineno, line in enumerate(blank_fences(text.splitlines()), start=1):
+        lines = blank_fences(text.splitlines())
+        for lineno, line in enumerate(lines, start=1):
             targets = [f'"{t}"' for t in SEE_RE.findall(line) if t not in headings]
-            targets += [
-                t
-                for rest in SEE_UNQUOTED_RE.findall(line)
-                if (t := _unquoted_target(rest, headings))
-            ]
+            for match in SEE_UNQUOTED_RE.finditer(line):
+                rest, nxt = match.group(1), lineno
+                while _clause(rest) is None and nxt < len(lines) and lines[nxt].strip():
+                    rest += " " + lines[nxt].strip()  # hard-wrapped: join the paragraph
+                    nxt += 1
+                if t := _unquoted_target(rest, headings):
+                    targets.append(t)
             errors += [f"{path}:{lineno}: see {t} names no heading" for t in targets]
     return errors
 
