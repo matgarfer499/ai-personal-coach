@@ -103,8 +103,19 @@ Ask about one step per message. Store each answer as soon as you have it with
      (1 to 10) exactly as printed and, for each YES, its lettered questions; follow the form's
      "If NO go to question N". Then quote the form's text for the result.
    - Quote the form's "Delay becoming more active if" list once.
-   - With no PDF in `forms/`, send the official form (https://eparmedx.com, "PAR-Q+") and ask the
-     two questions below.
+   - With no PDF in `forms/`, send the form: to a Spanish client "PAR-Q+ en español"
+     (https://eparmedx.com/wp-content/uploads/2023/12/Spanish.pdf) and the listing page
+     https://eparmedx.com/print-versions-of-par-q/languages/ in case the file moves; to an
+     English client https://eparmedx.com/print-versions-of-par-q/. Say in one plain line what to
+     do: fill it in, then send it back or answer the two questions below.
+   - If the client sends a filled-in PDF: read it where it is, without copying it. List back only
+     the outcome: any YES on the 7 questions, and any YES on the follow-ups (the answers
+     themselves are not stored). Ask the client to confirm, then store the two values below. A
+     field you cannot read: ask the client that question aloud, using the wording of the
+     standard PAR-Q+ question. If the PDF's questions do not match the 7 standard questions, do
+     not map it; ask the client the 7 standard questions instead. Never store the file in `data/`, and
+     do not copy its contents, the client's name or its path into notes or the profile; only
+     the two screening fields.
    Any YES on the 7 questions? Any YES on the follow-up questions? Store
    `screening.parq_any_yes` and `screening.parq_followup_yes`. With any YES, or over 45, ask
    whether a qualified exercise professional or clinician has reviewed vigorous or maximal
@@ -141,15 +152,27 @@ Ask about one step per message. Store each answer as soon as you have it with
    `novice` for under 12 months; `intermediate` for 12 months or more while they still add load
    or reps most months; `advanced` for 12 months or more once progress has slowed to a plateau.
    The 12 months come from "Novice strength gains and plateau" and "Trained lifters: 12-20
-   weekly sets". After a long break, ask what they could lift before and choose the level they
-   can load at today.
+   weekly sets". Ask first "¿Entrenas ahora o lo dejaste? ¿Desde cuándo?". For any loads they
+   give, ask whether they are from now or from before the break. Choose the level from what they
+   lift today; loads from before the break are history, and /plan restarts lower per
+   `coach knowledge section strength-hypertrophy "Short breaks cost little"` (breaks of weeks),
+   `"Longer detraining"` and `"Returning lifters and \"muscle memory\""` (breaks of months).
    Injuries: any current injury or pain in an area? Record each with `coach injury add AREA
    --since DATE`, adding `--professional WHO` when someone has assessed it and
-   `--exercises "LIFT, LIFT"` for the lifts it affects.
+   `--exercises "LIFT, LIFT"` for the lifts it affects: ask for them in the client's own words,
+   in Spanish or English, never for English app names; aliases map common names. Before any
+   import, `coach injury add` prints every name under `unmatched`: say that is expected
+   only while no sessions are imported yet, and that /import re-checks it; once sessions exist,
+   an unmatched name needs the client to say which logged lift it is.
    `activity_level`, per `coach knowledge section nutrition "Activity multipliers (PAL)"`:
    `desk` = desk job with little exercise or a few sessions a week; `desk_training` = desk job and
    about 1 h of training on 4 or more days (convention: "most days" read as 4+); `active` =
-   physical job, or daily moderate-to-vigorous exercise plus lots of daily movement.
+   physical job, or daily moderate-to-vigorous exercise plus lots of daily movement. Ask the
+   training days in a usual week as one number (convention: a range such as "3-4" takes the
+   lower number). 3-4 days: `desk`; 4 days in most weeks: `desk_training`; if unsure which,
+   `desk`, per `coach knowledge section nutrition "Self-reported activity is noisy"` ("choose
+   the lower plausible multiplier when unsure"). Say so in one line: the weight trend corrects
+   it after 2-4 weeks.
 9. **Check.** `coach profile show`: `missing` must be empty; mention any `unrecognised` items.
 10. **Targets.** Run `coach safety`, then `coach energy`, `coach macros` and `coach zones`.
     Only when `use_rpe_not_hr` is false, ask for a morning resting pulse (`--hr-rest N`) and an
