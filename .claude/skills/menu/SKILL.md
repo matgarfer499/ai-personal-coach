@@ -278,7 +278,8 @@ from `coach mealplan check` (or `coach menu`), then one line with any day that i
 items and seasoning only for a dish the client asks about. Name any value in `missing` as "sin
 dato", never as a number. Mark products from Open Food Facts as unverified data from a public
 database, and products added with `--label` as "values from the label". After saving: the PDF
-path from `coach mealplan export`; the recipes and the shopping list are in the PDF (step 9 says what to do without the `pdf` extra).
+path from `coach mealplan export`; the recipes and the shopping list are in the PDF (step 9
+says what to do without the `pdf` extra).
 
 ## Safety
 
