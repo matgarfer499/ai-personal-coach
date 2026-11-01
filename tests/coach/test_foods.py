@@ -153,3 +153,9 @@ def test_ml_for_a_food_without_density_is_still_an_error():
     assert rice.g_per_ml is None
     with pytest.raises(ValueError, match="per 100 g"):
         menu_totals([("arroz", foods.Amount(300, "ml"))], [rice])
+
+
+@pytest.mark.parametrize("bad", ["nan", "-1", "0", "inf"])
+def test_from_row_rejects_a_bad_density(bad):
+    with pytest.raises(ValueError, match="g_per_ml"):
+        Food.from_row(row(g_per_ml=bad))

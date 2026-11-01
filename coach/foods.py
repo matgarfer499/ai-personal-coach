@@ -87,6 +87,9 @@ class Food:
             values[name] = float(text) if text else None
         text = str(values["g_per_ml"]).strip()
         values["g_per_ml"] = float(text) if text else None
+        density = values["g_per_ml"]
+        if density is not None and not (math.isfinite(density) and density > 0):
+            raise ValueError(f"{values['name_en']}: g_per_ml must be a positive number")
         return cls(**values)
 
     @property

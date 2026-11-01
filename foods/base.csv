@@ -154,7 +154,7 @@ soy sauce,salsa de soja,53.0,8.14,4.13,0.57,0.8,fdc_sr_legacy,174277,Soy sauce m
 "mustard, prepared",mostaza,60.0,3.74,1.83,3.34,4.0,fdc_sr_legacy,172234,"Mustard, prepared, yellow",yellow mustard; Dijon and old-style mustard differ a little,,
 "orange juice, raw",zumo de naranja,45.0,0.7,10.2,0.2,0.2,fdc_sr_legacy,169098,"Orange juice, raw (Includes foods for USDA's Food Distribution Program)",squeezed juice; packaged juice differs,,1.048
 "bouillon cube, prepared","caldo de pastilla, preparado",5.0,0.39,0.62,0.12,,fdc_sr_legacy,174566,"Soup, chicken broth cubes, dry, prepared with water","chicken cube made up with water as the pack says; no fibre value in source, carbs_g is total",,1.027
-"sandwich bread, white",pan de molde,238.0,10.66,34.71,2.15,9.2,fdc_sr_legacy,167532,"Bread, white wheat",sliced white loaf,,
+"sandwich bread, white",pan de molde,267.0,8.2,47.3,3.6,2.3,fdc_sr_legacy,172818,"Bread, white, commercially prepared, low sodium, no salt","closest sliced white loaf: SR Legacy has no other distinct plain white bread; low sodium, no salt",,
 rye bread,pan de centeno,259.0,8.5,42.5,3.3,5.8,fdc_sr_legacy,172684,"Bread, rye",,,
 flour tortilla,tortilla de trigo,297.0,8.01,46.87,7.58,2.4,fdc_sr_legacy,167535,"Tortillas, ready-to-bake or -fry, flour, shelf stable",,,
 "fresh tuna, raw","atún fresco, crudo",144.0,23.33,0.0,4.9,0.0,fdc_sr_legacy,173706,"Fish, tuna, fresh, bluefin, raw",bluefin; other fresh tuna differ in fat,,

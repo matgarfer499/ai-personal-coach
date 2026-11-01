@@ -99,3 +99,24 @@ def test_liquid_rows_have_a_density_from_the_source():
     for name in names:
         assert 0.9 < float(built[name]["g_per_ml"]) < 1.3, name
     assert built["olive oil"]["g_per_ml"] == ""  # fats keep grams
+
+
+def test_every_density_is_plausible():
+    for path in TABLES:
+        for r in rows(path):
+            if r["g_per_ml"]:
+                assert 0.8 <= float(r["g_per_ml"]) <= 1.3, r["name_en"]
+
+
+def test_new_staples_use_the_chosen_fdc_ids():
+    expected = {
+        "zumo de naranja": "169098",
+        "caldo de pastilla, preparado": "174566",
+        "pan de molde": "172818",
+        "pan de centeno": "172684",
+        "tortilla de trigo": "167535",
+        "atún fresco, crudo": "173706",
+    }
+    table = load_foods()
+    for name, fdc_id in expected.items():
+        assert find(name, table).source_id == fdc_id, name

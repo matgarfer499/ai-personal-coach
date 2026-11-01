@@ -42,7 +42,9 @@ or tbsp portion.
 
 Liquids: a row marked `liquid: yes` gets `g_per_ml` from the release's own portion weight (cup,
 else fl oz, else tbsp, divided by the exact US volume). Milks, juices, broth, soy sauce, coconut
-milk and kefir are marked; oils are not, they stay in grams.
+milk and kefir are marked; oils are not, they stay in grams. Each density comes from one SR
+portion, so it is approximate (coconut milk and kefir most of all). Caldo de pastilla is the
+made-up broth: enter ml (or g) of prepared broth, never the dry cube.
 
 BEDCA (the Spanish food composition database) was tried for Spanish staples; its public query
 endpoint answered searches but returned no nutrient values, so this version uses FDC only.
