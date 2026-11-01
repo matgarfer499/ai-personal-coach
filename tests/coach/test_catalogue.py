@@ -313,7 +313,8 @@ def test_off_replace_never_overwrites_a_hand_entered_label_row(capsys, data_dir,
     assert code != 0 and "hand-entered label row" in out["message"]
     assert (
         "remove" not in out["message"]
-        and "correct it with --label --barcode 8400000000017 --replace" in out["message"]
+        and "giving every label value again: --label --barcode 8400000000017 --replace"
+        in out["message"]
     )
     assert catalogue.load(data_dir)[0].allergens == ("soja",)
 
@@ -336,4 +337,4 @@ def test_off_energy_gap_does_not_say_label(capsys, data_dir, monkeypatch):
     _, out = run(capsys, data_dir, "products", "add", "8400000000017", "--chain", "X")
     warning = out["warnings"][0]
     assert warning.startswith("kcal is ") and "label" not in warning
-    assert warning.endswith("; check the pack")
+    assert warning.endswith("(source uses food-specific factors); check the pack")

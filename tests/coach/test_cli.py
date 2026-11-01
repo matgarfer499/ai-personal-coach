@@ -1091,13 +1091,51 @@ def test_label_free_from_claims_are_refused(capsys, data_dir, text):
     assert not (data_dir / "catalogue.csv").exists()
 
 
+UNRECOGNISED = "unrecognised allergen text: do not use for anyone with an allergy"
+
+
+@pytest.mark.parametrize("text", ["n.a", "NA", "n/d", "-", "tbd", "kiwi"])
+def test_label_unrecognised_allergen_text_is_stored_and_adds_unknown(capsys, data_dir, text):
+    _, out = run(capsys, data_dir, *_label("--allergens", text))
+    assert out["added"]["allergens"] == ["unknown", text]
+    assert len(out["warnings"]) == 1 and out["warnings"][0].startswith(UNRECOGNISED)
+    assert out["warnings"][0].endswith("until checked")
+
+
+@pytest.mark.parametrize(
+    "text, stored",
+    [
+        ("desconozco los alergenos", ["unknown"]),
+        ("gluten (trigo, cebada)", ["gluten (trigo, cebada)"]),
+        ("Frutos de cáscara (ilegible)", ["unknown", "Frutos de cáscara"]),
+        ("piñones", ["piñones"]),
+        ("sesamo", ["sesamo"]),
+        ("Sésamo, Piñones; Huevo", ["Sésamo", "Piñones", "Huevo"]),
+        ("soja (no sé)", ["unknown", "soja"]),
+        ("leche, no sé si lleva soja", ["unknown", "leche", "soja"]),
+    ],
+)
+def test_label_recognised_allergens_keep_the_clients_spelling(capsys, data_dir, text, stored):
+    _, out = run(capsys, data_dir, *_label("--allergens", text))
+    assert out["added"]["allergens"] == stored
+    assert not any(w.startswith(UNRECOGNISED) for w in out["warnings"])
+
+
+@pytest.mark.parametrize(
+    "text", ["without gluten", "exento de gluten", "doesn't contain nuts", "libre de soja"]
+)
+def test_label_more_free_from_claims_are_refused(capsys, data_dir, text):
+    code, out = run(capsys, data_dir, *_label("--allergens", text))
+    assert code != 0 and "write only the allergens the pack declares" in out["message"]
+
+
 def test_label_with_energy_but_no_macros_warns_in_a_full_sentence(capsys, data_dir):
     args = _label("--kcal", "100", "--protein", "0", "--carbs", "0", "--fat", "0")
     code, out = run(capsys, data_dir, *args, "--replace")
     assert code == 0
     assert out["warnings"] == [
-        "label lists kcal but no energy-yielding macros: read the label again, "
-        "fix it with --replace"
+        "label kcal is stated but no energy-yielding macros are listed: read the label "
+        "again, fix it with --replace"
     ]
 
 
