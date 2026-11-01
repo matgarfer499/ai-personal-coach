@@ -169,8 +169,8 @@ def calorie_target(
         and abs(maintenance - default_estimate) < 0.5
     ):
         notes.append(
-            f"{PAL_RULE}: training is on hold but the activity level is 'active'; ask whether it "
-            "comes from the job or from exercise, and if from exercise rerun with --pal"
+            f"{PAL_RULE}: activity level 'active' is kept while training is on hold: if it comes "
+            "from the job, no change is needed; if it comes from exercise, rerun with --pal"
         )
     notes += [r for r in flags.reasons if r not in notes]
 

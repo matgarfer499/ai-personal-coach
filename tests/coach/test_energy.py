@@ -85,7 +85,7 @@ def test_no_training_uses_the_desk_band_for_desk_training():
 def test_no_training_keeps_active_with_a_note():
     p = man(activity_level="active", screening=OK | {"cardiac_symptoms": True})
     assert tdee(p, today=TODAY) == pytest.approx(1780 * 1.8)
-    assert any("--pal" in n for n in target(p).notes)
+    assert any("if it comes from the job, no change is needed" in n for n in target(p).notes)
     assert not any("--pal" in n for n in target(man(activity_level="active")).notes)
 
 
