@@ -418,6 +418,12 @@ def test_variants_of_one_lift_do_not_match_each_other():
     assert named_in(close, ["Lat Pulldown - Close Grip"], mm)
     assert named_in(close, ["Lat Pulldown"], mm)  # a plain name covers its variants
     assert named_in("Lat Pulldown (Cable)", [close], mm)
+    # spacing around the dash does not change how a name splits
+    wide = "Lat Pulldown  -  Wide Grip"
+    assert not named_in(close, [wide], mm)
+    assert not named_in("Lat Pulldown\t-\tClose Grip", [wide], mm)
+    assert named_in(wide, ["Lat Pulldown"], mm)
+    assert lookup(wide, mm) is mm["lat pulldown"]
 
 
 def test_no_name_is_shared_by_two_muscle_map_entries():

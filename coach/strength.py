@@ -106,21 +106,30 @@ def load_muscle_map(path: Path = MUSCLE_MAP_PATH) -> dict[str, dict]:
     return yaml.safe_load(Path(path).read_text(encoding="utf-8"))
 
 
+def _strip_equipment(name: str) -> str:
+    return re.sub(r"\s*\([^)]*\)\s*$", "", name)
+
+
+def _split_variant(name: str) -> tuple[str, str]:
+    """("Seated Cable Row", "Bar Grip") for "Seated Cable Row - Bar Grip"; variant "" if none."""
+    parts = re.split(r"\s+-\s+", name, maxsplit=1)
+    return parts[0], parts[1] if len(parts) > 1 else ""
+
+
 def _candidates(exercise: str) -> list[str]:
     """Names to try, most specific first: as logged, no "(Equipment)", no "- variant" either."""
-    no_equipment = re.sub(r"\s*\([^)]*\)\s*$", "", exercise)
-    base = re.sub(r"\s+-\s+.*$", "", no_equipment)  # "Seated Cable Row - Bar Grip"
+    no_equipment = _strip_equipment(exercise)
+    base = _split_variant(no_equipment)[0]
     return list(dict.fromkeys(fold(n) for n in (exercise, no_equipment, base)))
 
 
 def _as_logged(exercise: str) -> set[str]:
     """The name as logged and without "(Equipment)", but with any "- variant" part."""
-    return {fold(exercise), fold(re.sub(r"\s*\([^)]*\)\s*$", "", exercise))}
+    return {fold(exercise), fold(_strip_equipment(exercise))}
 
 
 def _variant(exercise: str) -> str:
-    no_equipment = re.sub(r"\s*\([^)]*\)\s*$", "", exercise)
-    return fold(no_equipment.split(" - ", 1)[1]) if " - " in no_equipment else ""
+    return fold(_split_variant(_strip_equipment(exercise))[1])
 
 
 def lookup(exercise: str, muscle_map: dict[str, dict]) -> dict | None:
