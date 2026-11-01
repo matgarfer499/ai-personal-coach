@@ -89,6 +89,30 @@ def test_no_training_keeps_active_with_a_note():
     assert not any("--pal" in n for n in target(man(activity_level="active")).notes)
 
 
+def test_no_training_active_note_goes_after_an_explicit_pal():
+    p = man(activity_level="active", screening=OK | {"cardiac_symptoms": True})
+    # as cli.py does: it always passes the estimate, with or without --pal
+    assert any("--pal" in n for n in target(p, tdee_kcal=tdee(p, today=TODAY)).notes)
+    assert not any("--pal" in n for n in target(p, tdee_kcal=tdee(p, 1.6, TODAY)).notes)
+
+
+def test_no_training_from_blood_pressure_uses_the_desk_band():
+    bp = OK | {"bp_systolic": 185, "bp_diastolic": 100}
+    p = man(activity_level="desk_training", screening=bp)
+    assert flags(p, TODAY).no_training
+    assert tdee(p, today=TODAY) == pytest.approx(1780 * 1.45)
+
+
+def test_no_training_desk_band_still_respects_the_floor_and_no_deficit():
+    cardiac = OK | {"cardiac_symptoms": True}
+    small = woman(activity_level="desk_training", weight_kg=45, height_cm=150, screening=cardiac)
+    t = target(small, tdee_kcal=tdee(small, today=TODAY))
+    assert t.kcal == energy.FLOOR_KCAL["female"] and t.clamped
+    ed = man(activity_level="desk_training", screening=cardiac | {"scoff_positive": True})
+    t = target(ed, tdee_kcal=tdee(ed, today=TODAY))
+    assert t.kcal == round(1780 * 1.45) and t.deficit == 0
+
+
 # nutrition.md "Deficit size for weight loss" (500-750) and "Deficit size when keeping or
 # building muscle" (at most 500): the coach uses 500.
 def test_fat_loss_deficit_is_500():

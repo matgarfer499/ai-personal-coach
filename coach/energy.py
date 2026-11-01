@@ -160,7 +160,14 @@ def calorie_target(
         # A surplus aims at weight gain, which is a weight target: blocked by the same flags.
         if not (flags.prescriber_owns_weight or flags.no_weight_targets):
             adjustment = maintenance * SURPLUS_FRACTION
-    if flags.no_training and not recalibrated and profile.activity_level == "active":
+    # An explicit --pal reaches here as a tdee_kcal that differs from the default estimate.
+    default_estimate = tdee(profile, today=today) if flags.no_training else None
+    if (
+        flags.no_training
+        and not recalibrated
+        and profile.activity_level == "active"
+        and abs(maintenance - default_estimate) < 0.5
+    ):
         notes.append(
             f"{PAL_RULE}: training is on hold but the activity level is 'active'; ask whether it "
             "comes from the job or from exercise, and if from exercise rerun with --pal"
