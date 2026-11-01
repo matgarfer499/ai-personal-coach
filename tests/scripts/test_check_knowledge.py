@@ -228,3 +228,17 @@ def test_titles_match_rejects_shared_boilerplate_and_short_titles():
         "Motion: A Systematic Review and Meta-Analysis, Healthcare (Basel)",
     )
     assert not ck.titles_match("Erratum.", "X, 2020. Erratum to: widgets. J Widgets")
+
+
+def test_a_reference_to_a_missing_heading_fails():
+    errors = ck.check_references(BAD)
+    assert len(errors) == 1
+    assert "No such rule" in errors[0] and "gadgets.md" in errors[0]
+    assert ck.check_references(GOOD) == []
+
+
+def test_a_supports_quote_over_500_characters_fails():
+    errors = ck.check_quote_length(FIXTURES / "long_quote")
+    assert len(errors) == 1
+    assert "S001" in errors[0] and "500" in errors[0]
+    assert ck.check_quote_length(GOOD) == []
