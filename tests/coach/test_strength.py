@@ -425,6 +425,20 @@ def test_an_injury_on_one_variant_pauses_every_variant_of_the_lift():
     assert named_in(close, ["Lat Pulldown - Close Grip"])
 
 
+def test_a_rep_range_for_one_variant_does_not_apply_to_another():
+    ranges = [parse_rep_range("Lat Pulldown - Wide Grip=12-15")]
+    assert rep_range_for("Lat Pulldown - Wide Grip (Cable)", ranges) == (12, 15)
+    assert rep_range_for("Lat Pulldown - Close Grip (Cable)", ranges) == (8, 12)
+    assert rep_range_for("Lat Pulldown", ranges) == (8, 12)
+
+
+def test_a_plain_rep_range_applies_to_variants_and_spanish_aliases_match():
+    plain = [parse_rep_range("Lat Pulldown=6-8")]
+    assert rep_range_for("Lat Pulldown - Close Grip (Cable)", plain) == (6, 8)
+    assert rep_range_for("Jalón al Pecho (Cable)", plain) == (6, 8)
+    assert rep_range_for("Leg Press (Machine)", [parse_rep_range("press de piernas=6-8")]) == (6, 8)
+
+
 def test_no_name_is_shared_by_two_muscle_map_entries():
     owner: dict[str, str] = {}
     for key, entry in load_muscle_map().items():

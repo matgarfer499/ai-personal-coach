@@ -116,6 +116,10 @@ def _split_variant(name: str) -> tuple[str, str]:
     return parts[0], parts[1] if len(parts) > 1 else ""
 
 
+def _variant(name: str) -> str:
+    return fold(_split_variant(_strip_equipment(name))[1])
+
+
 def _candidates(exercise: str) -> list[str]:
     """Names to try, most specific first: as logged, no "(Equipment)", no "- variant" either."""
     no_equipment = _strip_equipment(exercise)
@@ -217,11 +221,20 @@ def progression(
     return suggestion
 
 
-def named_in(exercise: str, names: list[str], muscle_map: dict[str, dict] | None = None) -> bool:
+def named_in(
+    exercise: str,
+    names: list[str],
+    muscle_map: dict[str, dict] | None = None,
+    share_variants: bool = True,
+) -> bool:
     """Whether a logged name is one of `names`; case, accents and "(Equipment)" do not matter.
 
     With a muscle map, two names for the same mapped lift (an alias such as "press banca" for
-    "Bench Press (Barbell)") also match.
+    "Bench Press (Barbell)") also match. Variants of one lift ("Lat Pulldown - Close Grip" and
+    "- Wide Grip") match each other through the map when `share_variants` is true (an injury
+    pause: over-pausing is the safe direction). When false (a rep range), a name that carries a
+    variant matches through the map only a logged name with the same variant; a plain name still
+    covers every variant.
     """
     wanted = set().union(*map(_as_logged, names))
     if _as_logged(exercise) & wanted:
@@ -229,8 +242,11 @@ def named_in(exercise: str, names: list[str], muscle_map: dict[str, dict] | None
     if muscle_map is None:
         return False
     entry = lookup(exercise, muscle_map)
-    # variants of one lift share a pause: over-pausing is the safe direction
-    return entry is not None and any(lookup(n, muscle_map) is entry for n in names)
+    return entry is not None and any(
+        lookup(n, muscle_map) is entry
+        and (share_variants or not _variant(n) or _variant(n) == _variant(exercise))
+        for n in names
+    )
 
 
 REP_RANGE_FORMAT = "EXERCISE=LOW-HIGH"
@@ -260,7 +276,11 @@ def rep_range_for(
 ) -> tuple[int, int]:
     """The range given for a logged lift (the last one wins), else `*`, else the rule's default."""
     mapped = load_muscle_map()
-    named = [r for name, r in ranges if name != STAR and named_in(exercise, [name], mapped)]
+    named = [
+        r
+        for name, r in ranges
+        if name != STAR and named_in(exercise, [name], mapped, share_variants=False)
+    ]
     stars = [r for name, r in ranges if name == STAR]
     return (named or stars or [default])[-1]
 
