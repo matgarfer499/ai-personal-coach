@@ -107,8 +107,10 @@ Computed by `coach safety` from the profile; the calculators obey them.
   `coach profile set pal_override`, that if it comes from the job nothing changes, and that the
   coach cannot model a mix of both yet. It is skipped when `--pal`, `--tdee` or a stored
   `pal_override` applies.
-- `profile.pal_override` applies only while `no_training` is set (every path: `coach energy`,
-  `coach macros`, menus); once the flag clears it is ignored. An explicit `--pal` or `--tdee`
+- `profile.pal_override` applies only while `no_training` is set and the level is `active`
+  (every path: `coach energy`, `coach macros`, menus); once the flag clears it is ignored. Each
+  use is announced by a note ("using stored pal_override ...") and `coach profile set` warns when
+  it has no effect or is inactive. `check_pal` (profile.py) is the one 1.4-2.0 range check. An explicit `--pal` or `--tdee`
   still wins.
 
 ## Red flags

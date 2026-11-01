@@ -12,11 +12,11 @@ from datetime import date
 from coach.profile import (
     GLP1,
     GOALS,
-    PAL_MAX,
-    PAL_MIN,
+    PAL_RULE,
     WEIGHT_RELATED_CONDITION,
     Profile,
     ProfileIncomplete,
+    check_pal,
 )
 from coach.safety import GLP1_RULE, SafetyFlags, calorie_block_reason
 from coach.safety import flags as safety_flags
@@ -28,7 +28,7 @@ MSJ_SEX_CONSTANT = {"male": 5.0, "female": -161.0}
 # nutrition.md: "Activity multipliers (PAL)": desk 1.4-1.5, desk + about 1 h training most days
 # 1.6-1.75, physically active 1.7-1.9.
 PAL_BANDS = {"desk": (1.4, 1.5), "desk_training": (1.6, 1.75), "active": (1.7, 1.9)}
-# PAL_MIN and PAL_MAX (profile.py): nutrition.md "Activity multipliers (PAL)" limits.
+# PAL_MIN, PAL_MAX and check_pal (profile.py): nutrition.md "Activity multipliers (PAL)" limits.
 
 # nutrition.md: "Deficit size for weight loss (overweight and obesity)" (500-750 kcal) and
 # "Deficit size when keeping or building muscle" (at or below about 500): every coach client
@@ -52,7 +52,6 @@ OBESITY_BMI = 30.0
 FLOOR_RULE = 'nutrition.md: "Low- and very-low-calorie diets need clinical supervision"'
 OLDER_RULE = 'nutrition.md: "Resistance training during any diet, especially for older adults"'
 RECALIBRATE_RULE = 'nutrition.md: "Recalibrate TDEE from the weight trend"'
-PAL_RULE = 'nutrition.md: "Activity multipliers (PAL)"'
 
 
 def rmr_mifflin(profile: Profile, today: date | None = None) -> float:
@@ -72,8 +71,13 @@ def band_midpoint(level: str) -> float:
 
 
 # nutrition.md: "Activity multipliers (PAL)" desk band, which applies once exercise has stopped
-# (no_training). convention: its midpoint is the --pal the `active` note gives.
+# (no_training). convention: its midpoint is the pal_override the `active` note suggests.
 DESK_PAL = band_midpoint("desk")
+
+
+def pal_override_applies(profile: Profile, no_training: bool) -> bool:
+    """A stored choice counts only under no_training and only for `active` (the note's case)."""
+    return bool(no_training and profile.pal_override and profile.activity_level == "active")
 
 
 def pal(profile: Profile, training: bool = True) -> float:
@@ -98,20 +102,11 @@ def tdee(
     if multiplier is None:
         if no_training is None:
             no_training = safety_flags(profile, today).no_training
-        # The stored choice is ignored once no_training clears.
-        multiplier = profile.pal_override if no_training and profile.pal_override else None
-    if multiplier is None:
-        multiplier = pal(profile, training=not no_training)
-    elif multiplier < PAL_MIN:
-        raise ValueError(
-            f"PAL {multiplier} is too low: never 1.2 for ambulatory adults, use at least "
-            f"{PAL_MIN} ({PAL_RULE})"
-        )
-    elif multiplier > PAL_MAX:
-        raise ValueError(
-            f"PAL {multiplier} is too high: not above about {PAL_MAX} for recreational "
-            f"gym-goers ({PAL_RULE})"
-        )
+        if pal_override_applies(profile, no_training):
+            multiplier = profile.pal_override
+        else:
+            multiplier = pal(profile, training=not no_training)
+    check_pal(multiplier)
     return rmr_mifflin(profile, today) * multiplier
 
 
@@ -152,12 +147,13 @@ def calorie_target(
 ) -> Target:
     """Daily calorie target.
 
-    `tdee_kcal` replaces the estimate (the CLI's estimate with or without an explicit PAL, or the
-    trend's recalibrated TDEE); `None` means the default `tdee`.
+    `tdee_kcal` replaces the estimate (the CLI's estimate, with or without an explicit PAL or a
+    stored `pal_override`, or the trend's recalibrated TDEE); `None` means the default `tdee`.
     `current_kcal` is what the client eats now; with `hold_deficit` the target never goes below it.
     `recalibrated` marks `tdee_kcal` as the trend's TDEE: then a cut from `current_kcal` is
-    limited to one step. `estimate_chosen` says the client already picked the estimate (`--pal` or
-    `--tdee`), so the `active` no_training note is skipped.
+    limited to one step. `estimate_chosen` covers `--pal` and `--tdee` only (the client picked the
+    estimate, so the `active` no_training note is skipped); a stored `pal_override` that applies
+    also silences that note but is always announced by a note of its own.
     """
     if flags.no_calorie_targets:
         raise ValueError(calorie_block_reason(flags))
@@ -194,11 +190,18 @@ def calorie_target(
         # A surplus aims at weight gain, which is a weight target: blocked by the same flags.
         if not (flags.prescriber_owns_weight or flags.no_weight_targets):
             adjustment = maintenance * SURPLUS_FRACTION
-    if (
+    stored = pal_override_applies(profile, flags.no_training) and not estimate_chosen
+    if stored:
+        notes.append(
+            f"using stored pal_override {profile.pal_override:g} (set while training was on "
+            "hold): if the hold is over or your activity changed, run "
+            "`coach profile set pal_override none`"
+        )
+    elif (
         flags.no_training
         and not estimate_chosen
-        and profile.pal_override is None
         and profile.activity_level == "active"
+        and not profile.pal_override
     ):
         notes.append(
             f"{PAL_RULE}: activity level 'active' is kept while training is on hold: if it comes "

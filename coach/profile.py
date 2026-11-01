@@ -104,6 +104,23 @@ ENUMS = {
 # nutrition.md: "Activity multipliers (PAL)": never 1.2 for ambulatory adults (1.4 is the
 # guideline's floor), not above about 2.0 for recreational gym-goers.
 PAL_MIN, PAL_MAX = 1.4, 2.0
+PAL_RULE = 'nutrition.md: "Activity multipliers (PAL)"'
+
+
+def check_pal(value: float, label: str = "PAL") -> None:
+    """The one range check for a PAL (an explicit --pal and the stored pal_override)."""
+    if value < PAL_MIN:
+        raise ValueError(
+            f"{label} {value} is too low: never 1.2 for ambulatory adults, use at least "
+            f"{PAL_MIN} ({PAL_RULE})"
+        )
+    if value > PAL_MAX:
+        raise ValueError(
+            f"{label} {value} is too high: not above about {PAL_MAX} for recreational "
+            f"gym-goers ({PAL_RULE})"
+        )
+
+
 NUMBERS = ("height_cm", "weight_kg", "pal_override")
 TYPES = {
     "birth_date": date,
@@ -179,8 +196,8 @@ def _validate(data: dict) -> None:
         if value is not None and (isinstance(value, bool) or not isinstance(value, int | float)):
             raise ValueError(f"{name} must be a number, not {value!r}")
     pal = data.get("pal_override")
-    if pal is not None and not PAL_MIN <= pal <= PAL_MAX:
-        raise ValueError(f"pal_override must be {PAL_MIN}-{PAL_MAX}, not {pal!r}")
+    if pal is not None:
+        check_pal(pal, "pal_override")
     for name, kind in TYPES.items():
         value = data.get(name)
         if value is not None and (isinstance(value, bool) or not isinstance(value, kind)):

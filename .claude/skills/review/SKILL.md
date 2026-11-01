@@ -45,6 +45,8 @@ While `no_training` holds and the `coach energy` notes give the `pal_override` v
 whether the `active` level comes from the job or from exercise. Only when it was exercise that
 has stopped, run `coach profile set pal_override VALUE` with that value. From the job, or a mix
 of both: store nothing, and say the coach cannot model a mix yet (they may tell a clinician).
+When the training hold has ended, run `coach profile set pal_override none`; the energy notes
+say when a stored value is in use.
 - `coach safety`, `coach profile show`, `coach knowledge stale`.
 - `coach trend` (weight trend and, after 4 weeks, `recalibrated_tdee`).
 - `coach strength sets --week-ending END` and `coach strength progress`, adding

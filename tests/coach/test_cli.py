@@ -112,7 +112,7 @@ def test_pal_override_reaches_energy_and_macros(capsys, data_dir):
     _, out = run(capsys, data_dir, "energy")
     kcal = round(_rmr(data_dir) * energy.DESK_PAL) - energy.DEFICIT_KCAL
     assert out["target"]["kcal"] == kcal
-    assert not any("pal_override" in n for n in out["target"]["notes"])
+    assert any("using stored pal_override" in n for n in out["target"]["notes"])
     _, macros = run(capsys, data_dir, "macros")
     assert macros["kcal"] == kcal
     _, shown = run(capsys, data_dir, "profile", "show")
@@ -124,6 +124,25 @@ def test_pal_override_reaches_energy_and_macros(capsys, data_dir):
     assert out["tdee"] == pytest.approx(_rmr(data_dir) * energy.band_midpoint("active"))
     run(capsys, data_dir, "profile", "set", "pal_override", "none")
     assert load_profile(data_dir / "profile.yaml").pal_override is None
+
+
+def test_profile_set_pal_override_warns_when_it_has_no_effect(capsys, data_dir):
+    def warnings():
+        out = run(capsys, data_dir, "profile", "set", "pal_override", "1.45")[1]
+        return out.get("warnings", [])
+
+    assert any("no effect" in w for w in warnings())  # activity level is desk
+    _stopped_active(data_dir)
+    assert warnings() == []
+    run(capsys, data_dir, "profile", "set", "screening.cardiac_symptoms", "false")
+    assert any("inactive until a training hold applies" in w for w in warnings())
+
+
+def test_stored_pal_override_is_announced_by_the_cli(capsys, data_dir):
+    _stopped_active(data_dir)
+    run(capsys, data_dir, "profile", "set", "pal_override", str(energy.DESK_PAL))
+    _, out = run(capsys, data_dir, "energy")
+    assert any("using stored pal_override" in n for n in out["target"]["notes"])
 
 
 def test_macros_with_the_desk_pal_match_the_energy_rerun(capsys, data_dir):

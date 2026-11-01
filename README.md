@@ -237,7 +237,8 @@ How the original evidence base was built, and its limits:
   ingredients: read the labels.
 - **Known gaps** (tracked as issues): with `no_training` the energy estimate is fixed for
   `desk_training` (desk band); for `active` it adds a note and the client stores `pal_override` if
-  the activity comes from exercise (a job-plus-exercise mix cannot be modelled yet); the dry runs in `docs/examples/` predate the current skills
+  the activity comes from exercise (a job-plus-exercise mix cannot be modelled yet);
+  the dry runs in `docs/examples/` predate the current skills
   and there is no `/menu` one; the `hold` and `paused` paths of `strength progress` are covered
   by tests but have not been seen in a real `/plan` run.
 

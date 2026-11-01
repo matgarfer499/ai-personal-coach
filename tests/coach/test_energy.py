@@ -4,7 +4,7 @@ import pytest
 
 from coach import energy
 from coach.energy import calorie_target, rmr_mifflin, tdee
-from coach.profile import Profile, ProfileIncomplete
+from coach.profile import Profile, ProfileIncomplete, check_pal
 from coach.safety import flags
 
 TODAY = date(2026, 1, 1)
@@ -147,7 +147,7 @@ def test_pal_override_applies_only_under_no_training():
     p = man(activity_level="active", screening=stopped, pal_override=energy.DESK_PAL)
     assert tdee(p, today=TODAY) == pytest.approx(RMR * energy.DESK_PAL)
     assert tdee(p, multiplier=1.7, today=TODAY) == pytest.approx(RMR * 1.7)  # --pal wins
-    assert not any("pal_override" in n for n in target(p).notes)  # counted as an explicit estimate
+    assert any("using stored pal_override" in n for n in target(p).notes)  # never silent
     cleared = man(activity_level="active", pal_override=energy.DESK_PAL)
     assert tdee(cleared, today=TODAY) == pytest.approx(RMR * energy.band_midpoint("active"))
     assert target(p, tdee_kcal=2400, estimate_chosen=True).maintenance == 2400  # --tdee wins
@@ -320,3 +320,30 @@ def test_under_18s_get_no_calorie_target():
     minor = woman(birth_date=date(2011, 6, 1))
     with pytest.raises(ValueError, match="Under-18s"):
         calorie_target(minor, flags(minor, today=TODAY), today=TODAY)
+
+
+def test_stored_pal_override_is_always_announced_when_applied():
+    stopped = OK | {"cardiac_symptoms": True}
+    p = man(activity_level="active", screening=stopped, pal_override=energy.DESK_PAL)
+    note = next(n for n in target(p).notes if "using stored pal_override" in n)
+    assert f"{energy.DESK_PAL:g}" in note and "set while training was on hold" in note
+    assert "coach profile set pal_override none" in note
+    # an explicit --pal wins, so the stored value is not in use and not announced
+    chosen = target(p, tdee_kcal=tdee(p, 1.7, TODAY), estimate_chosen=True)
+    assert not any("pal_override" in n for n in chosen.notes)
+
+
+@pytest.mark.parametrize("level", ["desk", "desk_training"])
+def test_pal_override_is_ignored_unless_the_level_is_active(level):
+    p = man(activity_level=level, screening=OK | {"cardiac_symptoms": True}, pal_override=1.9)
+    assert tdee(p, today=TODAY) == pytest.approx(RMR * energy.band_midpoint("desk"))
+    assert not any("pal_override" in n for n in target(p).notes)
+
+
+def test_check_pal_is_the_one_range_check():
+    assert check_pal(1.4) is None and check_pal(2.0) is None
+    for bad, word in [(1.2, "1.2"), (2.2, "2.0")]:
+        with pytest.raises(ValueError, match=word):
+            check_pal(bad)
+        with pytest.raises(ValueError, match=word):
+            tdee(man(), multiplier=bad, today=TODAY)
