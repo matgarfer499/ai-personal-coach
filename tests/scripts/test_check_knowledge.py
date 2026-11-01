@@ -275,3 +275,9 @@ def test_a_reference_target_must_be_a_level_2_or_3_heading(tmp_path):
     errors = ck.check_references(tmp_path)
     assert len(errors) == 2
     assert any('"Top"' in e for e in errors) and any('"Deep"' in e for e in errors)
+
+
+def test_unquoted_and_capitalised_references_are_checked():
+    errors = ck.check_references(FIXTURES / "unquoted_see")
+    targets = sorted(e.split('see "')[1].split('"')[0] for e in errors)
+    assert targets == ["Gone", "Missing Heading", "Nowhere", "Real"]
