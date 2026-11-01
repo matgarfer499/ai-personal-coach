@@ -307,8 +307,10 @@ def test_unmatched_rep_ranges_look_at_every_logged_lift(capsys, data_dir):
         "barbell row=6-8",  # logged, but outside the 28-day window
         "--rep-range",
         "sentadilla=6-8",
+        "--rep-range",
+        "*=6-8",
     )
-    assert out["unmatched_rep_ranges"] == ["sentadilla"]
+    assert out["unmatched_rep_ranges"] == ["sentadilla"]  # and `*` is never in the list
 
 
 def test_strength_progress_rejects_a_bad_rep_range(capsys, data_dir):

@@ -182,14 +182,8 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
         for name in names
     }
     # Every logged lift, not just the ones shown: --exercise and the lookback only filter output.
-    every = {s.exercise for s in logged}
-    unmatched = [
-        name
-        for name, _ in ranges
-        if name != strength.STAR
-        and not any(strength.rep_range_matches(lift, name, muscle_map) for lift in every)
-    ]
-    return {"lifts": lifts, "unmatched_rep_ranges": list(dict.fromkeys(unmatched))}
+    unmatched = strength.unmatched_rep_ranges(ranges, {s.exercise for s in logged}, muscle_map)
+    return {"lifts": lifts, "unmatched_rep_ranges": unmatched}
 
 
 def _leftover_warning(leftovers: list[ExerciseSet]) -> str:

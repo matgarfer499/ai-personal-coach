@@ -273,7 +273,16 @@ STAR = "*"  # `*=LOW-HIGH` sets the range for every lift with no range of its ow
 
 def rep_range_matches(exercise: str, name: str, muscle_map: dict[str, dict] | None) -> bool:
     """Whether a `--rep-range` name applies to a logged lift; the one matcher for both uses."""
-    return name != STAR and named_in(exercise, [name], muscle_map, share_variants=False)
+    return named_in(exercise, [name], muscle_map, share_variants=False)
+
+
+def unmatched_rep_ranges(
+    ranges: list[tuple[str, tuple[int, int]]], logged: set[str], muscle_map: dict[str, dict] | None
+) -> list[str]:
+    """Range names (not `*`) that apply to none of the logged lifts, in the order given."""
+    names = (n for n, _ in ranges if n != STAR)
+    missing = (n for n in names if not any(rep_range_matches(x, n, muscle_map) for x in logged))
+    return list(dict.fromkeys(missing))
 
 
 def rep_range_for(
@@ -281,7 +290,7 @@ def rep_range_for(
 ) -> tuple[int, int]:
     """The range given for a logged lift (the last one wins), else `*`, else the rule's default."""
     mapped = load_muscle_map()
-    named = [r for name, r in ranges if rep_range_matches(exercise, name, mapped)]
+    named = [r for name, r in ranges if name != STAR and rep_range_matches(exercise, name, mapped)]
     stars = [r for name, r in ranges if name == STAR]
     return (named or stars or [default])[-1]
 
