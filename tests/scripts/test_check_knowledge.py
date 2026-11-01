@@ -228,3 +228,50 @@ def test_titles_match_rejects_shared_boilerplate_and_short_titles():
         "Motion: A Systematic Review and Meta-Analysis, Healthcare (Basel)",
     )
     assert not ck.titles_match("Erratum.", "X, 2020. Erratum to: widgets. J Widgets")
+
+
+def test_a_reference_to_a_missing_heading_fails():
+    errors = ck.check_references(BAD)
+    assert len(errors) == 1
+    assert "No such rule" in errors[0] and "gadgets.md" in errors[0]
+    assert ck.check_references(GOOD) == []
+
+
+def test_a_supports_quote_over_500_characters_fails():
+    errors = ck.check_quote_length(FIXTURES / "long_quote")
+    assert len(errors) == 1
+    assert "S001" in errors[0] and "500" in errors[0]
+    assert ck.check_quote_length(GOOD) == []
+
+
+def test_a_reference_may_name_a_section_heading(tmp_path):
+    (tmp_path / "a.md").write_text(
+        '## Bone health\n\n### A rule\n(see "Bone health") and see "Nothing here".\n',
+        encoding="utf-8",
+    )
+    errors = ck.check_references(tmp_path)
+    assert len(errors) == 1 and "Nothing here" in errors[0]
+
+
+def test_supports_quote_length_boundary_is_500_characters(tmp_path):
+    def errors_for(total: int) -> list[str]:
+        line = "Supports: " + "x" * (total - len("Supports: "))
+        (tmp_path / "sources.md").write_text(
+            f"## List\n\n### S001\nDoe J, 2020. T. J\nURL: <https://example.org/a>\n{line}\n",
+            encoding="utf-8",
+        )
+        return ck.check_quote_length(tmp_path)
+
+    assert errors_for(500) == []
+    assert len(errors_for(501)) == 1
+
+
+def test_a_reference_target_must_be_a_level_2_or_3_heading(tmp_path):
+    (tmp_path / "a.md").write_text(
+        "# Top\n\n## Section\n\n### Rule\n\n#### Deep\n\n"
+        '(see "Rule") (see "Section") (see "Top") (see "Deep")\n',
+        encoding="utf-8",
+    )
+    errors = ck.check_references(tmp_path)
+    assert len(errors) == 2
+    assert any('"Top"' in e for e in errors) and any('"Deep"' in e for e in errors)

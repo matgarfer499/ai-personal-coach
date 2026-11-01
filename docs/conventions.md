@@ -61,6 +61,7 @@ Every one is labelled where it lives: `# convention:` in code, "convention", "he
 | `foods.ENERGY_TOLERANCE` | 10% of the 4/4/9 (+2 fibre) energy | flags a food row whose stated kcal disagrees, unless it carries a `kcal_exception` |
 | `knowledge.HEADER_LINES` | 5 | where the "Evidence checked on" date may sit |
 | `check_knowledge.LONG_TITLE_RUN`, `MIN_TITLE_RUN` | 80, 20 characters | how much of a PubMed title a citation must reproduce |
+| `check_knowledge.MAX_SUPPORTS_CHARS` | 500 characters | longest `Supports:` line in `sources.md`, matching the research skill's step 4 (only the sentences that carry the claim's numbers) |
 | `research.SLUG_MAX` | 40 | research branch names stay readable |
 | `profile.EMERGENCY_NUMBER` | 2 to 6 digits | rejects typos in a client's emergency number (112, 911, 000) |
 

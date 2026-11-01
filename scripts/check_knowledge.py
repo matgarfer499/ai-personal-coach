@@ -1,6 +1,7 @@
 """Mechanical checks for the knowledge base.
 
-Offline (default): source IDs resolve and are all cited, one valid grade per rule, no en or em
+Offline (default): source IDs resolve and are all cited, every `see "X"` names a heading,
+`Supports:` lines are at most 500 characters, one valid grade per rule, no en or em
 dashes, an "Evidence checked on" date in every rule file, a fresh `index.md` and README counts
 that match it.
 
@@ -60,6 +61,12 @@ BOILERPLATE = re.compile(
     r"anupdated|asystematicreview|andmetaanalysis|metaanalysis|ofrandomi[sz]edcontrolledtrials"
     r"|arandomi[sz]edcontrolledtrial|anumbrellareview|anarrativereview|positionstand"
 )
+
+# convention: longest `Supports:` line in sources.md, matching the research skill's step 4 (only
+# the sentences that carry the claim's numbers, at most about 500 characters).
+MAX_SUPPORTS_CHARS = 500
+# a heading may itself contain quotes, so the closing quote is the one followed by punctuation
+SEE_RE = re.compile(r'see "(.+?)"(?=[\s,;.:)]|$)')
 
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 
@@ -149,6 +156,24 @@ def check_readme_counts(knowledge_dir: Path) -> list[str]:
     return []
 
 
+def check_references(knowledge_dir: Path) -> list[str]:
+    """Every `see "X"` in a rule file must name a `## X` or `### X` heading in some rule file."""
+    texts = {path: read(path) for path in rule_files(knowledge_dir)}
+    headings = {
+        found[1]
+        for text in texts.values()
+        for mark in blank_fences(text.splitlines())
+        if (found := parse_heading(mark)) and found[0] in (2, 3)
+    }
+    return [
+        f'{path}:{lineno}: see "{target}" names no heading'
+        for path, text in texts.items()
+        for lineno, line in enumerate(text.splitlines(), start=1)
+        for target in SEE_RE.findall(line)
+        if target not in headings
+    ]
+
+
 @dataclass
 class Source:
     sid: str
@@ -177,6 +202,15 @@ def parse_sources(path: Path) -> dict[str, Source]:
             supports=supports.removeprefix("Supports:").strip(),
         )
     return sources
+
+
+def check_quote_length(knowledge_dir: Path) -> list[str]:
+    sources = parse_sources(Path(knowledge_dir) / "sources.md")
+    return [
+        f"sources.md: {sid} Supports line is {n} characters (max {MAX_SUPPORTS_CHARS})"
+        for sid, source in sources.items()
+        if (n := len(f"Supports: {source.supports}")) > MAX_SUPPORTS_CHARS
+    ]
 
 
 def _normalise(text: str) -> str:
@@ -257,6 +291,7 @@ def main(argv: list[str] | None = None, fetch: Callable[[str], str] = fetch_url)
         errors += check_grades(path) + check_checked_date(path) + check_duplicate_headings(path)
     for path in sorted(kdir.glob("*.md")):
         errors += check_dashes(path)
+    errors += check_references(kdir) + check_quote_length(kdir)
     errors += check_index_fresh(kdir)
     errors += check_readme_counts(kdir)
     warnings: list[str] = []

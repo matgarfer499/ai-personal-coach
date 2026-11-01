@@ -18,3 +18,8 @@
 **Rule:** Clean gadgets.
 **Grade:** high
 **Sources:** [S001]
+
+### Dangling reference
+**Rule:** Charge gadgets as in (see "No such rule") and (see "Wrong grade value").
+**Grade:** strong
+**Sources:** [S001]
