@@ -84,7 +84,7 @@ def _jsonable(value: Any) -> Any:
 def cmd_energy(profile: Profile, args: argparse.Namespace) -> dict:
     flags = safety.flags(profile, args.today)
     rmr = energy.rmr_mifflin(profile, args.today)
-    estimated = energy.tdee(profile, args.pal, args.today)
+    estimated = energy.tdee(profile, args.pal, args.today, flags.no_training)
     target = energy.calorie_target(
         profile,
         flags,
@@ -93,6 +93,7 @@ def cmd_energy(profile: Profile, args: argparse.Namespace) -> dict:
         tdee_kcal=args.tdee if args.tdee is not None else estimated,
         current_kcal=args.current_kcal,
         recalibrated=args.tdee is not None,
+        estimate_chosen=args.pal is not None or args.tdee is not None,
     )
     return {"rmr": rmr, "tdee": estimated, "target": target}
 
@@ -461,6 +462,7 @@ _PROFILE_TYPES = {
     "birth_date": date.fromisoformat,
     "height_cm": float,
     "weight_kg": float,
+    "pal_override": float,
     "research_reminder_months": int,
 }
 
@@ -482,6 +484,8 @@ def _parse_profile_value(field: str, raw: str) -> Any:
                 raise ValueError(f"{field} must be a whole number, not {raw!r}")
             return int(raw)
         return raw
+    if field == "pal_override" and raw.lower() == "none":
+        return None
     if field == "injuries":
         raise ValueError("injuries are set with `coach injury add` and `coach injury clear`")
     if field == "emergency_number" and raw.strip().lower() == NO_NUMBER:
@@ -509,6 +513,16 @@ def _parse_profile_value(field: str, raw: str) -> Any:
         raise ValueError(f"{field}: {raw!r} is not valid") from None
 
 
+def _pal_override_warnings(profile: Profile, args: argparse.Namespace) -> list[str]:
+    if profile.pal_override is None:
+        return []
+    if profile.activity_level != "active":
+        return ["pal_override has no effect: it applies only to the 'active' activity level"]
+    if not safety.flags(profile, args.today).no_training:
+        return ["pal_override is inactive until a training hold applies"]
+    return []
+
+
 def cmd_profile(profile: Profile, args: argparse.Namespace) -> dict:
     if args.profile_cmd == "set":
         value = _parse_profile_value(args.field, args.value)
@@ -523,7 +537,12 @@ def cmd_profile(profile: Profile, args: argparse.Namespace) -> dict:
         else:
             setattr(profile, args.field, value)
         save_profile(profile, args.data_dir / "profile.yaml")  # validates enums and screening
-    return {
+    warnings = (
+        _pal_override_warnings(profile, args)
+        if getattr(args, "field", None) == "pal_override"
+        else []
+    )
+    return ({"warnings": warnings} if warnings else {}) | {
         "data_dir": str(args.data_dir.resolve()),  # skills read and write files here by path
         "profile": profile,
         "missing": [f for f in PROFILE_REQUIRED if getattr(profile, f) is None],

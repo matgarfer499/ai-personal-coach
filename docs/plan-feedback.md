@@ -733,9 +733,13 @@ from the label with the client, never estimate, and mark the product "values fro
 1.4-1.5, and desk work plus about 1 h of training most days as 1.6-1.75.
 - With `no_training`, `desk_training` uses the `desk` band; that follows directly from the rule.
 - `active` may come from the job or from exercise. Keep it, and add a note asking the client
-  which; the skill reruns with `--pal` when it was exercise.
+  which; the skill stores `pal_override` when it was exercise. Shipped in R4: the note only, no
+  skill step. R4b added the `setup`, `plan` and `review` skill step, the `estimate_chosen`
+  parameter and the `pal_override` profile field (applies only under `no_training`), so an
+  explicit `--pal`, `--tdee` or a stored `pal_override` silences the note.
 - Compute this inside `energy.tdee` from `safety.flags(profile, today)`. `energy.py` already
-  imports from `coach.safety`, so `coach/cli.py` stays unchanged.
+  imports from `coach.safety`. As shipped, `cmd_energy` also passes the flag it holds and
+  `estimate_chosen` (R4b); the rerun value is the `desk` midpoint, not an active-band value.
 - An explicit `--pal` still wins.
 
 **Failing tests first:**

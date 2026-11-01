@@ -177,3 +177,14 @@ def test_emergency_number_is_kept(tmp_path, number):
 def test_emergency_number_must_be_digits(tmp_path, number):
     with pytest.raises(ValueError, match="emergency_number"):
         save_profile(Profile(emergency_number=number), tmp_path / "profile.yaml")
+
+
+@pytest.mark.parametrize("value", [1.39, 2.01, True, "high"])
+def test_pal_override_must_be_a_plausible_pal(tmp_path, value):
+    with pytest.raises(ValueError, match="pal_override"):
+        save_profile(Profile(pal_override=value), tmp_path / "profile.yaml")
+
+
+def test_pal_override_round_trips(tmp_path):
+    save_profile(Profile(pal_override=1.45), tmp_path / "profile.yaml")
+    assert load_profile(tmp_path / "profile.yaml").pal_override == 1.45
