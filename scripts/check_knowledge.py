@@ -163,7 +163,7 @@ def check_references(knowledge_dir: Path) -> list[str]:
         found[1]
         for text in texts.values()
         for mark in blank_fences(text.splitlines())
-        if (found := parse_heading(mark))
+        if (found := parse_heading(mark)) and found[0] in (2, 3)
     }
     return [
         f'{path}:{lineno}: see "{target}" names no heading'

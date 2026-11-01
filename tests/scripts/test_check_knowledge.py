@@ -264,3 +264,14 @@ def test_supports_quote_length_boundary_is_500_characters(tmp_path):
 
     assert errors_for(500) == []
     assert len(errors_for(501)) == 1
+
+
+def test_a_reference_target_must_be_a_level_2_or_3_heading(tmp_path):
+    (tmp_path / "a.md").write_text(
+        "# Top\n\n## Section\n\n### Rule\n\n#### Deep\n\n"
+        '(see "Rule") (see "Section") (see "Top") (see "Deep")\n',
+        encoding="utf-8",
+    )
+    errors = ck.check_references(tmp_path)
+    assert len(errors) == 2
+    assert any('"Top"' in e for e in errors) and any('"Deep"' in e for e in errors)
