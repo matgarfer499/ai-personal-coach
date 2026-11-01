@@ -270,7 +270,14 @@ def write(
             for dish, raw in zip(meal.dishes, raw_meal.get("dishes") or [], strict=True):
                 steps = tuple(str(step) for step in raw.get("steps") or [])
                 source = str(raw.get("source") or "").strip()
-                key = (dish.name, tuple(dish.items), tuple(dish.seasoning), steps, source)
+                key = (
+                    dish.name,
+                    dish.servings,
+                    tuple(dish.items),
+                    tuple(dish.seasoning),
+                    steps,
+                    source,
+                )
                 group = groups.setdefault(
                     key, {"dish": dish, "steps": steps, "source": source, "dates": []}
                 )
@@ -280,6 +287,14 @@ def write(
     def ingredients(dish, separator: str) -> str:
         return separator.join(
             _text(_amount(name, amount, table, language, comma)) for name, amount in dish.items
+        )
+
+    def seasoning(dish) -> str:
+        if not dish.seasoning:
+            return ""
+        return (
+            f"<br/><font color='grey'>{words['seasoning']}: "
+            f"{_text(', '.join(dish.seasoning))}</font>"
         )
 
     def on_days(group) -> str:
@@ -297,10 +312,7 @@ def write(
         ]
         for group in quick:
             dish = group["dish"]
-            name = f"<b>{_text(dish.name)}</b>"
-            if dish.seasoning:
-                name += f"<br/><font color='grey'>{words['seasoning']}: "
-                name += f"{_text(', '.join(dish.seasoning))}</font>"
+            name = f"<b>{_text(dish.name)}</b>" + seasoning(dish)
             rows.append(
                 [
                     Paragraph(name, cell),
@@ -320,10 +332,7 @@ def write(
         meta = f"{words['on_days']}: {on_days(group)}"
         if dish.servings > 1:
             meta += " · " + words["batch_short"].format(n=dish.servings)
-        left = ingredients(dish, "<br/>")
-        if dish.seasoning:
-            left += f"<br/><font color='grey'>{words['seasoning']}: "
-            left += f"{_text(', '.join(dish.seasoning))}</font>"
+        left = ingredients(dish, "<br/>") + seasoning(dish)
         steps = "<br/>".join(f"{n}. {_text(step)}" for n, step in enumerate(group["steps"], 1))
         url = web_link(source)
         show_qr = bool(qr and url)
@@ -333,7 +342,8 @@ def write(
         if show_qr:
             row.append(qr_code(url))
             widths.append(qr_width)
-        layout = Table([row], colWidths=widths)
+        # splitInRow: a recipe taller than a page splits instead of raising LayoutError
+        layout = Table([row], colWidths=widths, splitInRow=1)
         layout.setStyle(
             TableStyle(
                 [

@@ -224,3 +224,21 @@ def test_the_week_overview_has_a_row_per_day(capsys, data_dir):
 def test_missing_data_names_the_product_not_its_barcode(capsys, data_dir):
     data = export(capsys, data_dir)
     assert b"Fiambre de prueba" in data and b"8400000000024" not in data
+
+
+def test_a_recipe_longer_than_a_page_still_exports(capsys, data_dir):
+    pytest.importorskip("reportlab")
+    draft = yaml.safe_load((data_dir / "menu-draft.yaml").read_text(encoding="utf-8"))
+    for day in draft["days"]:
+        for meal in day["meals"]:
+            for dish in meal.get("dishes") or []:
+                if dish["dish"] == "Estofado de prueba":
+                    dish["steps"] = [f"Paso {n}: " + "remover despacio " * 30 for n in range(40)]
+    (data_dir / "menu-draft.yaml").write_text(
+        yaml.safe_dump(draft, allow_unicode=True), encoding="utf-8"
+    )
+    save(capsys, data_dir)
+    code, out = run(capsys, data_dir, "mealplan", "export")
+    assert code == 0, out
+    data = (data_dir / "menus" / "2026-10-26.pdf").read_bytes()
+    assert b"40. Paso 39" in data  # the last step is printed, not cut off
