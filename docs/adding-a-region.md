@@ -47,6 +47,9 @@ regions/<code>/
   foods.csv          regional foods missing from foods/base.csv (same columns)
   foods_ids.tsv      the FoodData Central matches foods.csv is built from
   products.csv       own-brand products with label values (optional)
+  recipe-sources.yaml  the region's own recipe sites and channels, read by /menu before the
+                     root recipe-sources.yaml (optional; same format, checked by
+                     tests/coach/test_recipe_sources.py; links only, never recipe text)
   README.md          sources, coverage and anything a reviewer should know
 ```
 

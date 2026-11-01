@@ -1,0 +1,113 @@
+# Spain's own recipe sources: well-tested Spanish cooking sites and channels.
+# /menu reads this file before the root recipe-sources.yaml. Links and one line on why
+# each source is good only, never recipe text. Format and checks:
+# tests/coach/test_recipe_sources.py.
+
+- id: directo-al-paladar
+  name: "Directo al Paladar"
+  url: https://www.directoalpaladar.com/
+  kind: site
+  language: es
+  cuisines: [spanish, mediterranean, international]
+  tags: [quick, budget]
+  why: "Big Spanish food magazine, several new recipes a day, step-by-step photos, wide range of styles"
+  checked_on: 2026-11-01
+- id: recetas-de-rechupete
+  name: "Recetas de Rechupete"
+  url: https://www.abc.es/recetasderechupete/
+  kind: site
+  language: es
+  cuisines: [spanish, galician, mediterranean]
+  tags: [beginner]
+  why: "Classic Spanish home cooking with detailed steps; old domain recetasderechupete.com redirects here (ABC partnership)"
+  checked_on: 2026-11-01
+- id: hogarmania-arguinano
+  name: "Hogarmanía (Karlos Arguiñano)"
+  url: https://www.hogarmania.com/cocina/recetas/
+  kind: site
+  language: es
+  cuisines: [spanish, basque, mediterranean]
+  tags: [quick, budget, beginner]
+  why: "Recipes from Arguiñano's daily TV show, cooked on camera by a chef, cheap seasonal Spanish food"
+  checked_on: 2026-11-01
+- id: el-comidista-site
+  name: "El Comidista (El País)"
+  url: https://elpais.com/gastronomia/el-comidista/
+  kind: site
+  language: es
+  cuisines: [spanish, mediterranean, international]
+  tags: [quick]
+  why: "Food journalism with tested, opinionated recipes; site blocks fetching and may hit El País metered paywall"
+  checked_on: 2026-11-01
+- id: el-comidista-yt
+  name: "El Comidista en EL PAÍS"
+  url: https://www.youtube.com/@elcomidistaenelpais
+  kind: youtube
+  language: es
+  cuisines: [spanish, mediterranean, international]
+  tags: [quick]
+  why: "Video versions of El Comidista recipes, clear technique, lots of flavour and world dishes"
+  checked_on: 2026-11-01
+- id: las-recetas-de-mj
+  name: "Las Recetas de MJ"
+  url: https://www.lasrecetasdemj.com/
+  kind: site
+  language: es
+  cuisines: [spanish, mediterranean, international]
+  tags: [beginner, budget]
+  why: "Popular Spanish home cook, every written recipe has a matching video (youtube.com/lasrecetasdemj)"
+  checked_on: 2026-11-01
+- id: cocina-familiar
+  name: "Cocina Familiar (Javier Romero)"
+  url: https://cocina-familiar.com/
+  kind: site
+  language: es
+  cuisines: [spanish, riojan, mediterranean]
+  tags: [budget, beginner]
+  why: "Rioja cook with a TV show and 2,600+ home recipes; YouTube channel/UCXMrqL3QHKQP6Q-iObZjrXA also active"
+  checked_on: 2026-11-01
+- id: bon-viveur
+  name: "Bon Viveur"
+  url: https://bonviveur.com/es/
+  kind: site
+  language: es
+  cuisines: [spanish, mediterranean, international]
+  tags: [batch, budget]
+  why: "Spanish recipe site with a weekly menu (Mon-Sun) plus shopping list, good for menu planning"
+  checked_on: 2026-11-01
+- id: loli-dominguez
+  name: "La Cocina de Loli Domínguez"
+  url: https://www.youtube.com/@lolidominguezjimenez
+  kind: youtube
+  language: es
+  cuisines: [spanish, andalusian]
+  tags: [budget, beginner]
+  why: "Andalusian home cook since 2013, traditional guisos and family dishes, ~2.9M subscribers"
+  checked_on: 2026-11-01
+- id: recetas-de-esbieta
+  name: "Recetas de Esbieta"
+  url: https://www.youtube.com/@RecetasdeEsbieta
+  kind: youtube
+  language: es
+  cuisines: [spanish, bread, baking]
+  tags: [beginner]
+  why: "Large tested back catalogue (bread, baking); recent uploads are food-history essays, not recipes"
+  checked_on: 2026-11-01
+- id: chef-bosquet
+  name: "Chef Bosquet"
+  url: https://www.youtube.com/@chefbosquet
+  kind: youtube
+  language: es
+  cuisines: [spanish, healthy]
+  tags: [healthy, quick]
+  why: "Spanish chef cooking light versions of popular dishes and desserts; mostly short videos"
+  checked_on: 2026-11-01
+- id: juan-llorca
+  name: "Juan Llorca"
+  url: https://juanllorca.com/
+  kind: site
+  language: es
+  cuisines: [spanish, mediterranean]
+  tags: [healthy, batch]
+  why: "Valencia chef for school and family food; recent posts are infant and BLW recipes, use for family meals only"
+  checked_on: 2026-11-01
