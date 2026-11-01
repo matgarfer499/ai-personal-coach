@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from coach.macros import KCAL_PER_G
-from coach.profile import real_region
+from coach.regioncode import real_region
 from coach.text import fold
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -133,7 +133,8 @@ def _read(path: Path) -> list[Food]:
 
 def load_foods(region: str | None = None, root: Path = ROOT) -> list[Food]:
     table = _read(root / "foods" / "base.csv")
-    if real_region(region):
+    region = real_region(region)
+    if region:
         table += _read(root / "regions" / region / "foods.csv")
     check_unique(table)
     return table

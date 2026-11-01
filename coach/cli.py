@@ -43,15 +43,14 @@ from coach.profile import (
     CONDITION_TOKENS,
     GOALS,
     MEDICATION_TOKENS,
-    NO_REGION,
     PARQ_ANSWERS,
     SCREENING_KEYS,
     Profile,
     ProfileIncomplete,
     load_profile,
-    real_region,
     save_profile,
 )
+from coach.regioncode import NO_REGION, real_region
 from coach.sessions.importers import base as importers  # the package registers importers
 from coach.sessions.model import ExerciseSet
 from coach.sessions.store import append, read_sets
@@ -478,8 +477,12 @@ def _parse_profile_value(field: str, raw: str) -> Any:
     if field == "injuries":
         raise ValueError("injuries are set with `coach injury add` and `coach injury clear`")
     if field == "region":
-        if real_region(raw) is None:
+        if not raw.strip():
+            raise ValueError("region needs a value: a region code, or none for no region")
+        code = real_region(raw)
+        if code is None:
             return NO_REGION  # chosen: no region for this country, the base food table only
+        raw = code
         if not (regions.ROOT / "regions" / raw / "region.yaml").exists():
             raise ValueError(
                 f"there is no region {raw!r} yet (no regions/{raw}/region.yaml): set the region "

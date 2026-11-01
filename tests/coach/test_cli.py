@@ -828,6 +828,22 @@ def test_vigorous_review_can_be_recorded(capsys, data_dir):
     assert flags["review_before_vigorous"] is False and flags["no_all_out_sprints"] is True
 
 
+def test_an_empty_region_is_an_error_and_codes_are_stored_normalised(capsys, data_dir):
+    for empty in ("", "   "):
+        assert run(capsys, data_dir, "profile", "set", "region", empty)[0] == 2
+    assert run(capsys, data_dir, "profile", "show")[1]["profile"]["region"] is None
+    _, out = run(capsys, data_dir, "profile", "set", "region", "ES ")
+    assert out["profile"]["region"] == "es"
+    path = data_dir / "profile.yaml"
+    text = "".join(
+        line
+        for line in path.read_text(encoding="utf-8").splitlines(True)
+        if not line.startswith("region:")
+    )
+    path.write_text(text + 'region: ""\n', encoding="utf-8")  # empty is unset, not "none"
+    assert "region" in run(capsys, data_dir, "profile", "show")[1]["missing"]
+
+
 def test_a_region_without_its_folder_is_refused_with_a_hint(capsys, data_dir):
     code, out = run(capsys, data_dir, "profile", "set", "region", "mx")
     assert code == 2

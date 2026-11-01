@@ -11,7 +11,7 @@ import yaml
 
 from coach import catalogue
 from coach.foods import PER_UNITS, ROOT, Food, check_unique, load_foods
-from coach.profile import real_region
+from coach.regioncode import real_region
 
 PRODUCT_FIELDS = [
     "chain",

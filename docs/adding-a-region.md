@@ -17,7 +17,8 @@ uv run python -m coach products add BARCODE --chain "YOUR SHOP" --json
 
 Those products go into your private catalogue in the data folder and work in `/menu` and the
 shopping list like any other food. `/setup` asks for your emergency number when there is no
-region and stores it in your profile.
+region and stores it in your profile. A client with region `none` who cannot find a number may
+have none stored; the skills then say to call the local emergency number (112 in Europe).
 
 Add a region when you want what is specific to a country: foods the general table lacks, the
 local supermarket chains and their own brands (`/menu` accepts any chain, but the region documents

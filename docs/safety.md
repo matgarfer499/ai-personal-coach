@@ -19,7 +19,9 @@ the model.
   client's own (`coach profile set emergency_number N`), else their region's (`emergency_number`
   in `region.yaml`: 112 for Spain), else none, and then the skills ask which number to call
   where the client lives (112 across the EU, 911 in the US, Canada and Mexico, 999 in the UK,
-  000 in Australia) and store it.
+  000 in Australia) and store it. A profile with region `none` may have no stored number
+  (`emergency_number` then stays in `missing`); the skills fall back to the local emergency
+  number (112 in Europe) when a red flag fires.
 - Not a medical device: its numbers are estimates from equations and logs, and every rule is
   general guidance from the knowledge files.
 
