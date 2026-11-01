@@ -126,7 +126,7 @@ def test_hevy_identical_repeated_block_is_kept():
 
 def test_hevy_missing_columns(tmp_path):
     path = tmp_path / "x.csv"
-    path.write_text("title,start_time\nA,1 Jan 2025, 10:00\n")
+    path.write_text("title,start_time\nA,1 Jan 2025, 10:00\n", encoding="utf-8")
     assert not hevy_csv.HevyCsv().can_read(path)
     with pytest.raises(ImporterError, match="exercise_title"):
         hevy_csv.HevyCsv().read(path)
@@ -171,7 +171,7 @@ def test_generic_keeps_identical_straight_sets_and_non_contiguous_sessions():
 )
 def test_generic_bad_values_name_the_problem(tmp_path, row, message):
     path = tmp_path / "x.csv"
-    path.write_text(f"date,exercise,weight_kg,reps\n{row}\n")
+    path.write_text(f"date,exercise,weight_kg,reps\n{row}\n", encoding="utf-8")
     with pytest.raises(ImporterError, match=message):
         generic_csv.GenericCsv().read(path)
 
@@ -186,7 +186,7 @@ def test_registry_detects_and_refuses_unknown(tmp_path):
     assert detect(GENERIC / "basic.csv").name == "generic_csv"
     assert get("hevy_csv").name == "hevy_csv"
     other = tmp_path / "other.csv"
-    other.write_text("foo,bar\n1,2\n")
+    other.write_text("foo,bar\n1,2\n", encoding="utf-8")
     with pytest.raises(ImporterError, match="no importer"):
         detect(other)
 
