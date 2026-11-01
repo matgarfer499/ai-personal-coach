@@ -27,9 +27,17 @@ jobs:
           gh api -H "Accept: application/vnd.github.raw" \
             "repos/$GITHUB_REPOSITORY/contents/.github/risk-paths?ref=$BASE" \
             | grep -v '^#' | grep -v '^$' > "$RUNNER_TEMP/patterns"
+          files_url="repos/$GITHUB_REPOSITORY/pulls/$PR/files"
+          gh api --paginate "$files_url" --jq '.[].filename' > "$RUNNER_TEMP/files"
+          # The files API stops at 3000 entries: a short list fails closed.
+          expected=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq .changed_files)
+          got=$(wc -l < "$RUNNER_TEMP/files")
+          if [ "$got" -ne "$expected" ]; then
+            echo "::error::Got $got of $expected changed files; cannot check the full PR."
+            exit 1
+          fi
           # previous_filename catches a risky file renamed out of its path.
-          gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
-            --jq '.[] | .filename, (.previous_filename // empty)' > "$RUNNER_TEMP/files"
+          gh api --paginate "$files_url" --jq '.[].previous_filename // empty' >> "$RUNNER_TEMP/files"
           # grep exits 1 on no match (fine) and 2 on a bad pattern (fail closed).
           risky=$(grep -E -f "$RUNNER_TEMP/patterns" "$RUNNER_TEMP/files" || [ $? -eq 1 ])
           if [ -z "$risky" ]; then
