@@ -93,7 +93,17 @@ def test_no_training_active_note_only_without_an_explicit_estimate():
     p = man(activity_level="active", screening=OK | {"cardiac_symptoms": True})
     # as cli.py does: tdee_kcal is None unless --pal or --tdee was given
     assert any("--pal" in n for n in target(p).notes)
-    assert not any("--pal" in n for n in target(p, tdee_kcal=tdee(p, 1.8, TODAY)).notes)
+    chosen = target(p, tdee_kcal=tdee(p, 1.8, TODAY), estimate_chosen=True)
+    assert not any("--pal" in n for n in chosen.notes)
+
+
+# The rerun value is the desk midpoint (training stopped), taken from the PAL bands in code.
+def test_active_note_carries_the_desk_midpoint_as_the_pal():
+    p = man(activity_level="active", screening=OK | {"cardiac_symptoms": True})
+    note = next(n for n in target(p).notes if "--pal" in n)
+    assert note.endswith("--pal 1.45") and "stopped while training is on hold" in note
+    assert energy.DESK_PAL == pytest.approx(1.45)
+    assert tdee(p, energy.DESK_PAL, TODAY) == pytest.approx(1780 * 1.45)
 
 
 def test_tdee_takes_no_training_from_the_caller():

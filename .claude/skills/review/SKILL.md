@@ -41,6 +41,8 @@ A weekly review: what the data says, and whether the plan should change.
 
 END is the last day of the week under review (default: today). When END is before today, run
 `coach trend`, `coach strength progress` and `coach energy` with `--today END` (ground rules).
+While `no_training` holds, when the `coach energy` notes give a `--pal` value (activity from
+exercise that has stopped), pass that same `--pal` to every `coach energy` and `coach macros` call.
 - `coach safety`, `coach profile show`, `coach knowledge stale`.
 - `coach trend` (weight trend and, after 4 weeks, `recalibrated_tdee`).
 - `coach strength sets --week-ending END` and `coach strength progress`, adding

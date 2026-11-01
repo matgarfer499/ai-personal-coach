@@ -177,9 +177,11 @@ Ask about one step per message. Store each answer as soon as you have it with
 10. **Targets.** Run `coach safety`, then `coach energy`, `coach macros` and `coach zones`.
     Only when `use_rpe_not_hr` is false, ask for a morning resting pulse (`--hr-rest N`) and an
     observed all-out peak (`--hr-max N`); skip either if unknown.
-   When the `coach energy` `notes` hold the `active` `no_training` note, ask whether the activity
-   comes from the job or from exercise; if exercise, rerun `coach energy` with `--pal` (a value
-   from the `active` band in the PAL rule, never computed by you).
+    When the `coach energy` `notes` hold the `active` `no_training` note, ask whether the activity
+    comes from the job or from exercise. From the job: no change. From exercise: rerun
+    `coach energy` with the `--pal` value the note gives (never a value you chose or computed),
+    then `coach macros` with the same `--pal`; pass it to every later `coach energy` and
+    `coach macros` call. Tell them to keep training on hold until a clinician clears it.
 11. **Reminder.** Say the coach will suggest refreshing its evidence every 6 months
     (`research_reminder_months`); set another number only if they ask.
 

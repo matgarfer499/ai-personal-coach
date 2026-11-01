@@ -93,6 +93,7 @@ def test_energy_active_note_under_no_training_and_explicit_pal(capsys, data_dir)
         return run(capsys, data_dir, "energy", *extra)[1]["target"]["notes"]
 
     assert any("no change is needed" in n for n in notes())
+    assert any("--pal 1.45" in n for n in notes())
     assert not any("no change is needed" in n for n in notes("--pal", "1.8"))  # the band midpoint
     assert not any("no change is needed" in n for n in notes("--tdee", "2400"))
 

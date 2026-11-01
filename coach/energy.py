@@ -20,6 +20,8 @@ MSJ_SEX_CONSTANT = {"male": 5.0, "female": -161.0}
 # nutrition.md: "Activity multipliers (PAL)": desk 1.4-1.5, desk + about 1 h training most days
 # 1.6-1.75, physically active 1.7-1.9.
 PAL_BANDS = {"desk": (1.4, 1.5), "desk_training": (1.6, 1.75), "active": (1.7, 1.9)}
+# With no_training, exercise has stopped: the desk band's midpoint (convention: band midpoint).
+DESK_PAL = sum(PAL_BANDS["desk"]) / 2
 # nutrition.md: "Activity multipliers (PAL)": never 1.2 for ambulatory adults (1.4 is the
 # guideline's floor), not above about 2.0 for recreational gym-goers.
 PAL_MIN, PAL_MAX = 1.4, 2.0
@@ -129,13 +131,16 @@ def calorie_target(
     tdee_kcal: float | None = None,
     current_kcal: float | None = None,
     recalibrated: bool = False,
+    estimate_chosen: bool = False,
 ) -> Target:
     """Daily calorie target.
 
-    `tdee_kcal` replaces the estimate (an explicit PAL, or the trend's recalibrated TDEE).
+    `tdee_kcal` replaces the estimate (the CLI's estimate with or without an explicit PAL, or the
+    trend's recalibrated TDEE); `None` means the default `tdee`.
     `current_kcal` is what the client eats now; with `hold_deficit` the target never goes below it.
     `recalibrated` marks `tdee_kcal` as the trend's TDEE: then a cut from `current_kcal` is
-    limited to one step.
+    limited to one step. `estimate_chosen` says the client already picked the estimate (`--pal` or
+    `--tdee`), so the `active` no_training note is skipped.
     """
     if flags.no_calorie_targets:
         raise ValueError(calorie_block_reason(flags))
@@ -172,11 +177,11 @@ def calorie_target(
         # A surplus aims at weight gain, which is a weight target: blocked by the same flags.
         if not (flags.prescriber_owns_weight or flags.no_weight_targets):
             adjustment = maintenance * SURPLUS_FRACTION
-    # tdee_kcal is None unless --pal or --tdee was given: then the client has already chosen.
-    if flags.no_training and tdee_kcal is None and profile.activity_level == "active":
+    if flags.no_training and not estimate_chosen and profile.activity_level == "active":
         notes.append(
             f"{PAL_RULE}: activity level 'active' is kept while training is on hold: if it comes "
-            "from the job, no change is needed; if it comes from exercise, rerun with --pal"
+            "from the job, no change is needed; if it comes from exercise (stopped while "
+            f"training is on hold), rerun with --pal {DESK_PAL:g}"
         )
     notes += [r for r in flags.reasons if r not in notes]
 

@@ -102,7 +102,10 @@ Computed by `coach safety` from the profile; the calculators obey them.
 - `desk_training` uses the `desk` PAL band (nutrition.md "Activity multipliers (PAL)": desk work
   with little exercise).
 - Only `active` is kept, with a note, because it may come from the job: its text is in
-  `docs/conventions.md` (`energy.pal` row). The note is skipped when `--pal` or `--tdee` was given.
+  `energy.calorie_target`. It tells the client that if the activity comes from exercise (stopped
+  while training is on hold) to rerun with `--pal` set to the desk midpoint (`energy.DESK_PAL`),
+  and that if it comes from the job nothing changes. It is skipped when `--pal` or `--tdee` was
+  given.
 - An explicit `--pal` always wins.
 
 ## Red flags
