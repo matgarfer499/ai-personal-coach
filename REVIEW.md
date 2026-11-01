@@ -24,8 +24,8 @@ What matters when reviewing this repo. Reviewers read this before reporting.
 
 - `uv.lock`, `assets/`
 - `knowledge/index.md` (built by `scripts/build_knowledge_index.py`)
-- `foods/base.csv`, `regions/*/foods.csv` (built by `scripts/build_food_table.py` from the
-  `*_ids.tsv` lists; review the ID lists instead)
+- `foods/base.csv` (built by `scripts/build_food_table.py` from `foods/base_ids.tsv`; review the
+  ID list instead)
 
 ## Risky paths
 
