@@ -6013,14 +6013,14 @@ Cheema BS, Davies TB, Stewart M, Papalia S, Atlantis E. 2015. The feasibility an
 Type: RCT · DOI: [10.1186/2052-1847-7-3](https://doi.org/10.1186/2052-1847-7-3) · Files: cardio-health  
 URL: <https://pubmed.ncbi.nlm.nih.gov/25973207/>  
 Opened: <https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4429464/fullTextXML>  
-Supports: Condensed: 'Mean training heart rate during the 12-week intervention period ranged from 86-89% and 64-77% of age-predicted HR max in the boxing and walking groups' ... 'instructed to exercise at a rating of perceived exertion of 15-17/20 (“hard” to “very hard”)' ... '(1) heavy bag, (2) focus mitts, (3) circular body bag, (4) footwork drills, and (4) skipping.' ... 'Two participants in the boxing group experienced an adverse event'. Added by research 2026-11-01 (boxing functional).
+Supports: Condensed: 'Men and women with abdominal obesity' ... 'Mean training heart rate during the 12-week intervention period ranged from 86-89% and 64-77% of age-predicted HR max in the boxing and walking groups' ... 'instructed to exercise at a rating of perceived exertion of 15-17/20' ... '(1) heavy bag, (2) focus mitts ... (4) footwork drills, and (4) skipping.' ... 'Two participants in the boxing group experienced an adverse event'. Added by research 2026-11-01 (boxing functional).
 
 ### S866
 Scott C. 2019. Estimating the total energy costs of a brief 1-minute bout of heavy bag punching. European Journal of Human Movement 42:101-107  
 Type: Other · Files: cardio-health  
 URL: <https://dialnet.unirioja.es/descarga/articulo/7383013.pdf>  
 Opened: <https://dialnet.unirioja.es/descarga/articulo/7383013.pdf>  
-Supports: Condensed: 'a convenience sample of inexperienced young men who were learning to train with a heavy bag' ... 'For brief intense pugilistic exercise, our total energy cost estimate was as much as 4.5-fold greater than previously published per minute exercise oxygen uptake rates.'. Added by research 2026-11-01 (boxing functional).
+Supports: Condensed: 'Ten male subjects completed testing' ... 'a convenience sample of inexperienced young men who were learning to train with a heavy bag' ... 'For brief intense pugilistic exercise, our total energy cost estimate was as much as 4.5-fold greater than previously published per minute exercise oxygen uptake rates.'. Added by research 2026-11-01 (boxing functional).
 
 ### S867
 Wilke J, Mohr L. 2020. Chronic effects of high-intensity functional training on motor function: a systematic review with multilevel meta-analysis. Sci Rep 10:21680  

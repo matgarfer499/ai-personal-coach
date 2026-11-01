@@ -166,8 +166,10 @@ Knowledge, by situation: run only the lines that apply.
    day, add short walks on days they choose); intensity only as the zones `coach zones` printed (RPE and
    talk test, and bpm only if it printed them).
    For an activity with no rule of its own, use the rule of the closest modality by intensity; if
-   the intensity is unclear, use the vigorous (HIIT) rule and its safety flags. Say which rule you
-   used and suggest `/research`.
+   the intensity is unclear, use the vigorous (HIIT) rule. Say which rule you used and suggest
+   `/research`. When the vigorous (HIIT) rule applies, its screening gate and safety flags come
+   before the activity is written into the plan and win over "start at the minimum of Weekly
+   baseline dose" for that activity.
 4. Nutrition: the calorie target, protein, fat, carbohydrate and fibre exactly as `coach macros`
    printed them.
 5. Write `data/plan.md` in the profile language. Its first three lines, with nothing before
