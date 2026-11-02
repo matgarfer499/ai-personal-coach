@@ -81,9 +81,9 @@ it. Products added this way are marked unverified (a product typed from its labe
 "values from the label"), and prices are never fetched. The PDF export
 needs the optional extra: `uv sync --extra pdf`.
 
-[`docs/examples/`](docs/examples/) has dry runs of `/setup`, `/checkin`, `/import`, `/plan` and
-`/review` with an invented client, including three red-flag cases. They were recorded with an
-earlier version of the skills, so some outputs differ from today's (see Limitations).
+[`docs/examples/`](docs/examples/) has dry runs of `/setup`, `/checkin`, `/import`, `/plan`,
+`/review` and `/menu` with an invented client, including the red-flag cases. They were
+regenerated with the current skills.
 
 The CLI behind the skills can also be used directly, for example
 `uv run python -m coach energy` or `uv run python -m coach --help`.
@@ -239,10 +239,7 @@ How the original evidence base was built, and its limits:
   ingredients: read the labels.
 - **Known gaps** (tracked as issues): with `no_training` the energy estimate is fixed for
   `desk_training` (desk band); for `active` it adds a note and the client stores `pal_override` if
-  the activity comes from exercise (a job-plus-exercise mix cannot be modelled yet);
-  the dry runs in `docs/examples/` predate the current skills
-  and there is no `/menu` one; the `hold` and `paused` paths of `strength progress` are covered
-  by tests but have not been seen in a real `/plan` run.
+  the activity comes from exercise (a job-plus-exercise mix cannot be modelled yet).
 
 ## What is inside
 
