@@ -1,6 +1,9 @@
 # /plan dry run: PAR-Q+ follow-up YES, every lift on `hold`
 
-The client is synthetic ("Marco", invented for this run; no real data). Run date: 2026-11-02 (a Monday). `DATA` is a fresh folder made with `mktemp -d`; the real path printed by the CLI is shown as `DATA`. Four weeks of invented workouts (12 sessions, two alternating full-body sessions A and B, last logged session 2026-10-30) were imported with `coach import`, and the profile was set with `coach profile set` (english, muscle_gain, intermediate, no medication, every screen clear). The knowledge sections below are shortened to heading, the start of the Rule line and Grade; the CLI prints more. Every other output is the CLI's, copied exactly.
+The client is synthetic ("Marco", invented for this run; no real data). Run date: 2026-11-02 (a Monday). `DATA` is a fresh folder made with `mktemp -d`; the real path printed by the CLI is shown as `DATA`. Four weeks of invented workouts (12 sessions, two alternating full-body sessions A and B, last logged session 2026-10-30) were imported with `coach import`, and the profile was set with `coach profile set` (english, muscle_gain, intermediate, no medication, every screen clear).
+
+**Not verbatim CLI output:** the knowledge sections (shortened to heading, the start of the Rule line and Grade), the `$ read the last logged session ... sessions.csv` lines (a summary of the file, not a CLI command), the `$ cat > DATA/plan.md` block (the plan text itself is written by the simulated coach, not generated), and all Coach and Client dialogue, which is a simulation of a model following `.claude/skills/plan/SKILL.md`, not a recorded session. Everything inside the other `$ uv run python -m coach` blocks is real output from the CLI, pasted by script (no retyping, key order as printed), with the temp folder shown as `DATA`. Sets and reps in all three examples are chosen the same way: the number of sets is what the log shows per lift (3), the rep range is the `rep_range` the CLI prints (8-12), effort is the RIR from "Target reps in reserve"; only `plan-hold.md` pins the reps to the last logged session, because `hold` says so.
+
 
 The point of the run: with `screening.parq_followup_yes true`, does `/plan` keep every lift at its logged load and reps, quote no progression, and end with the deferral line from `docs/safety.md`? One lift (Bench Press) is set up so that, without the flag, the CLI would raise its load.
 
@@ -128,7 +131,7 @@ $ uv run python -m coach --data-dir DATA knowledge section nutrition "Surplus si
 
 **Client:** Monday, Wednesday and Friday at 18:30, one hour, full gym. I'm happy with the lifts I do. No injuries. I'd like to walk on Tuesday, Thursday and Saturday. I haven't seen a doctor about the PAR-Q+ yet.
 
-**Coach:** (No injury, so no `coach injury add`. Keep the logged lifts with their logged names so `/review` can count them. `hold_progression`: the same sets, no harder than the last sessions (2 RIR), and loads only from the `hold` rows, never the load the CLI would have printed without the flag. The last logged session was B (2026-10-30), so the rotation continues with A on Monday. Cardio starts at the 150-minute minimum, split evenly over the three walking days the client gave. Writing `DATA/plan.md`.)
+**Coach:** (No injury, so no `coach injury add`. Keep the logged lifts with their logged names so `/review` can count them. `hold_progression`: the same sets, no harder than the last sessions (2 RIR), and loads only from the `hold` rows, never the load the CLI would have printed without the flag. The last logged session was B (2026-10-30), so the rotation continues with A on Monday. Cardio starts at the 150-minute minimum, spread over the three walking days the client gave. Writing `DATA/plan.md`.)
 
 ```
 $ cat > DATA/plan.md   (file written; content identical to the final message below, including the review line and the deferral line)
@@ -147,7 +150,7 @@ Three full-body sessions of one hour at the gym, Monday, Wednesday and Friday at
 
 You asked to put more weight on the bench. Not yet: your PAR-Q+ follow-up answers say a doctor or qualified exercise professional should see you first, and until then nothing goes up: not load, not reps, not sets, not effort [PAR-Q+ 2023 as the default entry screen]. This block is maintenance, not progression. That includes the bench: you stay at 67.5 kg, and I won't raise it even though you beat the top of the range last time.
 
-Every work set stays at 3 sets with the same load and the same reps as your last session for that lift, 2 reps in reserve (RIR), never to failure [Target reps in reserve] [Double progression]. Same load and same reps means a 12 is not a signal to add weight: it stays until a clinician has reviewed it.
+Every lift stays at the 3 sets you log now, with the same load and the same reps as your last session for that lift, and no harder than your last sessions (you logged them at 2 reps in reserve, RIR), never to failure [Target reps in reserve] [Double progression]. Same load and same reps means a 12 is not a signal to add weight: it stays until a clinician has reviewed it.
 
 **Session A (Monday, then Friday on alternate weeks)**
 - Squat: 87.5 kg, 3 sets of 12, 12, 11
@@ -163,7 +166,7 @@ Rep range 8-12 as usual [Double progression]. Your weekly sets per muscle stay w
 
 ## Cardio
 
-Minimum 150 minutes of moderate cardio a week [Weekly baseline dose]: brisk walks on Tuesday, Thursday and Saturday, 50 minutes each. Intensity: perceived effort (RPE) 12-13, you can talk but not sing; about 117-139 bpm, which is only a rough guide because the maximum heart rate behind it is a formula estimate (183), so trust the talk test first. No vigorous work: no HIIT, sprints, jump rope or jumps, and no 1RM tests, until a qualified exercise professional or your doctor has reviewed it [PAR-Q+ specific thresholds].
+Minimum 150 minutes of moderate cardio a week [Weekly baseline dose]: brisk walks spread over Tuesday, Thursday and Saturday. Intensity: perceived effort (RPE) 12-13, you can talk but not sing; about 117-139 bpm, which is only a rough guide because the maximum heart rate behind it is a formula estimate (183), so trust the talk test first. No vigorous work: no HIIT, sprints, jump rope or jumps, and no 1RM tests, until a qualified exercise professional or your doctor has reviewed it [PAR-Q+ specific thresholds].
 
 ## Nutrition
 

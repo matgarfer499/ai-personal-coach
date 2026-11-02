@@ -1,6 +1,9 @@
 # /plan dry run: shoulder injury, with a professional (lift `paused`, load is a ceiling)
 
-The client is synthetic ("Marco", invented for this run; no real data). Run date: 2026-11-02 (a Monday). `DATA` is a fresh folder made with `mktemp -d`; the real path printed by the CLI is shown as `DATA`. Four weeks of invented workouts (12 sessions, two alternating full-body sessions A and B, last logged session 2026-10-30) were imported with `coach import`, and the profile was set with `coach profile set` (english, muscle_gain, intermediate, no medication, every screen clear, no injury yet). The knowledge sections are shortened to heading, the start of the Rule line and Grade; the CLI prints more. Every other output is the CLI's, copied exactly.
+The client is synthetic ("Marco", invented for this run; no real data). Run date: 2026-11-02 (a Monday). `DATA` is a fresh folder made with `mktemp -d`; the real path printed by the CLI is shown as `DATA`. Four weeks of invented workouts (12 sessions, two alternating full-body sessions A and B, last logged session 2026-10-30) were imported with `coach import`, and the profile was set with `coach profile set` (english, muscle_gain, intermediate, no medication, every screen clear, no injury yet).
+
+**Not verbatim CLI output:** the knowledge sections (shortened to heading, the start of the Rule line and Grade), the `$ read the last logged session ... sessions.csv` lines (a summary of the file, not a CLI command), the `$ cat > DATA/plan.md` block (the plan text itself is written by the simulated coach, not generated), and all Coach and Client dialogue, which is a simulation of a model following `.claude/skills/plan/SKILL.md`, not a recorded session. Everything inside the other `$ uv run python -m coach` blocks is real output from the CLI, pasted by script (no retyping, key order as printed), with the temp folder shown as `DATA`. Sets and reps in all three examples are chosen the same way: the number of sets is what the log shows per lift (3), the rep range is the `rep_range` the CLI prints (8-12), effort is the RIR from "Target reps in reserve"; only `plan-hold.md` pins the reps to the last logged session, because `hold` says so.
+
 
 The point of the run: the same shoulder as in `plan-injury-no-professional.md`, but a physiotherapist has assessed it, so `/plan` records it with `coach injury add shoulder --professional physiotherapist --exercises "Bench Press"`. The lift must come back `paused`, with `load_kg` as a ceiling, must not be progressed, and must be swapped or reduced within the limits the physiotherapist set. Because a professional manages it, `coach safety` does not set `refer_gp` for the injury, so there is no deferral line (see "What the replay shows").
 
@@ -123,7 +126,7 @@ $ uv run python -m coach --data-dir DATA macros --kcal 2676 --json
 {"in_deficit": false, "kcal": 2676.0, "protein_g": 131.2, "fat_g": 74.33, "fat_min_g": 59.47, "carbs_g": 370.55, "fibre_g": 25, "protein_g_per_kg": 1.6, "notes": ["nutrition.md: \"Daily protein target for people who lift\": 1.6 g/kg/day"]}
 ```
 
-**Coach:** (Bench Press is `paused` with `load_kg` 67.5: no progression, and 67.5 is a ceiling, not a target. The physiotherapist said no barbell bench for now, so I swap the lift rather than reduce it; the CLI prints no reduced load and I do not invent one. The other lifts keep their `add_reps` loads. `refer_gp` is false, so no deferral line; the professional is the physiotherapist. Loading the injury rules.)
+**Coach:** (Bench Press is `paused` with `load_kg` 67.5: no progression, and 67.5 is a ceiling, not a target. The physiotherapist said no barbell bench for now, so I swap the lift rather than reduce it; the CLI prints no reduced load and I do not invent one. The other lifts keep their `add_reps` loads. The plan's own choices (the swap to push-ups, justified only by what the client said the physiotherapist said, and the overhead press left progressing) are the simulated coach's judgment and illustrate skill problem 2 of `plan-injury-no-professional.md`; they are not a reference answer. `refer_gp` is false, so no deferral line; the professional is the physiotherapist. Loading the injury rules.)
 
 ```
 $ uv run python -m coach --data-dir DATA knowledge section recovery-habits "Some pain during exercise is acceptable in chronic, assessed pain"
@@ -142,7 +145,7 @@ $ uv run python -m coach --data-dir DATA knowledge section recovery-habits "Musc
 **Grade:** emerging
 ```
 
-**Coach:** (The bench is swapped for push-ups, the one press they allowed, which is bodyweight so there is no load to invent, and the rest of the body keeps training [Acute sprains and strains: protect briefly, then load]. Cardio starts at the 150-minute minimum, split evenly over the three walking days. Writing `DATA/plan.md`.)
+**Coach:** (The bench is swapped for push-ups, the one press they allowed, which is bodyweight so there is no load to invent, and the rest of the body keeps training [Acute sprains and strains: protect briefly, then load]. Cardio starts at the 150-minute minimum, spread over the three walking days. Writing `DATA/plan.md`.)
 
 ```
 $ cat > DATA/plan.md   (file written; content identical to the final message below, including the review line)
@@ -162,20 +165,20 @@ Three full-body sessions of one hour at the gym, Monday, Wednesday and Friday at
 **The barbell bench press is out of the plan for now.** Your right shoulder has hurt on it since 2026-10-29. Your physiotherapist manages it and said no barbell bench for now, so it does not progress and I do not load it; they decide when it comes back [Some pain during exercise is acceptable in chronic, assessed pain]. The rest of your body keeps training [Acute sprains and strains: protect briefly, then load].
 
 **Session A (Monday, then Friday on alternate weeks)**
-- Squat: 87.5 kg, 3 sets of 8-12 reps
-- Push Up (in place of the bench press, as your physiotherapist allowed): 3 sets of 8-12 reps, stopping 2-3 reps before you would fail. Stop if it brings the shoulder pain on, and tell me.
-- Barbell Row: 62.5 kg, 3 sets of 8-12 reps
+- Squat: 87.5 kg, 3 sets (as you log now) of 8-12 reps
+- Push Up (in place of the bench press, as your physiotherapist allowed): 3 sets (as you log now) of 8-12 reps, stopping about 1-3 reps before you would fail. Stop if it brings the shoulder pain on, and tell me.
+- Barbell Row: 62.5 kg, 3 sets (as you log now) of 8-12 reps
 
 **Session B (Wednesday)**
-- Romanian Deadlift: 77.5 kg, 3 sets of 8-12 reps
-- Overhead Press: 40.0 kg, 3 sets of 8-12 reps. This one feels fine for you today. If it starts to hurt the shoulder, stop it and tell me so I can record it too.
-- Lat Pulldown: 57.5 kg, 3 sets of 8-12 reps
+- Romanian Deadlift: 77.5 kg, 3 sets (as you log now) of 8-12 reps
+- Overhead Press: 40.0 kg, 3 sets (as you log now) of 8-12 reps. This one feels fine for you today. If it starts to hurt the shoulder, stop it and tell me so I can record it too.
+- Lat Pulldown: 57.5 kg, 3 sets (as you log now) of 8-12 reps
 
-Loads for the lifts that stay are the ones the command gives: same load, add reps until every set beats 12, then I raise it [Double progression]. 2-3 reps in reserve (RIR) on working sets, never to failure [Target reps in reserve]. Your sets per muscle stay near what you log now [Weekly sets per muscle (dose-response)].
+Loads for the lifts that stay are the ones the command gives: same load, add reps until every set beats 12, then I raise it [Double progression]. about 1-3 reps in reserve (RIR) on working sets, never to failure [Target reps in reserve]. Your sets per muscle stay near what you log now [Weekly sets per muscle (dose-response)].
 
 ## Cardio
 
-Minimum 150 minutes of moderate cardio a week [Weekly baseline dose]: brisk walks on Tuesday, Thursday and Saturday, 50 minutes each. Intensity: perceived effort (RPE) 12-13, you can talk but not sing; about 117-139 bpm, a rough guide because the maximum heart rate behind it (183) is a formula estimate. Walking should not provoke the shoulder.
+Minimum 150 minutes of moderate cardio a week [Weekly baseline dose]: brisk walks spread over Tuesday, Thursday and Saturday. Intensity: perceived effort (RPE) 12-13, you can talk but not sing; about 117-139 bpm, a rough guide because the maximum heart rate behind it (183) is a formula estimate. Walking should not provoke the shoulder.
 
 ## Nutrition
 
@@ -200,7 +203,7 @@ Review the plan with /review every week.
 
 ## What the replay shows
 
-Result: correct. With `--professional physiotherapist`, `coach strength progress` returned `"action": "paused"` for Bench Press with `load_kg` 67.5 (a ceiling, not a target), so the lift is not progressed; the plan swaps it for push-ups within the limits the client reported from the physiotherapist. `coach safety` lists it under `paused_exercises` with `assessed: true` and does not set `refer_gp` (the safety table: only an injury with no `professional` sets it), so there is no deferral line and the plan names the physiotherapist. The other lifts keep their `add_reps` loads.
+Result: the CLI behaviour is correct. With `--professional physiotherapist`, `coach strength progress` returned `"action": "paused"` for Bench Press with `load_kg` 67.5 (a ceiling, not a target), so the lift is not progressed; the plan swaps it for push-ups within the limits the client reported from the physiotherapist. `coach safety` lists it under `paused_exercises` with `assessed: true` and does not set `refer_gp` (the safety table: only an injury with no `professional` sets it), so there is no deferral line and the plan names the physiotherapist. The other lifts keep their `add_reps` loads. The plan's own choices (the swap to push-ups, justified only by what the client said the physiotherapist said, and the overhead press left progressing) are the simulated coach's judgment and illustrate skill problem 2 of `plan-injury-no-professional.md`; they are not a reference answer.
 
 Skill problems found (not fixed here; this PR changes no skill, code or test):
 

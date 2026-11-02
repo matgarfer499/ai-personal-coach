@@ -1,6 +1,9 @@
 # /plan dry run: shoulder injury, no professional yet (lift `paused`, no load)
 
-The client is synthetic ("Marco", invented for this run; no real data). Run date: 2026-11-02 (a Monday). `DATA` is a fresh folder made with `mktemp -d`; the real path printed by the CLI is shown as `DATA`. Four weeks of invented workouts (12 sessions, two alternating full-body sessions A and B, last logged session 2026-10-30) were imported with `coach import`, and the profile was set with `coach profile set` (english, muscle_gain, intermediate, no medication, every screen clear, no injury yet). The knowledge sections are shortened to heading, the start of the Rule line and Grade; the CLI prints more. Every other output is the CLI's, copied exactly.
+The client is synthetic ("Marco", invented for this run; no real data). Run date: 2026-11-02 (a Monday). `DATA` is a fresh folder made with `mktemp -d`; the real path printed by the CLI is shown as `DATA`. Four weeks of invented workouts (12 sessions, two alternating full-body sessions A and B, last logged session 2026-10-30) were imported with `coach import`, and the profile was set with `coach profile set` (english, muscle_gain, intermediate, no medication, every screen clear, no injury yet).
+
+**Not verbatim CLI output:** the knowledge sections (shortened to heading, the start of the Rule line and Grade), the `$ read the last logged session ... sessions.csv` lines (a summary of the file, not a CLI command), the `$ cat > DATA/plan.md` block (the plan text itself is written by the simulated coach, not generated), and all Coach and Client dialogue, which is a simulation of a model following `.claude/skills/plan/SKILL.md`, not a recorded session. Everything inside the other `$ uv run python -m coach` blocks is real output from the CLI, pasted by script (no retyping, key order as printed), with the temp folder shown as `DATA`. Sets and reps in all three examples are chosen the same way: the number of sets is what the log shows per lift (3), the rep range is the `rep_range` the CLI prints (8-12), effort is the RIR from "Target reps in reserve"; only `plan-hold.md` pins the reps to the last logged session, because `hold` says so.
+
 
 The point of the run: the client mentions a shoulder that hurts on the bench press and has not seen anyone. `/plan` records it with `coach injury add shoulder --exercises "Bench Press"` and no `--professional`. The lift must come back `paused` with no `load_kg`, must not be loaded, must be swapped or reduced, and the answer must send the client to a GP or physiotherapist and end with the deferral line. At the end, a second run checks that a Spanish name for the lift ("Press de banca") pauses the logged English lift through the aliases.
 
@@ -142,7 +145,7 @@ $ uv run python -m coach --data-dir DATA knowledge section recovery-habits "Musc
 **Grade:** emerging
 ```
 
-**Coach:** (The bench is out until it is assessed, and the rest of the body keeps training [Acute sprains and strains: protect briefly, then load]. Session A would have no push exercise, so I put a pushing exercise that does not need the shoulder to carry the load in its slot, a triceps pushdown, with the instruction to drop it if it provokes the shoulder. It is a new lift, so no load number: "a weight you could lift 2-3 more times". Cardio starts at the 150-minute minimum, split evenly over the three walking days. Writing `DATA/plan.md`.)
+**Coach:** (The bench is out until it is assessed, and the rest of the body keeps training. I loaded the two strain rules because the skill lists them for any injury, but a dull ache nobody has diagnosed is not a strain, so I cite neither. Session A would have no push exercise, so I put a pushing exercise that does not need the shoulder to carry the load in its slot, a triceps pushdown, with the instruction to drop it if it provokes the shoulder. It is a new lift, so no load number: "a weight you could lift 2-3 more times". Cardio starts at the 150-minute minimum, spread over the three walking days. Writing `DATA/plan.md`.)
 
 ```
 $ cat > DATA/plan.md   (file written; content identical to the final message below, including the review line and the deferral line)
@@ -159,23 +162,23 @@ training_schedule: mon 18:30; wed 18:30; fri 18:30
 
 Three full-body sessions of one hour at the gym, Monday, Wednesday and Friday at 18:30, as a rotation A, B, A, B, A, B [Weekly baseline dose] [Full-body versus split]. Your last session was B, so Monday is A. If you miss one, carry on with the next one in the rotation; do not double up.
 
-**The bench press is out of the plan for now.** Your right shoulder has been hurting on it since 2026-10-29 and nobody has assessed it. Until a GP or physiotherapist has looked at it, it is not loaded, not progressed and not swapped back in [Some pain during exercise is acceptable in chronic, assessed pain]. The rest of your body keeps training [Acute sprains and strains: protect briefly, then load].
+**The bench press is out of the plan for now.** Your right shoulder has been hurting on it since 2026-10-29 and nobody has assessed it. Until a GP or physiotherapist has looked at it, it is not loaded and not progressed [Some pain during exercise is acceptable in chronic, assessed pain]. The rest of your body keeps training.
 
 **Session A (Monday, then Friday on alternate weeks)**
-- Squat: 87.5 kg, 3 sets of 8-12 reps
-- Triceps Pushdown (in place of the bench press): 3 sets of 8-12 reps with a weight you could lift 2-3 more times. Stop it if it brings the shoulder pain on, and tell me.
-- Barbell Row: 62.5 kg, 3 sets of 8-12 reps
+- Squat: 87.5 kg, 3 sets (as you log now) of 8-12 reps
+- Triceps Pushdown (in place of the bench press): 3 sets (as you log now) of 8-12 reps with a weight you could lift 2-3 more times. Stop it if it brings the shoulder pain on, and tell me.
+- Barbell Row: 62.5 kg, 3 sets (as you log now) of 8-12 reps
 
 **Session B (Wednesday)**
-- Romanian Deadlift: 77.5 kg, 3 sets of 8-12 reps
-- Overhead Press: 40.0 kg, 3 sets of 8-12 reps. This one feels fine for you today. If it starts to hurt the shoulder, stop it and tell me so I can record it too.
-- Lat Pulldown: 57.5 kg, 3 sets of 8-12 reps
+- Romanian Deadlift: 77.5 kg, 3 sets (as you log now) of 8-12 reps
+- Overhead Press: 40.0 kg, 3 sets (as you log now) of 8-12 reps. This one feels fine for you today. If it starts to hurt the shoulder, stop it and tell me so I can record it too.
+- Lat Pulldown: 57.5 kg, 3 sets (as you log now) of 8-12 reps
 
-Loads for the lifts that stay are the ones the command gives: same load, add reps until every set beats 12, then I raise it [Double progression]. 2-3 reps in reserve (RIR) on working sets, never to failure [Target reps in reserve]. Your sets per muscle stay near what you log now, and chest sets drop while the bench is out [Weekly sets per muscle (dose-response)].
+Loads for the lifts that stay are the ones the command gives: same load, add reps until every set beats 12, then I raise it [Double progression]. about 1-3 reps in reserve (RIR) on working sets, never to failure [Target reps in reserve]. Your sets per muscle stay near what you log now [Weekly sets per muscle (dose-response)].
 
 ## Cardio
 
-Minimum 150 minutes of moderate cardio a week [Weekly baseline dose]: brisk walks on Tuesday, Thursday and Saturday, 50 minutes each. Intensity: perceived effort (RPE) 12-13, you can talk but not sing; about 117-139 bpm, a rough guide because the maximum heart rate behind it (183) is a formula estimate. Walking should not provoke the shoulder.
+Minimum 150 minutes of moderate cardio a week [Weekly baseline dose]: brisk walks spread over Tuesday, Thursday and Saturday. Intensity: perceived effort (RPE) 12-13, you can talk but not sing; about 117-139 bpm, a rough guide because the maximum heart rate behind it (183) is a formula estimate. Walking should not provoke the shoulder.
 
 ## Nutrition
 
@@ -195,7 +198,7 @@ That is a surplus of 128 kcal over your estimated maintenance (2548.38 kcal) [Su
 
 ## Rules used
 
-[Weekly baseline dose], [Full-body versus split], [Weekly sets per muscle (dose-response)], [Target reps in reserve], [Double progression], [Some pain during exercise is acceptable in chronic, assessed pain], [Acute sprains and strains: protect briefly, then load], [Surplus size for muscle gain], [Recalibrate TDEE from the weight trend], [Daily protein target for people who lift].
+[Weekly baseline dose], [Full-body versus split], [Weekly sets per muscle (dose-response)], [Target reps in reserve], [Double progression], [Some pain during exercise is acceptable in chronic, assessed pain], [Surplus size for muscle gain], [Recalibrate TDEE from the weight trend], [Daily protein target for people who lift].
 
 Review the plan with /review every week.
 
@@ -226,7 +229,7 @@ $ uv run python -m coach --data-dir DATA strength progress --json
 
 ## What the replay shows
 
-Result: correct. After `coach injury add` with no `--professional`, `coach safety` set `refer_gp` and listed Bench Press under `paused_exercises` with `assessed: false`, and `coach strength progress` returned `"action": "paused", "load_kg": null` for it, so the plan gives it no load at all (before the injury the same command offered 69.0 kg, which the plan does not quote). The plan swaps the slot, keeps the other lifts and walking, names a GP or physiotherapist, and ends with the deferral line from `docs/safety.md`, copied exactly.
+Result: the CLI behaviour is correct. After `coach injury add` with no `--professional`, `coach safety` set `refer_gp` and listed Bench Press under `paused_exercises` with `assessed: false`, and `coach strength progress` returned `"action": "paused", "load_kg": null` for it, so the plan gives it no load at all (before the injury the same command offered 69.0 kg, which the plan does not quote). The plan names a GP or physiotherapist and ends with the deferral line from `docs/safety.md`, copied exactly. The plan's own choices around the paused lift (a loaded triceps pushdown on an unassessed shoulder, the overhead press left progressing because the client said it feels fine) are the simulated coach's judgment and illustrate skill problem 2 below; they are not a reference answer.
 
 Alias check: `--exercises "Press de banca"` was accepted with `unmatched: []` and paused the logged "Bench Press"; with `"Press de banca, Press militar"` both Bench Press and Overhead Press are paused (second progress block above), so the C4 aliases work through the CLI.
 
