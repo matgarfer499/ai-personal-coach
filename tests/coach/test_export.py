@@ -258,7 +258,7 @@ def test_the_date_range_names_the_month_and_year_only_where_they_change(first, l
     assert export_module._date_range(first, last, export_module.LABELS["es"]) == text
 
 
-def test_a_dish_without_a_recipe_is_only_in_the_week_table(capsys, data_dir):
+def test_a_dish_without_a_recipe_still_prints_its_amounts(capsys, data_dir):
     data = export(capsys, data_dir)
-    assert data.count(b"Bocadillo de prueba") == 1
-    assert b"Platos r" not in data
+    assert data.count(b"Bocadillo de prueba") == 2  # the week table and its card
+    assert data.count(b"(150 g)") == 2  # the card and the shopping list

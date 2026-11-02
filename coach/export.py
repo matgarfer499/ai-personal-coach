@@ -176,9 +176,10 @@ def write(
 ) -> None:
     """Write the PDF; raises ValueError naming the extra to install when reportlab is missing.
 
-    Page one is the week at a glance; then each recipe (a dish with steps or a source) once, however
-    many days it is eaten, as a card grouped by meal; then the shopping list with a box to tick per
-    line. Dishes without a recipe (a sandwich, a yoghurt bowl) appear only in the week table.
+    Page one is the week at a glance; then each dish once, however many days it is eaten, as a card
+    grouped by meal; then the shopping list with a box to tick per line. A recipe (a dish with
+    steps or a source) gets ingredients, method and link; a dish without one (a sandwich, a
+    yoghurt bowl) gets a short card with its amounts on one line.
     """
     try:
         from reportlab.graphics.barcode.qr import QrCodeWidget
@@ -424,15 +425,13 @@ def write(
         nutrient = nutrients.get(key, key)
         story.append(Paragraph(_text(f"{nutrient}, {words['no_data']}: {', '.join(labels)}"), tiny))
 
-    # Each recipe once, with the days it is eaten, under the meal it first appears in.
+    # Each dish once, with the days it is eaten, under the meal it first appears in.
     groups: dict[tuple, dict] = {}
     for day, entry in zip(days, saved_days, strict=True):
         for meal, raw_meal in zip(day.meals, entry["meals"], strict=True):
             for dish, raw in zip(meal.dishes, raw_meal.get("dishes") or [], strict=True):
                 steps = tuple(str(step) for step in raw.get("steps") or [])
                 source = str(raw.get("source") or "").strip()
-                if not steps and not source:
-                    continue  # no recipe: the week table already names it
                 key = (
                     dish.name,
                     dish.servings,
@@ -476,7 +475,7 @@ def write(
     if recipes:
         pending.append(heading(words["recipes"]))
     # only dishes with a recipe are cooked; a fruit bowl or a shake eaten on several days is not
-    cooked = {group["dish"].name for group in recipes}
+    cooked = {group["dish"].name for group in recipes if group["steps"] or group["source"]}
     batches = [batch for batch in shopping["batches"] if batch["dish"] in cooked]
     if batches:
         rows = []
@@ -515,19 +514,22 @@ def write(
                 Paragraph(_text(dish.name), card_title),
                 Paragraph(meta, muted),
             ]
-            ingredients = [
-                Paragraph(
-                    f'<font color="{hex_code}"><b>{words["ingredients"].upper()}</b></font>'
-                    f" &nbsp;{words['one_serving']}",
-                    tiny,
-                ),
-                Spacer(1, 3),
-            ] + [
-                Paragraph(
-                    f"<b>{_quantity(a, comma)}</b>&nbsp; {_text(_label(n, table, language))}", cell
-                )
+            label = (
+                f'<font color="{hex_code}"><b>{words["ingredients"].upper()}</b></font>'
+                f" &nbsp;{words['one_serving']}"
+            )
+            amounts = [
+                f"<b>{_quantity(a, comma)}</b>&nbsp; {_text(_label(n, table, language))}"
                 for n, a in dish.items
             ]
+            if group["steps"] or source:
+                ingredients = [Paragraph(label, tiny), Spacer(1, 3)] + [
+                    Paragraph(amount, cell) for amount in amounts
+                ]
+            else:  # nothing to cook: the amounts on one line keep the card short
+                ingredients = [
+                    Paragraph(f"{label} &nbsp; " + " &nbsp;&middot;&nbsp; ".join(amounts), cell)
+                ]
             if dish.seasoning:
                 ingredients += [Spacer(1, 3), Paragraph(seasoning(dish), tiny)]
             method = []

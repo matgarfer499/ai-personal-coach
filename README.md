@@ -67,8 +67,8 @@ rule in `knowledge/` with its sources.
 | `/research` | refresh the evidence base on a separate branch for you to review |
 
 `/menu` writes the menu to `data/menus/` and can export it as a PDF: the week at a glance, each
-recipe once as a card with a link (and QR code) to its source, and a shopping list grouped by
-shop with boxes to tick:
+recipe once as a card with a link (and QR code) to its source, the amounts of every dish
+without a recipe (breakfasts, snacks), and a shopping list grouped by shop with boxes to tick:
 
 <p align="center">
   <img src="assets/menu-pdf.png" alt="Exported menu PDF: the week at a glance, recipe cards with QR codes, and the shopping list" width="960">
