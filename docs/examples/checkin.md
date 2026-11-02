@@ -1,5 +1,7 @@
 # /checkin dry run
 
+> **What is not verbatim:** CLI outputs are as the CLI printed them, except where shortened with `...` (long `knowledge section` and `profile set` outputs, cut to the part that matters) and where the scratch data folder path is shown as `DATA`. Commands are normalised for reading: `--json` is left out and quoting is added where a shell needs it. The dialogue is a simulation of a model following the skill, not a recording of a real conversation.
+
 The client is synthetic (tests/skills/checkin/client.md); the run was done on 2026-11-02 with the current skill. DATA stands for the data directory (a copy of `tests/skills/state/`, used as `COACH_DATA_DIR`; the skill passes no `--data-dir`). The last check-in in the start state was 2026-10-18; the days in between are not filled in.
 
 **Cliente:** Hola, check-in de hoy: 64,3 kg esta mañana, cintura 74 cm, ayer comí unas 1.750 kcal según la app y dormí 6 horas y media. Tengo un catarro, solo mocos, sin fiebre.

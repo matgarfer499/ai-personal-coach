@@ -1,5 +1,7 @@
 # /plan dry run: PAR-Q+ follow-up YES
 
+> **What is not verbatim:** CLI outputs are as the CLI printed them, except where shortened with `...` (long `knowledge section` and `profile set` outputs, cut to the part that matters) and where the scratch data folder path is shown as `DATA`. Commands are normalised for reading: `--json` is left out and quoting is added where a shell needs it. The dialogue is a simulation of a model following the skill, not a recording of a real conversation.
+
 The client is synthetic (tests/skills/plan/client-parq-followup.md, "Lucía"; no real data). Run date: 2026-11-02, with the current skill.
 The setup steps (import, `profile set screening.parq_followup_yes true`) had already been done, so `DATA` (used as `COACH_DATA_DIR`; the skill passes no `--data-dir`) holds profile.yaml, checkins.csv and sessions.csv. There is no `plan.md` and no `reviews/` yet. Long `knowledge section` outputs are cut with `...` (verbatim fragments only).
 

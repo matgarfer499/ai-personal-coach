@@ -1,5 +1,7 @@
 # /import dry run
 
+> **What is not verbatim:** CLI outputs are as the CLI printed them, except where shortened with `...` (long `knowledge section` and `profile set` outputs, cut to the part that matters) and where the scratch data folder path is shown as `DATA`. Commands are normalised for reading: `--json` is left out and quoting is added where a shell needs it. The dialogue is a simulation of a model following the skill, not a recording of a real conversation.
+
 The client is synthetic (tests/skills/import/client.md). Run date: 2026-11-02, with the current skill. DATA is a copy of `tests/skills/state/` (no `sessions.csv` yet) used as `COACH_DATA_DIR`; the skill passes no `--data-dir`. The fixture predates the `emergency_number` field, so `profile show` lists it under `missing`; /setup asks for it, /import does not.
 
 **Cliente:** Te paso mis entrenos de las últimas 4 semanas: tests/skills/import/workouts.csv. Los apunto en una hoja de cálculo, no en una app.

@@ -1,12 +1,14 @@
 # /menu dry run
 
+> **What is not verbatim:** CLI outputs are as the CLI printed them, except where shortened with `...` (long `knowledge section` and `profile set` outputs, cut to the part that matters) and where the scratch data folder path is shown as `DATA`. Commands are normalised for reading: `--json` is left out and quoting is added where a shell needs it. The dialogue is a simulation of a model following the skill, not a recording of a real conversation.
+
 El cliente es sintético (tests/skills/menu/client.md, "Lucía"; sin datos reales). Fecha de la ejecución: 2026-11-02, con la skill actual. DATA es una copia del estado inicial (profile.yaml y checkins.csv; sin `plan.md`, sin `tastes.yaml` y sin catálogo) usada como `COACH_DATA_DIR`; la skill no pasa `--data-dir`. Los `profile set` y `tastes set` se recortan a `...` cuando su salida repite el perfil.
 
 Dos cosas de esta ejecución son deliberadamente sintéticas, para no usar datos reales de ninguna cadena ni de la red:
 
-- Solo se usan las tablas base de alimentos (`foods/base.csv` y `regions/es/foods.csv`) y **un único producto de catálogo inventado**: "Mezcla de verduras salteadas congeladas (producto inventado)", código de barras 8400000000000, de una marca y una cadena inventadas ("Marca Ejemplo", "Supermercado Ejemplo"). Sus valores (71 kcal, 2 g de proteína, 9 g de hidratos, 3 g de grasa y 3 g de fibra por 100 g) están inventados, con las kcal coherentes con los macros. No existe en Open Food Facts: la fila se escribió con `coach.catalogue.save` en una llamada de Python puntual (`coach products` no tiene alta offline de OFF) con la fuente `Open Food Facts (unverified)`, que es la que llevaría una fila real de OFF. Sustituye aquí a la consulta `coach products search` + `coach products add` del paso 5, que necesita red.
+- Solo se usan las tablas base de alimentos (`foods/base.csv` y `regions/es/foods.csv`) y **un único producto de catálogo inventado**: "Mezcla de verduras salteadas congeladas (producto inventado)", código de barras 8400000000000, de una cadena inventada ("Supermercado Ejemplo"). Sus valores (71 kcal, 2 g de proteína, 9 g de hidratos, 3 g de grasa y 3 g de fibra por 100 g, sin alérgenos) están inventados, con las kcal coherentes con los macros. No existe en Open Food Facts ni en ninguna cadena real. Se añade con el camino sin red de la skill (paso 5), `coach products add --label`, así que su fuente es `label (entered by hand)`: son valores de etiqueta, no datos de Open Food Facts.
 - No hay búsqueda web ni red, así que los platos no llevan enlace de receta: la skill dice ofrecerlos sin enlace cuando no se puede buscar.
-- Las respuestas de Lucía sobre el tupper, comer fuera y cocinar para dos amplían el archivo del cliente (que dice "no lo sé" para todo lo que no lista), para que los campos `tupper`, `eat_out` y `people` salgan en el borrador; `tests/skills/menu/client.md` no se ha tocado.
+- Las respuestas de Lucía sobre el tupper, comer fuera y cocinar para dos amplían el archivo del cliente (que dice "no lo sé" para todo lo que no lista), para que los campos `tupper`, `eat_out` y `people` salgan en el borrador, y los valores de la etiqueta del producto inventado son los que ella "lee" en el envase; `tests/skills/menu/client.md` no se ha tocado.
 
 **Cliente:** ¿Me preparas un menú de tres días que cuadre con mis objetivos?
 
@@ -47,7 +49,7 @@ $ coach knowledge section nutrition "Dietary fibre"
 **Grade:** strong
 ```
 
-**Coach:** Estos son tus objetivos de partida (hasta que `/plan` fije los del plan): 1500 kcal, 132,0 g de proteína, grasa de 41,67 g como mínimo (33,33 g de suelo) y 25 g de fibra [nutrition.md: "Protein during fat loss"; "Dietary fibre"]. Con el betabloqueante no uso zonas de pulso, y con tu SÍ en el PAR-Q+ no pongo nada que dependa de trabajo intenso [cardio-health.md: "Beta-blockers: no formula-based HR zones"; recovery-habits.md: "PAR-Q+ specific thresholds"]. Aún no tengo tus gustos. Te pregunto unas cosas:
+**Coach:** Estos son tus objetivos de partida (hasta que `/plan` fije los del plan): 1500 kcal, 132,0 g de proteína, grasa de objetivo 41,67 g (el chequeo exige al menos el mínimo `fat_min_g`, 33,33 g) y 25 g de fibra [nutrition.md: "Protein during fat loss"; "Dietary fibre"]. Con el betabloqueante no uso zonas de pulso, y con tu SÍ en el PAR-Q+ no pongo nada que dependa de trabajo intenso [cardio-health.md: "Beta-blockers: no formula-based HR zones"; recovery-habits.md: "PAR-Q+ specific thresholds"]. Aún no tengo tus gustos. Te pregunto unas cosas:
 
 1. ¿Qué alimentos te encantan y cuáles no te gustan?
 2. ¿Alguna alergia o intolerancia?
@@ -58,15 +60,15 @@ $ coach knowledge section nutrition "Dietary fibre"
 **Cliente:** Me encantan el aguacate, el pollo y los huevos; no me gusta el pescado. Sin alergias; intolerancia a la lactosa. Cocina mediterránea y mexicana, sabores picante y cítrico. 20 minutos por comida entre semana, nivel principiante, tengo horno, airfryer y microondas. Presupuesto medio. Código postal 46001.
 
 ```
-$ coach tastes set loved_foods aguacate, pollo, huevos
+$ coach tastes set loved_foods "aguacate, pollo, huevos"
 $ coach tastes set disliked_foods pescado
 $ coach tastes set allergies none
 $ coach tastes set intolerances lactosa
-$ coach tastes set cuisines mediterránea, mexicana
-$ coach tastes set flavours picante, cítrico
+$ coach tastes set cuisines "mediterránea, mexicana"
+$ coach tastes set flavours "picante, cítrico"
 $ coach tastes set cooking_minutes 20
 $ coach tastes set cooking_skill beginner
-$ coach tastes set equipment horno, airfryer, microondas
+$ coach tastes set equipment "horno, airfryer, microondas"
 $ coach tastes set budget medium
 $ coach tastes set postal_code 46001
 ... "loved_foods": ["aguacate", "pollo", "huevos"], "disliked_foods": ["pescado"], "allergies": [], "intolerances": ["lactosa"], "cuisines": ["mediterránea", "mexicana"], "flavours": ["picante", "cítrico"], "cooking_minutes": 20, "cooking_skill": "beginner", "equipment": ["horno", "airfryer", "microondas"], "budget": "medium", "postal_code": "46001", ...
@@ -79,7 +81,7 @@ $ coach tastes set postal_code 46001
 (El cliente da las cadenas directamente, así que no hace falta buscar supermercados con el código postal ni enviarlo a ninguna búsqueda web.)
 
 ```
-$ coach tastes set chains Mercadona, Lidl
+$ coach tastes set chains "Mercadona, Lidl"
 {"tastes": {"loved_foods": ["aguacate", "pollo", "huevos"], "disliked_foods": ["pescado"], "allergies": [], "intolerances": ["lactosa"], "cuisines": ["mediterránea", "mexicana"], "flavours": ["picante", "cítrico"], "cooking_minutes": 20, "cooking_skill": "beginner", "equipment": ["horno", "airfryer", "microondas"], "budget": "medium", "postal_code": "46001", "chains": ["Mercadona", "Lidl"], "pantry": null, "untried": null, "ratings": []}, "missing": [], "favoured": [], "disliked": [], "excluded": []}
 ```
 
@@ -95,16 +97,26 @@ $ coach tastes set chains Mercadona, Lidl
 
 **Cliente:** Suelo comprar una mezcla de verduras salteadas congelada. No tengo el código de barras a mano.
 
-(Aquí la skill buscaría el producto en Open Food Facts con `coach products search` y lo guardaría con `coach products add`, pidiendo el código de barras o los valores de la etiqueta. Esta prueba no usa red: el producto es la fila inventada descrita arriba, ya en `DATA/catalogue.csv`.)
+(Aquí la skill buscaría el producto en Open Food Facts con `coach products search`. Esta prueba no usa red, así que va por el camino de la etiqueta del paso 5: `coach products add --label`, con los valores leídos del envase junto con la cliente, nunca estimados, y los alérgenos declarados.)
+
+**Coach:** Sin el código de barras no lo busco en la base pública. Mírame el envase: dime, por 100 g, las kcal, la proteína, los hidratos, la grasa y la fibra, y qué alérgenos declara.
+
+**Cliente:** (valores inventados para esta prueba) Por 100 g: 71 kcal, 2 g de proteína, 9 g de hidratos, 3 g de grasa y 3 g de fibra. El código de barras es el 8400000000000. No declara alérgenos.
 
 ```
 $ coach foods search verduras
-{"foods": [], "products": [{"product_name": "Mezcla de verduras salteadas congeladas (producto inventado)", "brand": "Marca Ejemplo", "chain": "Supermercado Ejemplo", "per": "100 g", "kcal": 71.0, "protein_g": 2.0, "carbs_g": 9.0, "fat_g": 3.0, "fibre_g": 3.0, "missing": [], "barcode": "8400000000000", "allergens": [], "source": "Open Food Facts (unverified)", "url": "synthetic: invented row, not a real product"}]}
+{"foods": [], "products": []}
+
+$ coach products add --label --name "Mezcla de verduras salteadas congeladas (producto inventado)" --chain "Supermercado Ejemplo" --per "100 g" --kcal 71 --protein 2 --carbs 9 --fat 3 --fibre 3 --barcode 8400000000000 --allergens none
+{"added": {"barcode": "8400000000000", "product_name": "Mezcla de verduras salteadas congeladas (producto inventado)", "brand": "", "chain": "Supermercado Ejemplo", "per": "100 g", "kcal": 71.0, "protein_g": 2.0, "carbs_g": 9.0, "fat_g": 3.0, "fibre_g": 3.0, "allergens": [], "url": "", "fetched_on": "2026-11-02", "source": "label (entered by hand)"}, "missing": [], "warnings": []}
+
+$ coach foods search verduras
+{"foods": [], "products": [{"product_name": "Mezcla de verduras salteadas congeladas (producto inventado)", "brand": "", "chain": "Supermercado Ejemplo", "per": "100 g", "kcal": 71.0, "protein_g": 2.0, "carbs_g": 9.0, "fat_g": 3.0, "fibre_g": 3.0, "missing": [], "barcode": "8400000000000", "allergens": [], "source": "label (entered by hand)", "url": ""}]}
 ```
 
-(Antes de escribir la fila, la misma búsqueda devolvía `{"foods": [], "products": []}`: las tablas base no traen ninguna mezcla de verduras. `allergens` vacío no prueba que el producto sea seguro: se avisa a la cliente de que mire la etiqueta por la lactosa.)
+(La primera búsqueda sale vacía: las tablas base no traen ninguna mezcla de verduras. `allergens` vacío no prueba que el producto sea seguro: se recuerda a la cliente que mire la etiqueta por la lactosa.)
 
-**Coach:** Uso esa mezcla en un plato; ten en cuenta que es un dato sin verificar de una base pública (Open Food Facts), y que `alérgenos` sale vacío, así que mira la etiqueta del paquete por la lactosa. El resto de alimentos salen de las tablas base.
+**Coach:** Producto añadido: valores de la etiqueta, los que me has leído. El resto de alimentos salen de las tablas base. Mira también en el envase que no ponga lactosa.
 
 El borrador está en `DATA/menu-draft.yaml` (con `base` en cada comida y cena, `people: 2` en la primera cena, `tupper: true` en la comida del día 3 de noviembre y `eat_out: true` en la última cena):
 
@@ -202,23 +214,23 @@ days:
 Compruebo el primer día entero y, para repartir la proteína entre comidas, cada comida del primer día por separado (el CLI nunca suma por mí):
 
 ```
-$ coach menu --item pan integral=50 --item aguacate=40 --item clara de huevo, cruda=200 --item tomate=50 --item pechuga de pollo, cruda=150 --item judías negras, cocidas=120 --item arroz blanco, cocido=90 --item aguacate=20 --item tomate=100 --item maíz dulce en lata=30 --item aceite de oliva=5 --item edamame=100 --item pechuga de pavo en lonchas=100 --item huevo entero, crudo=60 --item clara de huevo, cruda=200 --item 8400000000000=200 --item pan integral=40 --item aceite de oliva=5 --targets
+$ coach menu --item "pan integral=50" --item "aguacate=40" --item "clara de huevo, cruda=200" --item "tomate=50" --item "pechuga de pollo, cruda=150" --item "judías negras, cocidas=120" --item "arroz blanco, cocido=90" --item "aguacate=20" --item "tomate=100" --item "maíz dulce en lata=30" --item "aceite de oliva=5" --item "edamame=100" --item "pechuga de pavo en lonchas=100" --item "huevo entero, crudo=60" --item "clara de huevo, cruda=200" --item "8400000000000=200" --item "pan integral=40" --item "aceite de oliva=5" --targets
 {"totals": {"kcal": 1564.5, "protein_g": 142.38, "carbs_g": 111.24, "fat_g": 48.33, "fibre_g": 33.42, "unknown": [], "missing": {}}, "targets": {"in_deficit": true, "kcal": 1500, "protein_g": 132.0, "fat_g": 41.67, "fat_min_g": 33.33, "carbs_g": 149.25, "fibre_g": 25, "protein_g_per_kg": 2.0, "notes": ["nutrition.md: \"Protein during fat loss\": 2 g/kg/day"]}, "check": {"kcal": "ok", "protein_g": "ok", "fat_g": "ok", "fibre_g": "ok"}, "ok": true}
 
-$ coach menu --item pan integral=50 --item aguacate=40 --item clara de huevo, cruda=200 --item tomate=50
+$ coach menu --item "pan integral=50" --item "aguacate=40" --item "clara de huevo, cruda=200" --item "tomate=50"
 {"kcal": 303.0, "protein_g": 29.27, "carbs_g": 21.89, "fat_g": 8.05, "fibre_g": 6.28, "unknown": [], "missing": {}}
 
-$ coach menu --item pechuga de pollo, cruda=150 --item judías negras, cocidas=120 --item arroz blanco, cocido=90 --item aguacate=20 --item tomate=100 --item maíz dulce en lata=30 --item aceite de oliva=5
+$ coach menu --item "pechuga de pollo, cruda=150" --item "judías negras, cocidas=120" --item "arroz blanco, cocido=90" --item "aguacate=20" --item "tomate=100" --item "maíz dulce en lata=30" --item "aceite de oliva=5"
 {"kcal": 569.7, "protein_g": 48.77, "carbs_g": 49.76, "fat_g": 13.33, "fibre_g": 13.94, "unknown": [], "missing": {}}
 
-$ coach menu --item edamame=100 --item pechuga de pavo en lonchas=100
+$ coach menu --item "edamame=100" --item "pechuga de pavo en lonchas=100"
 {"kcal": 215.0, "protein_g": 26.03, "carbs_g": 5.01, "fat_g": 8.5, "fibre_g": 4.8, "unknown": [], "missing": {}}
 
-$ coach menu --item huevo entero, crudo=60 --item clara de huevo, cruda=200 --item 8400000000000=200 --item pan integral=40 --item aceite de oliva=5
+$ coach menu --item "huevo entero, crudo=60" --item "clara de huevo, cruda=200" --item "8400000000000=200" --item "pan integral=40" --item "aceite de oliva=5"
 {"kcal": 476.8, "protein_g": 38.32, "carbs_g": 34.58, "fat_g": 18.45, "fibre_g": 8.4, "unknown": [], "missing": {}}
 ```
 
-(La proteína queda en 29,27, 48,77, 26,03 y 38,32 g: la comida pasa del rango de 25-40 g, porque los 132,0 g del día no caben en menos sin pasar de las kcal. La regla pide el total diario, no un requisito por comida, así que se deja y se dice.)
+(Proteína por comida del primer día: 29,27, 48,77, 26,03 y 38,32 g. La regla pide repartir la proteína entre comidas como forma práctica de llegar al total diario, no como requisito aparte, así que se dejan como están.)
 
 Ahora el plan entero:
 
@@ -227,11 +239,11 @@ $ coach mealplan check menu-draft.yaml
 {"ok": true, "repeats": [], "taste_flags": [], "targets": {"in_deficit": true, "kcal": 1500, "protein_g": 132.0, "fat_g": 41.67, "fat_min_g": 33.33, "carbs_g": 149.25, "fibre_g": 25, "protein_g_per_kg": 2.0, "notes": ["nutrition.md: \"Protein during fat loss\": 2 g/kg/day"]}, "days": [{"date": "2026-11-02", "dishes": ["Tostada de aguacate con claras y tomate", "Bowl mexicano de pollo con judías negras y aguacate", "Edamame con limón y pimentón picante y pavo en lonchas", "Revuelto de huevo y claras con verduras salteadas"], "meals": [{"meal": "Desayuno", "tupper": false, "free": false, "dishes": ["Tostada de aguacate con claras y tomate"]}, {"meal": "Comida", "tupper": false, "free": false, "dishes": ["Bowl mexicano de pollo con judías negras y aguacate"]}, {"meal": "Merienda", "tupper": false, "free": false, "dishes": ["Edamame con limón y pimentón picante y pavo en lonchas"]}, {"meal": "Cena", "tupper": false, "free": false, "dishes": ["Revuelto de huevo y claras con verduras salteadas"]}], "totals": {"kcal": 1564.5, "protein_g": 142.38, "carbs_g": 111.24, "fat_g": 48.33, "fibre_g": 33.42, "unknown": [], "missing": {}}, "check": {"kcal": "ok", "protein_g": "ok", "fat_g": "ok", "fibre_g": "ok"}, "ok": true, "taste_flags": []}, {"date": "2026-11-03", "dishes": ["Gachas de avena con claras, plátano y canela", "Lentejas guisadas con pavo, zanahoria y pimentón picante", "Rollitos de pavo con aguacate y pepino, y una mandarina", "Tacos de ternera magra con aguacate y pico de gallo"], "meals": [{"meal": "Desayuno", "tupper": false, "free": false, "dishes": ["Gachas de avena con claras, plátano y canela"]}, {"meal": "Comida", "tupper": true, "free": false, "dishes": ["Lentejas guisadas con pavo, zanahoria y pimentón picante"]}, {"meal": "Merienda", "tupper": false, "free": false, "dishes": ["Rollitos de pavo con aguacate y pepino, y una mandarina"]}, {"meal": "Cena", "tupper": false, "free": false, "dishes": ["Tacos de ternera magra con aguacate y pico de gallo"]}], "totals": {"kcal": 1533.92, "protein_g": 133.88, "carbs_g": 123.66, "fat_g": 40.26, "fibre_g": 41.51, "unknown": [], "missing": {}}, "check": {"kcal": "ok", "protein_g": "ok", "fat_g": "ok", "fibre_g": "ok"}, "ok": true, "taste_flags": []}, {"date": "2026-11-04", "dishes": ["Huevos revueltos con espinacas y pan de centeno", "Pasta integral con pollo al limón y brócoli picante", "Garbanzos crujientes al airfryer con pavo", "Solomillo de cerdo a la plancha con patata y ensalada (bar)"], "meals": [{"meal": "Desayuno", "tupper": false, "free": false, "dishes": ["Huevos revueltos con espinacas y pan de centeno"]}, {"meal": "Comida", "tupper": false, "free": false, "dishes": ["Pasta integral con pollo al limón y brócoli picante"]}, {"meal": "Merienda", "tupper": false, "free": false, "dishes": ["Garbanzos crujientes al airfryer con pavo"]}, {"meal": "Cena", "tupper": false, "free": false, "dishes": ["Solomillo de cerdo a la plancha con patata y ensalada (bar)"]}], "totals": {"kcal": 1567.22, "protein_g": 141.39, "carbs_g": 127.79, "fat_g": 43.06, "fibre_g": 29.53, "unknown": [], "missing": {}}, "check": {"kcal": "ok", "protein_g": "ok", "fat_g": "ok", "fibre_g": "ok"}, "ok": true, "taste_flags": []}]}
 ```
 
-(Los tres días salen `ok`, `repeats` está vacío y `taste_flags` también. Esto último no prueba que un plato sea seguro: el cruce es por nombre y no sabe de sinónimos, así que la lactosa se evitó a mano: ni leche, ni yogur, ni queso, ni nata, ni mantequilla. Las kcal de los tres días quedan entre el objetivo y un 5% por encima, la proteína y la fibra por encima de sus mínimos, y la grasa por encima de su suelo.)
+(Los tres días salen `ok`, `repeats` está vacío y `taste_flags` también. Esto último no prueba que un plato sea seguro: el cruce es por nombre y no sabe de sinónimos, así que la lactosa se evitó a mano: ni leche, ni yogur, ni queso, ni nata, ni mantequilla.)
 
 **Coach (el plan):**
 
-Sin enlaces de receta (no he podido buscar en la web). El producto de la cena del primer día, la mezcla de verduras congelada, es un dato sin verificar de una base pública (Open Food Facts); el resto sale de las tablas de alimentos del coach. La cena del día 2 de noviembre es para dos personas y la del día 4 la comes fuera: no se compra. La comida del día 3 de noviembre va en tupper.
+Sin enlaces de receta (no he podido buscar en la web). El producto de la cena del primer día, la mezcla de verduras congelada, son valores de la etiqueta; el resto sale de las tablas de alimentos del coach. La cena del día 2 de noviembre es para dos personas y la del día 4 la comes fuera: no se compra. La comida del día 3 de noviembre va en tupper.
 
 **Lunes 2026-11-02:** 1564,5 kcal, 142,38 g de proteína.
 
@@ -260,7 +272,7 @@ Sin enlaces de receta (no he podido buscar en la web). El producto de la cena de
 | Merienda | Garbanzos crujientes al airfryer con pavo |
 | Cena (fuera) | Solomillo de cerdo a la plancha con patata y ensalada (bar) |
 
-Los tres días cuadran con tus objetivos de partida (1500 kcal, 132,0 g de proteína, 25 g de fibra) [nutrition.md: "Protein during fat loss"; "Dietary fibre"]. La proteína por comida sale de 26,03 a 48,77 g el primer día: la comida pasa del rango de 25-40 g, pero la regla pide el total diario, no un mínimo por comida [nutrition.md: "Protein distribution across meals"]. ¿Te sirve este menú?
+Los tres días cuadran con tus objetivos de partida (1500 kcal, 132,0 g de proteína, 25 g de fibra) [nutrition.md: "Protein during fat loss"; "Dietary fibre"]. ¿Te sirve este menú?
 
 **Cliente:** Sí, lo acepto.
 
@@ -284,10 +296,10 @@ $ coach mealplan export
 (La comida del primer día es el bowl mexicano de pollo; la cena del segundo día, los tacos de ternera.)
 
 ```
-$ coach tastes rate Bowl mexicano de pollo con judías negras y aguacate loved
+$ coach tastes rate "Bowl mexicano de pollo con judías negras y aguacate" loved
 ... "ratings": [{"dish": "Bowl mexicano de pollo con judías negras y aguacate", "rating": "loved", "date": "2026-11-02", "source": "", "note": ""}]}, "missing": [], "favoured": ["Bowl mexicano de pollo con judías negras y aguacate"], "disliked": [], "excluded": [], "recipe_saved": "recipes/bowl-mexicano-de-pollo-con-judias-negras-y-aguacate.yaml"}
 
-$ coach tastes rate Tacos de ternera magra con aguacate y pico de gallo never_again
+$ coach tastes rate "Tacos de ternera magra con aguacate y pico de gallo" never_again
 ... "ratings": [{"dish": "Bowl mexicano de pollo con judías negras y aguacate", "rating": "loved", "date": "2026-11-02", "source": "", "note": ""}, {"dish": "Tacos de ternera magra con aguacate y pico de gallo", "rating": "never_again", "date": "2026-11-02", "source": "", "note": ""}]}, "missing": [], "favoured": ["Bowl mexicano de pollo con judías negras y aguacate"], "disliked": [], "excluded": ["Tacos de ternera magra con aguacate y pico de gallo"], "recipe_saved": null}
 
 $ coach recipes list

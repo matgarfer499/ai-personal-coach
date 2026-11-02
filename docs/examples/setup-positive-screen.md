@@ -1,5 +1,7 @@
 # /setup dry run: positive eating-disorder screen
 
+> **What is not verbatim:** CLI outputs are as the CLI printed them, except where shortened with `...` (long `knowledge section` and `profile set` outputs, cut to the part that matters) and where the scratch data folder path is shown as `DATA`. Commands are normalised for reading: `--json` is left out and quoting is added where a shell needs it. The dialogue is a simulation of a model following the skill, not a recording of a real conversation.
+
 The client is synthetic (`tests/skills/setup/client-positive-screen.md`); dry run on 2026-11-02 with the current skill. DATA below stands for an empty scratch directory (`COACH_DATA_DIR`, as the skill says: no `--data-dir`). `profile set` outputs are trimmed to the `screening` block and `missing`.
 
 ---

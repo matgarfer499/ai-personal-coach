@@ -1,5 +1,7 @@
 # /review dry run
 
+> **What is not verbatim:** CLI outputs are as the CLI printed them, except where shortened with `...` (long `knowledge section` and `profile set` outputs, cut to the part that matters) and where the scratch data folder path is shown as `DATA`. Commands are normalised for reading: `--json` is left out and quoting is added where a shell needs it. The dialogue is a simulation of a model following the skill, not a recording of a real conversation.
+
 The client is synthetic (tests/skills/review/client.md). Run date: 2026-11-02, reviewing the week ending 2026-10-18, with the current skill. DATA is a copy of `tests/skills/state/` plus the imported `workouts.csv`, used as `COACH_DATA_DIR`; the skill passes no `--data-dir`. There is no `plan.md`, so no `--rep-range` is passed.
 
 **Cliente:** ¿Hacemos la revisión de la semana?
