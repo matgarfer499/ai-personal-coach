@@ -129,6 +129,13 @@ def test_cli_rate_replaces_an_earlier_rating_of_the_same_dish(capsys, tmp_path):
     assert out["excluded"] == ["Revuelto de setas"]
 
 
+def test_cli_rate_changes_an_earlier_rating_without_the_link_again(capsys, tmp_path):
+    source = ["--source", "https://example.org/revuelto"]
+    run(capsys, tmp_path, "tastes", "rate", "Revuelto de setas", "disliked", *source)
+    code, out = run(capsys, tmp_path, "tastes", "rate", "revuelto de setas", "never_again")
+    assert code == 0 and out["rating"]["rating"] == "never_again"
+
+
 def test_cli_rate_refuses_a_dish_in_no_menu_and_no_recipe_without_a_source(capsys, tmp_path):
     code, out = run(capsys, tmp_path, "tastes", "rate", "Plato fantasma", "liked")
     assert code == 2 and "--source" in out["message"]

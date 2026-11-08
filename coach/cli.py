@@ -59,7 +59,7 @@ from coach.regioncode import NO_REGION, real_region
 from coach.sessions.importers import base as importers  # the package registers importers
 from coach.sessions.model import ExerciseSet
 from coach.sessions.store import append, read_sets
-from coach.text import fold
+from coach.text import fold, fold_words
 
 # convention: 2 decimals in CLI output, so skills can quote numbers verbatim to a client.
 OUTPUT_DECIMALS = 2
@@ -376,11 +376,12 @@ VEG_FRUIT_NOTE = (
 def _menu_day(totals: foods.MenuTotals, targets: dict, share: float = 1.0) -> dict:
     check = menu_check(dataclasses.asdict(totals), targets, share)
     warnings = []
-    if totals.veg_fruit_g < VEG_FRUIT_MIN_G:
+    floor = VEG_FRUIT_MIN_G * share  # a free meal carries its share, as in menu_check
+    if totals.veg_fruit_g < floor:
         warnings.append(
             f"{round(totals.veg_fruit_g, OUTPUT_DECIMALS):g} g of vegetables and fruit, under the "
-            f"{VEG_FRUIT_MIN_G} g "
-            'a day of nutrition.md "Dietary fibre"'
+            f"{round(floor, OUTPUT_DECIMALS):g} g of the {VEG_FRUIT_MIN_G} g "
+            'a day of nutrition.md "Dietary fibre" for the planned meals'
         )
     return {
         "totals": totals,
@@ -472,6 +473,7 @@ def cmd_mealplan(profile: Profile, args: argparse.Namespace) -> dict:
     cooking_minutes = client_tastes.cooking_minutes
     today = args.today or date.today()
     checked = []
+    timed: set[str] = set()  # a batch is cooked once: its time is checked on its first day
     for day in days:
         totals = foods.menu_totals(day.items, table)
         checked.append(_menu_day(totals, targets, day.share))
@@ -479,16 +481,15 @@ def cmd_mealplan(profile: Profile, args: argparse.Namespace) -> dict:
             checked[-1]["free_meal"] = _free_meal(day, totals, targets)
         if day.date < today:
             checked[-1]["warnings"].append(f"dated before today ({today})")
-        long_dishes = {
-            d.name: d.minutes
-            for m in day.meals
-            for d in m.dishes
-            if cooking_minutes and d.minutes and d.minutes > cooking_minutes
-        }
-        checked[-1]["warnings"] += [
-            f"{name} takes {minutes} min, over the client's cooking_minutes ({cooking_minutes})"
-            for name, minutes in long_dishes.items()
-        ]
+        for dish in (d for m in day.meals for d in m.dishes if not d.eat_out):
+            if fold(dish.name) in timed:
+                continue
+            timed.add(fold(dish.name))
+            if cooking_minutes and dish.minutes and dish.minutes > cooking_minutes:
+                checked[-1]["warnings"].append(
+                    f"{dish.name} takes {dish.minutes} min, over the client's cooking_minutes "
+                    f"({cooking_minutes})"
+                )
     repeats = mealplan.repeats(days)
     ok = not repeats and not blocking and all(c["ok"] for c in checked)
     result = {
@@ -751,8 +752,12 @@ def cmd_tastes(profile: Profile, args: argparse.Namespace) -> dict:
         when = args.date or today
         if when > today:
             raise ValueError(f"{when} is after today ({today}); rate a dish already eaten")
-        known = recipes.find_in_menus(args.data_dir, args.dish) or any(
-            fold(r["dish"]) == fold(args.dish) for r in recipes.load_all(args.data_dir, current)
+        known = (
+            any(fold(r.dish) == fold(args.dish) for r in current.ratings)
+            or recipes.find_in_menus(args.data_dir, args.dish)
+            or any(
+                fold(r["dish"]) == fold(args.dish) for r in recipes.load_all(args.data_dir, current)
+            )
         )
         if not known and not args.source.strip():
             raise ValueError(
@@ -861,15 +866,14 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
 def cmd_foods(profile: Profile, args: argparse.Namespace) -> dict:
     region = _region_for(profile, args)
 
-    # a quoted phrase ("pan integral") is its words
-    words = [fold(w) for arg in args.words for w in arg.split()]
+    words = fold_words(*args.words)
     if not words:
         raise ValueError("foods search needs at least one word")
 
     def hit(*names: str) -> bool:
         # Each search word must start a word of the names ("pollo" finds "pechuga de pollo",
         # not "repollo").
-        found = re.findall(r"\w+", fold(" ".join(names)))
+        found = fold_words(*names)
         return all(any(f.startswith(w) for f in found) for w in words)
 
     region = real_region(region)

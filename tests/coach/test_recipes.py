@@ -118,6 +118,9 @@ def test_a_dish_already_in_the_library_is_rated_without_a_source(capsys, data_di
     code, out = run(capsys, data_dir, "tastes", "rate", "gazpacho", "loved")
     assert code == 0 and out["rating"]["rating"] == "loved"
     assert out["recipe_saved"] == "recipes/gazpacho.yaml"
+    # a quoted phrase is its words
+    _, found = run(capsys, data_dir, "recipes", "search", "Gazpacho,")
+    assert [r["dish"] for r in found["recipes"]] == ["Gazpacho"]
 
 
 def test_list_and_search_show_the_rating_and_hide_never_again(capsys, data_dir):

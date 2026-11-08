@@ -53,19 +53,6 @@ def load_release(fdc_dir: Path, ids: set[str]) -> tuple[dict[str, str], dict[str
     return descriptions, values
 
 
-def load_densities(fdc_dir: Path, ids: set[str]) -> dict[str, list[tuple[str, float]]]:
-    """fdc_id -> (unit, grams per ml) for each portion given in a unit of UNIT_ML. SR Legacy
-    writes the unit in `modifier`, as "cup" or "cup (8 fl oz)"."""
-    found: dict[str, list[tuple[str, float]]] = {}
-    with (fdc_dir / "food_portion.csv").open(newline="", encoding="utf-8") as handle:
-        for r in csv.DictReader(handle):
-            unit = r["modifier"].split(" (")[0].strip()
-            if r["fdc_id"] in ids and unit in UNIT_ML and float(r["amount"]) > 0:
-                grams = float(r["gram_weight"]) / (float(r["amount"]) * UNIT_ML[unit])
-                found.setdefault(r["fdc_id"], []).append((unit, grams))
-    return found
-
-
 def load_groups(fdc_dir: Path, ids: set[str]) -> dict[str, str]:
     """fdc_id -> the release's food category description (e.g. "Fruits and Fruit Juices")."""
     with (fdc_dir / "food_category.csv").open(newline="", encoding="utf-8") as handle:
@@ -79,8 +66,9 @@ def load_groups(fdc_dir: Path, ids: set[str]) -> dict[str, str]:
 
 
 def load_portions(fdc_dir: Path, ids: set[str]) -> dict[str, list[tuple[str, float]]]:
-    """fdc_id -> (modifier, grams per one) for every portion, the modifier cut before " (" as for
-    densities ("medium (3\" dia)" is "medium")."""
+    """fdc_id -> (modifier, grams per one) for every portion, the modifier cut before " ("
+    ("medium (3\" dia)" is "medium", "cup (8 fl oz)" is "cup"). SR Legacy writes the unit in
+    `modifier`."""
     found: dict[str, list[tuple[str, float]]] = {}
     with (fdc_dir / "food_portion.csv").open(newline="", encoding="utf-8") as handle:
         for r in csv.DictReader(handle):
@@ -92,11 +80,12 @@ def load_portions(fdc_dir: Path, ids: set[str]) -> dict[str, list[tuple[str, flo
     return found
 
 
-def density(options: list[tuple[str, float]]) -> float | None:
-    for unit in UNIT_ML:
-        for found, grams_per_ml in options:
+def density(portions: list[tuple[str, float]]) -> float | None:
+    """Grams per ml from the first portion in a unit of UNIT_ML, in its order."""
+    for unit, ml in UNIT_ML.items():
+        for found, grams in portions:
             if found == unit:
-                return round(grams_per_ml, 3)
+                return round(grams / ml, 3)
     return None
 
 
@@ -104,7 +93,6 @@ def build_rows(
     id_rows: list[dict],
     descriptions: dict,
     values: dict,
-    densities: dict | None = None,
     portions: dict | None = None,
     groups: dict | None = None,
 ) -> list[dict]:
@@ -128,7 +116,7 @@ def build_rows(
             fibre, zero_note = 0.0, FIBRE_ZERO_NOTE
         g_per_ml = None
         if (item.get("liquid") or "").strip() == "yes":
-            g_per_ml = density((densities or {}).get(fdc_id, []))
+            g_per_ml = density((portions or {}).get(fdc_id, []))
             if g_per_ml is None:
                 errors.append(f"{item['name_en']}: liquid with no cup, fl oz or tbsp portion")
                 continue
@@ -192,7 +180,6 @@ def main(argv: list[str] | None = None) -> int:
         id_rows,
         descriptions,
         values,
-        load_densities(args.fdc_dir, ids),
         load_portions(args.fdc_dir, ids),
         load_groups(args.fdc_dir, ids),
     )

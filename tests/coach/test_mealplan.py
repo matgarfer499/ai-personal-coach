@@ -959,6 +959,34 @@ def test_a_dish_longer_than_the_clients_cooking_minutes_warns(capsys, data_dir):
     assert "Guiso largo" in warning and "45" in warning and "30" in warning
 
 
+def test_a_long_batch_warns_once_and_an_eaten_out_dish_never(capsys, data_dir):
+    with_tastes(data_dir, cooking_minutes=30)
+    batch = {"servings": 2, "minutes": 60}
+    bar = meal("Cena", ("En el bar", ["tomate=10"], {"minutes": 90}), eat_out=True)
+    draft = {
+        "days": [
+            meals_day(oct_(26), meal("Comida", ("Guiso", VEG, batch)), bar),
+            meals_day(oct_(27), meal("Comida", ("Guiso", VEG, batch))),
+        ]
+    }
+    _, out = check(capsys, data_dir, draft)
+    # cooked once, on its first day; the bar dish is not cooked at all
+    assert [w for w in out["warnings"] if "min" in w] == [
+        "2026-10-26: Guiso takes 60 min, over the client's cooking_minutes (30)"
+    ]
+
+
+def test_a_free_meal_day_needs_only_its_share_of_vegetables_and_fruit(capsys, data_dir):
+    day = free_day(600)
+    day["meals"][1]["dishes"][0]["items"].append("tomate=310")  # 310 g, over 75% of 400 g
+    _, out = check(capsys, data_dir, {"days": [day]})
+    assert out["days"][0]["warnings"] == []
+    day["meals"][1]["dishes"][0]["items"][-1] = "tomate=290"
+    _, out = check(capsys, data_dir, {"days": [day]})
+    [warning] = out["days"][0]["warnings"]
+    assert "under the 300 g" in warning
+
+
 def test_minutes_must_be_a_whole_number(data_dir):
     bad = meals_day(oct_(26), meal("Comida", ("A", VEG, {"minutes": "rápido"})))
     with pytest.raises(ValueError, match="minutes"):
