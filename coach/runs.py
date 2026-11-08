@@ -228,7 +228,10 @@ def week(runs: list[Run], end: date, shown: zones.Zones, every: list[zones.Zone]
         "change_pct": (km - previous_km) / previous_km * 100 if previous_km else None,
         "spikes": found,
         # The next run's cap under the rule: 10% over the longest run of the last 30 days.
-        "long_run_cap_km": cap_base * SPIKE_RATIO if cap_base is not None else None,
+        # None while training is on hold: no next run to cap.
+        "long_run_cap_km": cap_base * SPIKE_RATIO
+        if cap_base is not None and shown.method != "no_training"
+        else None,
         "zone_method": shown.method,
         "zone_minutes": zone_minutes,
         "notes": notes,

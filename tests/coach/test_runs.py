@@ -153,3 +153,18 @@ def test_taper_far_from_the_race_gives_its_dates():
 def test_taper_refuses_a_past_race():
     with pytest.raises(ValueError, match="before today"):
         taper(date(2026, 3, 1), TODAY, [])
+
+
+# coach/safety.py no_training (cardiac symptoms) and heart disease: no zones, so no time per
+# zone and no cap for a next run.
+@pytest.mark.parametrize(
+    "kw", [{"screening": {"cardiac_symptoms": True}}, {"conditions": ["heart_disease"]}]
+)
+def test_no_zones_means_no_time_per_zone_and_no_next_run_cap(kw):
+    profile, f = zones_for(**kw)
+    shown = hr_zones(profile, f, hr_rest=48, hr_max=191, today=TODAY)
+    every = runs.zones_to_describe(profile, f, 48, 191, TODAY)
+    result = week([Run(TODAY, 10.0, 60, avg_hr=150)], TODAY, shown, every)
+    assert result["zone_minutes"] is None and result["notes"]
+    if f.no_training:
+        assert result["long_run_cap_km"] is None

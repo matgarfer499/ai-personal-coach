@@ -370,6 +370,10 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
     today = args.today or date.today()
     logged = [r for r in runs.read_runs(path) if r.date <= today]
     if args.runs_cmd == "taper":
+        flags = safety.flags(profile, args.today)
+        if flags.no_training:
+            stops = [r for r in flags.reasons if r.startswith((safety.CARDIAC, safety.BP))]
+            raise ValueError("no taper while training is on hold: " + "; ".join(stops))
         return runs.taper(args.race_date, today, logged)
     if args.runs_cmd == "add":
         when = args.date or today

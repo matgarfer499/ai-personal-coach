@@ -1795,3 +1795,9 @@ def test_runs_taper(capsys, data_dir):
     assert out["in_window"] is True and out["distance_cut"] == [0.41, 0.6]
     _, out = run(capsys, data_dir, "runs", "taper", "--race-date", "2026-06-01")
     assert out["in_window"] is False and out["starts_on"] == "2026-05-18"
+
+
+def test_runs_taper_refused_while_training_is_on_hold(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "screening.cardiac_symptoms", "true")
+    code, out = run(capsys, data_dir, "runs", "taper", "--race-date", "2026-04-12")
+    assert code == 2 and "Cardiac warning symptoms" in out["message"]
