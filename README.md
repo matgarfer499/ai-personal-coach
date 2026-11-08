@@ -247,7 +247,7 @@ How the original evidence base was built, and its limits:
 |---|---|
 | `.claude/skills/` | The commands, one `SKILL.md` each: setup, checkin, import, plan, review, menu, research |
 | `coach/` | The numbers: energy and macros, weight trend, zones, strength progression, safety flags, food tables, workout importers, CLI |
-| `knowledge/` | 4 rule files (strength and hypertrophy, cardio and health, nutrition, recovery and habits), 461 graded rules, 865 sources; `index.md` lists every rule |
+| `knowledge/` | 4 rule files (strength and hypertrophy, cardio and health, nutrition, recovery and habits), 466 graded rules, 883 sources; `index.md` lists every rule |
 | `foods/`, `regions/es/` | Food composition tables (USDA FoodData Central) and Spain-specific foods; each client's own supermarket products come from Open Food Facts into `data/` |
 | `data/` | Your personal data. Ignored by git; only `.gitkeep` is committed |
 | `docs/` | Safety, conventions, how the evidence was gathered, dry-run examples, a testing guide |
