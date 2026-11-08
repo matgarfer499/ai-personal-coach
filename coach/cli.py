@@ -794,7 +794,8 @@ def cmd_shopping(profile: Profile, args: argparse.Namespace) -> dict:
         "menu": _shown(args, path),
         "days": len(days),
         **listed,
-        "note": "amounts are for the form each name gives (raw, cooked, drained); a batch is "
+        "note": "amounts are for the form each name gives (raw, drained), except cooked rice, "
+        "pasta, lentils and broccoli, bought dry or raw by their cooking yield; a batch is "
         "bought once at its servings, `left_over` of them are for other days or the freezer; "
         "`units` is about how many of `unit_name` (the source's portion size) the grams make, in "
         "whole units rounded up; `packs` is whole packs of `pack_size` (the product's g or ml), "
@@ -1167,7 +1168,10 @@ def cmd_tastes(profile: Profile, args: argparse.Namespace) -> dict:
                 f"{args.dish!r} is first scheduled for {scheduled[0]}, after {when}: rate it once "
                 "it has been eaten (or give --date for the day it was)"
             )
-        rating = tastes.Rating(args.dish.strip(), args.rating, when, args.source, args.note)
+        # A first rating takes the dish's name as the menu or the library writes it.
+        listed = recipes.find_in_menus(args.data_dir, args.dish)
+        name = str(listed["dish"]).strip() if listed and not rated_before else args.dish.strip()
+        rating = tastes.Rating(name, args.rating, when, args.source, args.note)
         current.rate(rating)
         tastes.save_tastes(current, path)
         # a dish the client likes joins the recipe library (data/recipes/)
@@ -1515,8 +1519,19 @@ def _pack_size(text: str) -> float:
     return size
 
 
+# convention: a product whose kcal per 100 g is more than about 20% above a cooked food's is a dry
+# or raw form, never a gram-for-gram stand-in (the 20% figure from nutrition.md "EU label rules
+# and tolerances", borrowed); dry rice is about 2.8 times cooked rice per 100 g.
+DRY_FOR_COOKED_GAP = 0.20
+COOKED_WORDS = ("cooked", "boiled", "stewed")
+
+
 def _replaces(
-    name: str, per: str, region: str | None, others: list[catalogue.CatalogueProduct]
+    name: str,
+    per: str,
+    region: str | None,
+    others: list[catalogue.CatalogueProduct],
+    kcal: float | None = None,
 ) -> str:
     """The generic food's name_en this product is bought for in the shopping list ("" clears)."""
     if not name.strip():
@@ -1528,6 +1543,19 @@ def _replaces(
         )
     if food.buy_as:  # shopping turns it into that food before it looks for a product
         raise ValueError(f"--replaces {name!r}: it is bought as {food.buy_as!r}, replace that")
+    dry = mealplan.dry_form(food)
+    if dry:  # shopping turns the cooked grams into dry or raw grams first
+        raise ValueError(
+            f"--replaces {name!r}: it is bought as {dry[0]!r} (cooked weight / {dry[1]:g}), "
+            "replace that"
+        )
+    cooked = any(w in fold(food.name_en) for w in COOKED_WORDS)
+    if cooked and kcal is not None and food.kcal and kcal > food.kcal * (1 + DRY_FOR_COOKED_GAP):
+        raise ValueError(
+            f"--replaces {name!r}: {kcal:g} kcal per 100 g against {food.kcal:g} for the cooked "
+            "food looks like a dry or raw product; it cannot stand in for the cooked food gram for "
+            "gram (no yield rule for this food yet)"
+        )
     if foods.PER_UNITS[per] != food.unit and not food.g_per_ml:
         raise ValueError(
             f"--replaces {name!r}: that food has no density, so its grams cannot become ml"
@@ -1619,7 +1647,7 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         kept = stored.pack_size if stored and stored.per == per else None
         pack_size = kept or (found.get("pack_size") if found["per"] == per else None)
     replaces = (
-        _replaces(args.replaces, per, profile.region, others)
+        _replaces(args.replaces, per, profile.region, others, found["values"].get("kcal"))
         if args.replaces is not None
         else (stored.replaces if stored else "")
     )

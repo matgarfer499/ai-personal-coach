@@ -220,3 +220,20 @@ def test_cli_rate_takes_an_explicit_date_before_the_scheduled_day(capsys, tmp_pa
     code, _ = run(capsys, tmp_path, "tastes", "rate", "Lentejas estofadas", "loved",
                   "--date", "2026-10-20")  # fmt: skip
     assert code == 0
+
+
+# Beta 3 p4-sara-N6: the first rating keeps the menu's name, not the case it was typed in.
+def test_a_first_rating_takes_the_menu_name(capsys, tmp_path):
+    menu = tmp_path / "menus"
+    menu.mkdir()
+    (menu / "2026-03-01.yaml").write_text(
+        "days:\n- date: 2026-03-01\n  meals:\n  - meal: comida\n    dishes:\n"
+        "    - dish: Lentejas estofadas\n      items: [lentejas, cocidas=300]\n",
+        encoding="utf-8",
+    )
+    code, out = run(
+        capsys, tmp_path, "tastes", "rate", "LENTEJAS ESTOFADAS", "liked", "--date", "2026-03-01"
+    )
+    assert code == 0, out
+    stored = (tmp_path / "tastes.yaml").read_text(encoding="utf-8")
+    assert "Lentejas estofadas" in stored and "LENTEJAS" not in stored

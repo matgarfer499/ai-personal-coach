@@ -222,7 +222,7 @@ def test_shopping_list_sums_grams_by_chain(capsys, data_dir):
     assert out["chains"] == {
         "Eroski": [{"name": SKYR, "grams": 150}],
         "Mercadona": [{"name": "Comida de prueba", "grams": 5900}],
-        "any": [{"name": "lentejas, cocidas", "grams": 100}],
+        "any": [{"name": "lentejas, crudas", "grams": 36.6}],
     }
     assert out["unknown"] == [] and "form" in out["note"]
 
@@ -541,7 +541,7 @@ def test_shopping_buys_a_batch_once_at_its_servings(capsys, data_dir):
     assert code == 0
     _, shop = run(capsys, data_dir, "shopping")
     # per serving: 100 g lentils and 1,900 g of the test food; cooked once for 3 servings
-    assert shop["chains"]["any"] == [{"name": "lentejas, cocidas", "grams": 300}]
+    assert shop["chains"]["any"] == [{"name": "lentejas, crudas", "grams": 109.9}]
     assert shop["chains"]["Mercadona"] == [{"name": "Comida de prueba", "grams": 5700}]
     assert shop["batches"] == [
         {"dish": "Lentejas", "servings": 3, "dates": ["2026-10-26", "2026-10-27"], "left_over": 1}
@@ -564,7 +564,7 @@ def test_shopping_leaves_out_the_pantry(capsys, data_dir):
     code, _ = check(capsys, data_dir, draft, "save")
     assert code == 0
     _, shop = run(capsys, data_dir, "shopping")
-    assert shop["chains"] == {"any": [{"name": "lentejas, cocidas", "grams": 100}]}
+    assert shop["chains"] == {"any": [{"name": "lentejas, crudas", "grams": 36.6}]}
     assert shop["pantry_skipped"] == ["aceite de oliva", "Comida de prueba"]
 
 
@@ -820,7 +820,7 @@ def test_a_batch_for_two_is_bought_at_servings_times_people(capsys, data_dir):
 
     assert check(capsys, data_dir, {"days": [lunch(26), lunch(27)]}, "save")[0] == 0
     shop = run(capsys, data_dir, "shopping")[1]
-    assert shop["chains"]["any"] == [{"name": "lentejas, cocidas", "grams": 400}]
+    assert shop["chains"]["any"] == [{"name": "lentejas, crudas", "grams": 146.5}]
     assert shop["chains"]["Mercadona"] == [{"name": "Comida de prueba", "grams": 7600}]
 
 
@@ -1130,3 +1130,34 @@ def test_unit_names_follow_the_language():
         "unit_label": "ud. grandes",
     }
     assert _units(600, ("large", 50), "en") == {"units": 12, "unit_name": "large"}
+
+
+# Beta 3 p4-sara-N1: cooked grains, pasta, legumes and boiled vegetables are bought dry or raw,
+# by the yields in nutrition.md "Dry or raw to cooked weight for grains, pasta, legumes and
+# vegetables: Bognar yield factors".
+def test_cooked_forms_are_bought_dry_or_raw():
+    from datetime import date as day
+
+    from coach import mealplan
+
+    items = ["arroz blanco, cocido=300", "lentejas, cocidas=300", "brócoli, cocido=300",
+             "pasta, cocida=210"]  # fmt: skip
+    _, days = mealplan.parse(
+        {"days": [{"date": day(2026, 11, 2), "meals": [
+            {"meal": "comida", "dishes": [{"dish": "Plato", "items": items}]}]}]}
+    )  # fmt: skip
+    shop = mealplan.shopping(days, foods.load_foods("es"), "es")
+    lines = {line["name"]: line for line in shop["chains"]["any"]}
+    assert lines["arroz blanco, crudo"]["grams"] == round(300 / 2.98, 1)
+    assert lines["lentejas, crudas"]["grams"] == round(300 / 2.73, 1)
+    assert lines["brócoli, crudo"]["grams"] == round(300 / 1.11, 1)
+    assert lines["pasta, cruda"]["grams"] == round(210 / 2.10, 1)
+    assert not any("cocid" in name for name in lines)
+
+
+def test_every_cooked_yield_names_a_food_in_the_table():
+    from coach.mealplan import COOKED_YIELDS
+
+    table = foods.load_foods("es")
+    for cooked, (raw, factor) in COOKED_YIELDS.items():
+        assert foods.find(cooked, table) and foods.find(raw, table) and factor > 0, cooked

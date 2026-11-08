@@ -496,10 +496,31 @@ def shopping(
     }
 
 
+# nutrition.md: "Dry or raw to cooked weight for grains, pasta, legumes and vegetables: Bognar
+# yield factors": cooked edible weight per dry or raw weight; dry or raw = cooked / factor. Only
+# foods with a row in that rule (no chickpeas or canned legumes: D276).
+COOKED_YIELDS = {
+    "white rice, cooked": ("white rice, raw", 2.98),
+    "brown rice, cooked": ("brown rice, raw", 2.60),
+    "pasta, cooked": ("pasta, dry", 2.10),
+    "lentils, cooked": ("lentils, dry", 2.73),
+    "broccoli, boiled": ("broccoli, raw", 1.11),
+}
+
+
+def dry_form(food: Food) -> tuple[str, float] | None:
+    """(the dry or raw food's name_en, the yield factor) a cooked food is bought as, else None."""
+    return COOKED_YIELDS.get(food.name_en)
+
+
 def _bought_as(
     food: Food, amount: float, unit: str, table: list[Food], replaced: dict[str, Food]
 ) -> tuple[Food, float, str]:
     """The food actually bought for this item, with the amount in its unit."""
+    dry = dry_form(food)
+    raw = find(dry[0], table) if dry else None
+    if raw is not None and unit == "g":
+        food, amount = raw, amount / dry[1]
     target = find(food.buy_as, table) if food.buy_as else None
     if target is not None and unit == "g" and food.unit_g and target.unit_g:
         food, amount = target, amount / food.unit_g * target.unit_g

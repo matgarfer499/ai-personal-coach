@@ -380,6 +380,7 @@ def test_pack_size_and_replaces_are_typed_and_checked(capsys, data_dir, off_retu
         (["--pack-size", "nan"], "--pack-size"),
         (["--pack-size", "1.000"], "thousands"),  # a Spanish "1.000 ml" is not 1 ml
         (["--replaces", "huevo cocido"], "bought as"),  # shopping buys it as a raw egg
+        (["--replaces", "arroz blanco, cocido"], "bought as"),  # beta 3 p4-sara-N2: dry rice
         (["--replaces", "leche de unicornio"], "not a food"),
         (["--replaces", "Salteado campestre"], "not a food"),
     ],
@@ -419,8 +420,8 @@ def test_replaces_needs_a_unit_the_product_can_take(capsys, data_dir, off_return
     """A per-100 g product can stand for any generic food (all are per 100 g); a per-100 ml
     product only for one with a density to turn its grams into ml."""
     code, out = add(capsys, data_dir, off_returns, "product_found.json", "8400000000017",
-                    "--replaces", "lentejas, cocidas")  # fmt: skip
-    assert code == 0 and out["added"]["replaces"] == "lentils, cooked"
+                    "--replaces", "garbanzos, cocidos")  # fmt: skip
+    assert code == 0 and out["added"]["replaces"] == "chickpeas, cooked"
     code, out = add(capsys, data_dir, off_returns, "product_liquid.json", "8400000000031",
                     "--replaces", "garbanzos, cocidos")  # fmt: skip
     assert code != 0 and "no density" in out["message"]
@@ -438,3 +439,14 @@ def test_a_hand_edited_pack_size_must_be_positive(capsys, data_dir, off_returns,
         writer.writerows(rows)
     with pytest.raises(ValueError, match="pack_size"):
         catalogue.load(data_dir)
+
+
+# Beta 3 p4-sara-N2: a dry product never stands in for a cooked food gram for gram.
+def test_a_dry_product_cannot_replace_a_cooked_food(capsys, data_dir):
+    code, out = run(
+        capsys, data_dir, "products", "add", "--label", "--name", "Garbanzo seco prueba",
+        "--chain", "Mercadona", "--per", "100 g", "--kcal", "360", "--protein", "20",
+        "--carbs", "50", "--fat", "6", "--allergens", "ninguno",
+        "--replaces", "garbanzos, cocidos",
+    )  # fmt: skip
+    assert code != 0 and "dry" in out["message"]
