@@ -13,8 +13,8 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from statistics import fmean
 
-from coach.text import number
 from coach.safety import SafetyFlags, weight_block_reason
+from coach.text import number
 
 # convention: at least 7 weigh-ins covering 14 days (chosen when the coach was designed), built on
 # nutrition.md: "Read the scale with weekly averages" ("never adjust calories from one or two
