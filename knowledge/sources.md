@@ -8,16 +8,16 @@ Fields: type, DOI, canonical URL, opened URL, which files cite it, and what in t
 
 | Type | Count |
 |---|---|
-| Meta-analysis | 297 |
-| Other | 114 |
+| Meta-analysis | 300 |
+| Other | 117 |
 | RCT | 97 |
-| Cohort | 86 |
-| Systematic review | 92 |
-| Guideline | 78 |
-| Narrative review | 49 |
-| Position stand | 37 |
+| Cohort | 89 |
+| Systematic review | 96 |
+| Guideline | 80 |
+| Narrative review | 50 |
+| Position stand | 39 |
 | Umbrella review | 15 |
-| **Total** | **865** |
+| **Total** | **883** |
 
 ## List
 
@@ -2269,14 +2269,14 @@ Thomas DT, Erdman KA, Burke LM. 2016. Position of the Academy of Nutrition and D
 Type: Position stand · DOI: [10.1249/MSS.0000000000000852](https://doi.org/10.1249/MSS.0000000000000852) · Files: nutrition  
 URL: <https://pubmed.ncbi.nlm.nih.gov/26891166/>  
 Opened: <https://www.dietitians.ca/DietitiansOfCanada/media/Documents/Resources/noap-position-paper.pdf?ext=.pdf>  
-Supports: The carbohydrate table reads: 'Light: Low intensity or skill-based activities 3-5 g/kg of athlete's BW/d; Moderate: Moderate exercise program (e.g., ~1 h/d) 5-7 g/kg/d; High: Endurance program (e.g., 1-3 h/d mod-high-intensity exercise) 6-10 g/kg/d; Very High: Extreme commitment (e.g., >4-5 h/d) 8-12 g/kg/d'.
+Supports: Carbohydrate table: 'Light: Low intensity or skill-based activities 3-5 g/kg of athlete's BW/d; Moderate: ... (e.g., ~1 h/d) 5-7 g/kg/d; High: ... (e.g., 1-3 h/d mod-high-intensity exercise) 6-10 g/kg/d; Very High: ... (e.g., >4-5 h/d) 8-12 g/kg/d'. Fat: 'chronic implementation of fat intakes below 20% of energy intake' ... 'typically range from 20% to 35% of total energy intake'. Protein: 'energy restriction' ... 'as high as 2.0 g/kg/day or higher'.
 
 ### S326
 Kerksick CM et al. 2018. ISSN exercise & sports nutrition review update: research & recommendations. J Int Soc Sports Nutr 15:38.  
 Type: Position stand · DOI: [10.1186/s12970-018-0242-y](https://doi.org/10.1186/s12970-018-0242-y) · Files: nutrition  
 URL: <https://pubmed.ncbi.nlm.nih.gov/30068354/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=6090881&rettype=xml>  
-Supports: Full text: people in a general fitness programme 'can typically meet daily carbohydrate needs by consuming a normal diet (i.e., 45-55% CHO [3-5 g/kg/day]...)'. Moderate intense training (2-3 h/day, 5-6 times/week) needs 5-8 g/kg/day; high-volume training (3-6 h/day) '8-10 g/day', a typo for g/kg/day. Table 3 sorts supplements into categories I (strong evidence), II (limited or mixed) and III (little to none); 'we suggest that they generally only recommend supplements in category I'.
+Supports: Full text: general fitness 'normal diet (i.e., 45-55% CHO [3-5 g/kg/day], ... 25-35% fat [0.5-1.5 g/kg/day])'; reducing body fat: 'dietary fat intakes ranging from 0.5 to 1 g/kg/day' ... 'as little as 20% of total calories'. Moderate intense training needs 5-8 g/kg/day carbohydrate. Table 3 sorts supplements into categories I (strong evidence), II (limited or mixed) and III (little to none); 'we suggest that they generally only recommend supplements in category I'.
 
 ### S327
 Henselmans M, Bjørnsen T, Hedderman R, Vårvik FT. 2022. The Effect of Carbohydrate Intake on Strength and Resistance Training Performance: A Systematic Review. Nutrients 14(4):856.  
@@ -6042,3 +6042,129 @@ Type: Systematic review · DOI: [10.1186/s11556-024-00366-3](https://doi.org/10.
 URL: <https://pubmed.ncbi.nlm.nih.gov/39716049/>  
 Opened: <https://www.ebi.ac.uk/europepmc/webservices/rest/PMC11664925/fullTextXML>  
 Supports: Condensed: 'studies that applied functional training as a single-component approach showed a positive effect on activities of daily living' ... 'the training effect on balance and mobility was not superior to that of other exercise programs.' ... 'community-dwelling older adults'. Added by research 2026-11-01 (boxing functional).
+
+### S870
+Schuster Brandt Frandsen J, Hulme A, Parner ET, et al. 2025. How much running is too much? Identifying high-risk running sessions in a 5200-person cohort study. Br J Sports Med 59(17):1203-1210  
+Type: Cohort · DOI: [10.1136/bjsports-2024-109380](https://doi.org/10.1136/bjsports-2024-109380) · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/40623829/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&rettype=abstract&retmode=text&id=40623829>  
+Supports: Condensed: 'Among 5205 runners (mean age 45.8 years, SD=10.4; 22% female), a total of 1820 (35%) sustained a running-related injury' ... 'small spikes (HRR=1.64' ... 'moderate spikes (HRR=1.52' ... 'and large spikes (HRR=2.28' ... 'No relationship was identified for the week-to-week ratio.' ... 'when the distance of a single running session exceeded 10% of the longest run undertaken in the last 30 days.'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S871
+Nielsen RO, Parner ET, Nohr EA, Sorensen H, Lind M, Rasmussen S. 2014. Excessive progression in weekly running distance and risk of running-related injuries: an association which varies according to type of injury. J Orthop Sports Phys Ther 44(10):739-47  
+Type: Cohort · DOI: [10.2519/jospt.2014.5164](https://doi.org/10.2519/jospt.2014.5164) · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/25155475/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&rettype=abstract&retmode=text&id=25155475>  
+Supports: Condensed: '874 healthy novice runners' ... 'less than 10% or regression, 10% to 30%, or more than 30%.' ... 'no statistically significant differences in injury rates were found across the 3 exposure groups.' ... '(hazard ratio = 1.59; 95% confidence interval: 0.96, 2.66; P = .07).' ... 'novice runners may be well advised to progress their weekly distances by less than 30% per week over a 2-week period.'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S872
+Damsted C, Glad S, Nielsen RO, Sorensen H, Malisoux L. 2018. Is there evidence for an association between changes in training load and running-related injuries? A systematic review. Int J Sports Phys Ther 13(6):931-942  
+Type: Systematic review · DOI: none · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/30534459/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&rettype=abstract&retmode=text&id=30534459>  
+Supports: Condensed: 'Four articles fulfilled the eligibility criteria' ... 'no difference was found between a 10% and a 24% average increase in weekly volume (HR = 0.8, 95% CI: 0.6; 1.3).' ... 'Very limited evidence exists supporting that a sudden change in training load is associated with increased risk of running-related injury.'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S873
+Fredette A, Roy JS, Perreault K, Dupuis F, Napier C, Esculier JF. 2022. The Association Between Running Injuries and Training Parameters: A Systematic Review. J Athl Train 57(7):650-671  
+Type: Systematic review · DOI: [10.4085/1062-6050-0195.21](https://doi.org/10.4085/1062-6050-0195.21) · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/34478518/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&rettype=abstract&retmode=text&id=34478518>  
+Supports: Condensed: 'A total of 36 articles that involved 23 047 runners were included.' ... 'evidence about the association between weekly running distance, duration, frequency, intensity, or specific changes in training parameters and the onset of RRIs was conflicting.' ... 'caution should be taken when recommending optimal parameters or progressions.'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S874
+Bosquet L, Montpetit J, Arvisais D, Mujika I. 2007. Effects of tapering on performance: a meta-analysis. Med Sci Sports Exerc 39(8):1358-65  
+Type: Meta-analysis · DOI: [10.1249/mss.0b013e31806010e0](https://doi.org/10.1249/mss.0b013e31806010e0) · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/17762369/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&rettype=abstract&retmode=text&id=17762369>  
+Supports: Condensed: 'participants must be competitive athletes' ... 'Twenty-seven of 182 potential studies met these criteria' ... 'a tapering intervention of 2-wk duration (overall effect = 0.59 +/- 0.33, P < 0.001), where the training volume is exponentially decreased by 41-60% (overall effect = 0.72 +/- 0.36, P < 0.001), without any modification of either training intensity' ... 'or frequency'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S875
+Wang Z, Wang YT, Gao W, Zhong Y. 2023. Effects of tapering on performance in endurance athletes: A systematic review and meta-analysis. PLoS One 18(5):e0282838  
+Type: Meta-analysis · DOI: [10.1371/journal.pone.0282838](https://doi.org/10.1371/journal.pone.0282838) · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/37163550/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&rettype=abstract&retmode=text&id=37163550>  
+Supports: Condensed: 'time-trial (TT) performance (SMD = -0.45; P < 0.05) and time to exhaustion (TTE) performance (SMD = 1.28; P < 0.05).' ... 'tapering combined with pre-taper overload training had a more significant effect on TT performance' ... 'a ≤21-day taper, in which training volume is progressively reduced by 41-60% without changing training intensity or frequency, is an effective tapering strategy.'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S876
+Smyth B, Lawlor A. 2021. Longer Disciplined Tapers Improve Marathon Performance for Recreational Runners. Front Sports Act Living 3:735220  
+Type: Cohort · DOI: [10.3389/fspor.2021.735220](https://doi.org/10.3389/fspor.2021.735220) · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/34651125/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&rettype=abstract&retmode=text&id=34651125>  
+Supports: Condensed: 'more than 158,000 recreational marathon runners' ... 'strict tapers progressively decrease training in the weeks before the marathon, relaxed tapers do not' ... 'strict tapers were associated with better marathon performance than relaxed tapers (p < 0.001) and that longer tapers of up to 3 weeks were associated with better performance than shorter tapers (p < 0.001).'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S877
+Kakouris N, Yener N, Fong DTP. 2021. A systematic review of running-related musculoskeletal injuries in runners. J Sport Health Sci 10(5):513-522  
+Type: Systematic review · DOI: [10.1016/j.jshs.2021.04.001](https://doi.org/10.1016/j.jshs.2021.04.001) · Files: recovery-habits  
+URL: <https://pubmed.ncbi.nlm.nih.gov/33862272/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=33862272&rettype=abstract&retmode=text>  
+Supports: Condensed: 'The overall injury incidence and prevalence were 40.2% ± 18.8% and 44.6% ± 18.4% (mean ± SD), respectively. The knee, ankle, and lower leg accounted for the highest proportion of injury incidence' ... 'Achilles tendinopathy (10.3%), medial tibial stress syndrome (9.4%), patellofemoral pain syndrome (6.3%), plantar fasciitis (6.1%), and ankle sprains (5.8%)' ... 'iliotibial band syndrome (7.9%)'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S878
+Videbaek S, Bueno AM, Nielsen RO, Rasmussen S. 2015. Incidence of Running-Related Injuries Per 1000 h of running in Different Types of Runners: A Systematic Review and Meta-Analysis. Sports Med 45(7):1017-26  
+Type: Meta-analysis · DOI: [10.1007/s40279-015-0333-8](https://doi.org/10.1007/s40279-015-0333-8) · Files: recovery-habits  
+URL: <https://pubmed.ncbi.nlm.nih.gov/25951917/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=25951917&rettype=abstract&retmode=text>  
+Supports: Condensed: '13 original articles were included in the main analysis.' ... 'The meta-analyses revealed a weighted injury incidence of 17.8 (95% confidence interval [CI] 16.7-19.1) in novice runners and 7.7 (95% CI 6.9-8.7) in recreational runners.'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S879
+Tiller NB, Roberts JD, Beasley L, et al. 2019. International Society of Sports Nutrition Position Stand: nutritional considerations for single-stage ultra-marathon training and racing. J Int Soc Sports Nutr 16(1):50  
+Type: Position stand · DOI: [10.1186/s12970-019-0312-9](https://doi.org/10.1186/s12970-019-0312-9) · Files: nutrition  
+URL: <https://pubmed.ncbi.nlm.nih.gov/31699159/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=31699159&rettype=abstract&retmode=text>  
+Supports: Condensed: 'Protein intakes of ~ 1.6 g·kg- 1·d- 1 are necessary to maintain lean mass and support recovery from training, but amounts up to 2.5 g.kg- 1·d- 1 may be warranted during demanding training when calorie requirements are greater'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S880
+Bandegan A, Courtney-Martin G, Rafii M, Pencharz PB, Lemon PWR. 2019. Indicator amino acid oxidation protein requirement estimate in endurance-trained men 24 h postexercise exceeds both the EAR and current athlete guidelines. Am J Physiol Endocrinol Metab 316(5):E741-E748  
+Type: Other · DOI: [10.1152/ajpendo.00174.2018](https://doi.org/10.1152/ajpendo.00174.2018) · Files: nutrition  
+URL: <https://pubmed.ncbi.nlm.nih.gov/30779631/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=30779631&rettype=abstract&retmode=text>  
+Supports: Condensed: 'Eight men [maximal oxygen consumption 64.1 ml·kg-1·min-1 (SD 3.7)]' ... 'The EAR for protein and the upper 95% confidence interval were 2.1 and 2.6 g·kg-1·day-1, respectively.'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S881
+Gillen JB, West DWD, Williamson EP, Fung HJW, Moore DR. 2019. Low-Carbohydrate Training Increases Protein Requirements of Endurance Athletes. Med Sci Sports Exerc 51(11):2294-2301  
+Type: Other · DOI: [10.1249/MSS.0000000000002036](https://doi.org/10.1249/MSS.0000000000002036) · Files: nutrition  
+URL: <https://pubmed.ncbi.nlm.nih.gov/31083047/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=31083047&rettype=abstract&retmode=text>  
+Supports: Condensed: 'Our findings suggest that performing endurance exercise with low-CHO availability increases protein requirements of endurance athletes.'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S882
+World Health Organization. 2023. Carbohydrate intake for adults and children: WHO guideline. Geneva: World Health Organization. ISBN 978-92-4-007359-3  
+Type: Guideline · DOI: none · Files: nutrition  
+URL: <https://www.who.int/publications/i/item/9789240073593>  
+Opened: <https://iris.who.int/server/api/core/bitstreams/6c31b739-c2e8-4515-970d-d9e42346c7f4/content>  
+Supports: Condensed: 'at least 400 g of vegetables and fruits per day (strong recommendation).' ... 'at least 25 g per day of naturally occurring dietary fibre as consumed in foods (strong recommendation).' ... 'greatest benefit' ... 'was 25-29 g per day.' ... 'additional benefits with dietary fibre intakes greater than 30 g per day; however, data for this range of intake were more limited.'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S883
+Aragon AA, Campbell BI, Schoenfeld BJ, et al. 2026. International Society of Sports Nutrition position stand: diets for body weight reduction. J Int Soc Sports Nutr 23(1):2740266  
+Type: Position stand · DOI: [10.1080/15502783.2026.2740266](https://doi.org/10.1080/15502783.2026.2740266) · Files: nutrition  
+URL: <https://pubmed.ncbi.nlm.nih.gov/42867412/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=13665703&retmode=xml>  
+Supports: Condensed: 'For the general population' ... '1.2-1.6 g/kg BW is appropriate for supporting total body weight and fat loss' ... 'Daily protein intakes ranging 1.6-2.2 g/kg BW combined with resistance training may optimize muscle anabolism, while higher intakes of 1.9-3.2 g/kg BW can maximize lean mass retention in lean, resistance-trained individuals sustaining hypocaloric conditions.' ... '2.5-4.2 g/kg FFM'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S884
+Hector AJ, Phillips SM. 2018. Protein Recommendations for Weight Loss in Elite Athletes: A Focus on Body Composition and Performance. Int J Sport Nutr Exerc Metab 28(2):170-177  
+Type: Narrative review · DOI: [10.1123/ijsnem.2017-0273](https://doi.org/10.1123/ijsnem.2017-0273) · Files: nutrition  
+URL: <https://pubmed.ncbi.nlm.nih.gov/29182451/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=29182451&rettype=abstract&retmode=text>  
+Supports: Condensed: 'Current recommendations for protein intakes during weight loss in athletes are set at 1.6-2.4 g protein/kg/day.'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S885
+Yumuk V, Tsigos C, Fried M, et al. 2015. European Guidelines for Obesity Management in Adults. Obes Facts 8(6):402-424  
+Type: Guideline · DOI: [10.1159/000442721](https://doi.org/10.1159/000442721) · Files: nutrition  
+URL: <https://pubmed.ncbi.nlm.nih.gov/26641646/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=5644856&retmode=xml>  
+Supports: Condensed: 'usually provides an energy deficit of 600 kcal/day {grade A, B}. A 600 kcal (2,600 kJ) daily deficit will predict a weight loss of about 0.5 kg weekly.' ... 'Diets providing 1,200 kcal/day or more are classified as hypocaloric balanced diets (HBD) or balanced deficit diets'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S886
+Weinsier RL, Wilson LJ, Lee J. 1995. Medically safe rate of weight loss for the treatment of obesity: a guideline based on risk of gallstone formation. Am J Med 98(2):115-117  
+Type: Systematic review · DOI: [10.1016/S0002-9343(99)80394-5](https://doi.org/10.1016/S0002-9343(99)80394-5) · Files: nutrition  
+URL: <https://pubmed.ncbi.nlm.nih.gov/7847427/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=7847427&rettype=abstract&retmode=text>  
+Supports: Condensed: 'Nine subject groups derived from five published reports met the criteria for inclusion in the analysis.' ... 'an adjusted r2 of 0.98 and a dramatically increasing risk of gallstone formation at rates of weight loss above 1.5 kg per week.' ... 'The data suggest that rates of weight loss should not exceed an average of 1.5 kg per week.'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S887
+Campolina BG, Silva LA, Bordenski GH, Machado AM, Duarte CK. 2026. Selecting appropriate weight parameters for nutritional prescription during nutrition support: a scoping review. Nutrition 153:113424  
+Type: Other · DOI: [10.1016/j.nut.2026.113424](https://doi.org/10.1016/j.nut.2026.113424) · Files: nutrition  
+URL: <https://pubmed.ncbi.nlm.nih.gov/42815068/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=42815068&rettype=abstract&retmode=text>  
+Supports: Condensed: 'there is no clear consensus on which BW should be used across different clinical conditions.' ... '41 publications met the inclusion criteria.' ... 'Ideal body weight (IBW) was the most frequently reported BW parameter (73.2%), especially for patients with obesity, fluid overload, or limited mobility. CBW was recommended primarily for individuals with normal weight'. Added by research 2026-11-08 (beta fixes running and citations).
