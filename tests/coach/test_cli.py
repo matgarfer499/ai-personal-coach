@@ -1810,3 +1810,42 @@ def test_runs_taper_refused_while_training_is_on_hold(capsys, data_dir):
     run(capsys, data_dir, "profile", "set", "screening.cardiac_symptoms", "true")
     code, out = run(capsys, data_dir, "runs", "taper", "--race-date", "2026-04-12")
     assert code == 2 and "Cardiac warning symptoms" in out["message"]
+
+
+# Audit: a typed --kcal could keep a surplus while training is stopped.
+def test_typed_kcal_cannot_keep_a_surplus_while_training_is_stopped(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "goal", "muscle_gain")
+    run(capsys, data_dir, "profile", "set", "screening.cardiac_symptoms", "true")
+    _, energy = run(capsys, data_dir, "energy")
+    _, out = run(capsys, data_dir, "macros", "--kcal", "4000")
+    assert out["kcal"] == energy["target"]["kcal"] < 4000
+
+
+# Audit: a non-list `exercises:` crashed with a traceback.
+def test_plan_sets_rejects_exercises_that_are_not_a_list(capsys, data_dir):
+    plan = data_dir / "week.yaml"
+    plan.write_text("sessions:\n  - name: Push\n    exercises: 5\n", encoding="utf-8")
+    code, out = run(capsys, data_dir, "strength", "plan-sets", str(plan))
+    assert code == 2 and out["error"] == "invalid"
+
+
+# Audit: `target_kcal: 2,100` was read as 2.1 kcal.
+def test_plan_check_rejects_a_thousands_separator(capsys, data_dir):
+    _plan_md(data_dir, "2,100")
+    _, out = run(capsys, data_dir, "plan", "check")
+    assert out["ok"] is False and any("must be a number" in p for p in out["problems"])
+
+
+# Audit: any in_deficit other than "true" silently counted as false.
+def test_plan_check_rejects_an_unknown_in_deficit(capsys, data_dir):
+    _, macros = run(capsys, data_dir, "macros")
+    _plan_md(data_dir, macros["kcal"], in_deficit="yes")
+    _, out = run(capsys, data_dir, "plan", "check")
+    assert out["ok"] is False and any("in_deficit" in p for p in out["problems"])
+
+
+def test_tastes_set_help_names_every_settable_field(capsys):
+    with pytest.raises(SystemExit):
+        main(["tastes", "set", "--help"])
+    help_text = capsys.readouterr().out
+    assert "pantry" in help_text and "untried" in help_text

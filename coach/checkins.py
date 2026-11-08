@@ -89,7 +89,8 @@ def append_checkin(checkin: Checkin, path: Path) -> Checkin:
     rows = read_checkins(path)
     for earlier in (c for c in rows if c.date == checkin.date):
         given = {k: v for k, v in vars(checkin).items() if v is not None and v != ""}
-        if earlier.notes and checkin.notes:  # notes add up: a symptom noted earlier must stay
+        # notes add up: a symptom noted earlier must stay
+        if earlier.notes and checkin.notes and checkin.notes not in earlier.notes.split("; "):
             given["notes"] = f"{earlier.notes}; {checkin.notes}"
         checkin = replace(earlier, **given)
     rows = [c for c in rows if c.date != checkin.date] + [checkin]

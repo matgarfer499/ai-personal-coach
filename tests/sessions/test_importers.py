@@ -251,3 +251,13 @@ def test_run_files_and_workout_files_are_told_apart():
         assert detect(RUNS / name).name == "generic_runs_csv"
     assert detect(GENERIC / "basic.csv").name == "generic_csv"
     assert detect(HEVY / "basic.csv").name == "hevy_csv"
+
+
+def test_generic_runs_csv_reads_a_notes_column(tmp_path):
+    log = tmp_path / "runs.csv"
+    log.write_text(
+        "date,distance_km,duration_minutes,notes\n2026-03-28,8,48,easy\n", encoding="utf-8"
+    )
+    assert detect(log).name == "generic_runs_csv"
+    (run,) = get("generic_runs_csv").read(log)
+    assert run.notes == "easy"

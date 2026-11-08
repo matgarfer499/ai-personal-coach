@@ -1,9 +1,9 @@
 """A plain run log anyone can write by hand or export from a spreadsheet.
 
 Required columns: `date` (YYYY-MM-DD, or YYYY-MM-DD HH:MM), `distance_km` or `distance_miles`,
-and `duration_minutes` or `duration_seconds`. Optional: `avg_hr`, `max_hr` (bpm) and `rpe`
-(Borg 6-20). One row per run. `target = "runs"`: `coach import` stores these in data/runs.csv,
-not in data/sessions.csv.
+and `duration_minutes` or `duration_seconds`. Optional: `avg_hr`, `max_hr` (bpm), `rpe`
+(Borg 6-20) and `notes`. One row per run. `target = "runs"`: `coach import` stores these in
+data/runs.csv, not in data/sessions.csv.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from coach.sessions.importers.base import (
 
 DISTANCE = ("distance_km", "distance_miles")
 DURATION = ("duration_minutes", "duration_seconds")
-OPTIONAL = {"avg_hr", "max_hr", "rpe"}
+OPTIONAL = {"avg_hr", "max_hr", "rpe", "notes"}
 SECONDS_PER_MINUTE = 60  # a unit definition, not a coaching number
 
 
@@ -63,6 +63,7 @@ class GenericRunsCsv:
                 avg_hr=number(row, "avg_hr", line, int),
                 max_hr=number(row, "max_hr", line, int),
                 rpe=number(row, "rpe", line, int),
+                notes=(row.get("notes") or "").strip(),
                 source=self.name,
             )
             try:

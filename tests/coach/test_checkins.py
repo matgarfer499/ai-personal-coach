@@ -62,3 +62,10 @@ def test_a_file_without_a_date_column_is_a_clear_error(tmp_path):
 def test_rejects_impossible_values(tmp_path, field, value):
     with pytest.raises(ValueError, match=field):
         append_checkin(Checkin(date(2026, 3, 2), **{field: value}), tmp_path / "c.csv")
+
+
+def test_same_notes_twice_are_stored_once(tmp_path):
+    path = tmp_path / "checkins.csv"
+    append_checkin(Checkin(date(2026, 3, 2), notes="symptoms: chest_pain"), path)
+    append_checkin(Checkin(date(2026, 3, 2), notes="symptoms: chest_pain"), path)
+    assert read_checkins(path)[0].notes == "symptoms: chest_pain"
