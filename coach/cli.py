@@ -346,11 +346,18 @@ def _strength_alias(args: argparse.Namespace) -> dict:
         if not name:
             raise ValueError("give the name as the client logs it")
         key = next(k for k, v in muscle_map.items() if v is entry)
-        # A name the map already gives to another lift keeps that lift: refuse a dead alias.
-        merged = strength.with_aliases({**aliases, name: key})
-        found = strength.lookup(name, merged)
-        if found is not merged[key]:
-            other = next(k for k, v in merged.items() if v is found)
+        # A name the map already gives to another lift keeps that lift: the alias would be dead
+        # (that lift comes first in the map) or take every set logged under it (it comes later).
+        rest = strength.with_aliases({k: v for k, v in aliases.items() if k != name})
+        other = next(
+            (
+                k
+                for k, e in rest.items()
+                if k != key and fold(name) in {fold(n) for n in (k, *e.get("aliases", []))}
+            ),
+            None,
+        )
+        if other is not None:
             raise ValueError(f"{name!r} already names {other!r} in the muscle map")
         aliases[name] = key
         path = args.data_dir / strength.PERSONAL_ALIASES
@@ -857,7 +864,14 @@ def _find_injury(profile: Profile, area: str) -> dict | None:
 
 
 def cmd_injury(profile: Profile, args: argparse.Namespace) -> dict:
-    muscle_map = strength.muscle_map_for(args.data_dir)  # before saving: a bad file stops here
+    # An injury is a safety record: a broken alias file never stops it from being saved; it only
+    # falls back to the built-in names for the `unmatched` hint.
+    warnings = []
+    try:
+        muscle_map = strength.muscle_map_for(args.data_dir)
+    except ValueError as err:
+        muscle_map = strength.load_muscle_map()
+        warnings.append(f"{err}; matched against the built-in exercise names only")
     if args.injury_cmd == "add":
         injury = _find_injury(profile, args.area)
         if injury is not None and injury["status"] == "cleared":
@@ -892,7 +906,9 @@ def cmd_injury(profile: Profile, args: argparse.Namespace) -> dict:
         if fold(e) not in safety.RUN_NAMES
         and not any(strength.named_in(x, [e], muscle_map) for x in logged)
     ]
-    return {"injuries": profile.injuries, "unmatched": unmatched}
+    return {"injuries": profile.injuries, "unmatched": unmatched} | (
+        {"warnings": warnings} if warnings else {}
+    )
 
 
 def cmd_tastes(profile: Profile, args: argparse.Namespace) -> dict:

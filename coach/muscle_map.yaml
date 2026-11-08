@@ -43,10 +43,10 @@ bent over row:
   aliases: [remo con barra, row, barbell row, pendlay row, t bar row, remo]
 seated cable row:
   muscles: {back: 1, biceps: 0.5, rear_delts: 0.5}
-  aliases: [remo en polea, remo sentado en polea, remo sentado con cable, seated row, remo sentado]
+  aliases: [remo en polea, remo sentado en polea, remo sentado con cable, seated row, remo sentado, remo polea, remo con polea]
 dumbbell row:
   muscles: {back: 1, biceps: 0.5, rear_delts: 0.5}
-  aliases: [remo con mancuerna]
+  aliases: [remo con mancuerna, remo mancuerna, remo con mancuernas, remo a una mano]
 lat pulldown:
   muscles: {back: 1, biceps: 0.5, rear_delts: 0.5}
   aliases: [jalón al pecho, jalón dorsal, pulldown, jalón]

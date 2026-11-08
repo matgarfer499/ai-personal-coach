@@ -85,7 +85,8 @@ Adds an exported workout log to `data/sessions.csv` without duplicates.
    toward no muscle. For each, propose the closest lift the map knows in plain words (what it
    trains, e.g. "a kind of row: back and biceps") and ask the client to confirm; never guess a
    muscle they have not confirmed. Store each confirmed one with
-   `coach strength alias add "LOGGED NAME" "MAP LIFT"` (it refuses a lift the map does not know),
+   `coach strength alias add "LOGGED NAME" "MAP LIFT"` (it refuses a lift the map does not know,
+   and a name the map already gives another lift: then that lift is what the name counts as),
    then rerun `coach strength sets`. A name with no close lift stays unmapped: say so.
 5. Run `coach injury list`. If `unmatched` lists names, show the logged names from this import's
    lifts and ask which one each listed lift is. Then run `coach injury add AREA --exercises "..."`

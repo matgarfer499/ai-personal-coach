@@ -2080,3 +2080,16 @@ def test_strength_alias_add_stores_a_personal_alias(capsys, data_dir):
     code, out = run(capsys, data_dir, "strength", "alias", "add", "Fly", "rear delt fly")
     assert code == 2 and "chest fly" in out["message"]
     assert not (data_dir / "muscle_aliases.yaml").read_text(encoding="utf-8").count("Fly")
+    # "Plank" names a lift later in the map: an alias for squat would take every plank set.
+    code, out = run(capsys, data_dir, "strength", "alias", "add", "Plank", "squat")
+    assert code == 2 and "plank" in out["message"]
+    # Pointing one of the client's own names at another lift is allowed.
+    code, out = run(capsys, data_dir, "strength", "alias", "add", "Zercher Carry Thing", "plank")
+    assert code == 0 and out["aliases"] == {"Zercher Carry Thing": "plank"}
+
+
+def test_a_broken_alias_file_never_blocks_recording_an_injury(capsys, data_dir):
+    (data_dir / "muscle_aliases.yaml").write_text("Mi remo: no such lift\n", encoding="utf-8")
+    code, out = run(capsys, data_dir, "injury", "add", "rodilla", "--exercises", "squat")
+    assert code == 0 and out["warnings"]
+    assert load_profile(data_dir / "profile.yaml").injuries[0]["area"] == "rodilla"

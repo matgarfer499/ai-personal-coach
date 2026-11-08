@@ -213,7 +213,7 @@ def personal_aliases(data_dir: Path) -> dict[str, str]:
         aliases = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     except yaml.YAMLError as err:
         raise ValueError(f"{path} is not valid YAML: {err}") from err
-    if not isinstance(aliases, dict):
+    if not isinstance(aliases, dict) or not all(isinstance(v, str) for v in aliases.values()):
         raise ValueError(f"{path} must map each logged name to a lift in the muscle map")
     return {str(k): v for k, v in aliases.items()}
 

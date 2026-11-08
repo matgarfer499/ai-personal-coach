@@ -505,6 +505,8 @@ def test_injury_pause_matches_a_spanish_name():
         ("Rear Delt Reverse Fly (Dumbbell)", "rear delt fly"),
         ("Pájaros con mancuernas", "rear delt fly"),
         ("Curl de bíceps con mancuernas", "bicep curl"),
+        ("Remo polea", "seated cable row"),
+        ("Remo mancuerna", "dumbbell row"),
         ("Sentadilla en Smith", "squat"),
         ("Curl con cable", "bicep curl"),
         ("Press de hombro con máquina", "shoulder press"),
@@ -530,7 +532,9 @@ def test_personal_aliases_extend_the_map(tmp_path):
     assert lookup("mi remo raro", load_muscle_map()) is None  # the built-in map is untouched
 
 
-@pytest.mark.parametrize("text", ["Mi remo: renamed lift\n", "Mi remo: [\n", "- a list\n"])
+@pytest.mark.parametrize(
+    "text", ["Mi remo: renamed lift\n", "Mi remo: [\n", "- a list\n", "Mi remo: [squat]\n"]
+)
 def test_a_broken_personal_alias_file_is_a_clear_error(tmp_path, text):
     (tmp_path / "muscle_aliases.yaml").write_text(text, encoding="utf-8")
     with pytest.raises(ValueError, match="muscle_aliases.yaml"):
