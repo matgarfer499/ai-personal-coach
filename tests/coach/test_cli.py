@@ -1501,6 +1501,8 @@ def test_unrecognised_items_are_explained(capsys, data_dir):
 
 # Beta p3-antonio-I6: the region's number counts, so it is not asked for again.
 def test_region_emergency_number_is_not_missing(capsys, data_dir):
+    _, out = run(capsys, data_dir, "profile", "show")
+    assert "emergency_number" in out["missing"]
     _, out = run(capsys, data_dir, "profile", "set", "region", "es")
     assert "emergency_number" not in out["missing"]
 
@@ -1512,3 +1514,16 @@ def test_checkin_warns_on_an_implausible_weight_jump(capsys, data_dir):
     assert any("27" in w and "2026-03-30" in w for w in out["warnings"])
     _, calm = run(capsys, data_dir, "checkin", "add", "--date", "2026-03-31", "--weight", "72.4")
     assert calm["warnings"] == []
+
+
+def test_checkin_weight_jump_after_a_long_gap_is_still_flagged(capsys, data_dir):
+    run(capsys, data_dir, "checkin", "add", "--date", "2026-03-01", "--weight", "72")
+    _, out = run(capsys, data_dir, "checkin", "add", "--weight", "99")
+    assert out["warnings"]
+
+
+def test_future_date_error_says_symptoms_were_recorded(capsys, data_dir):
+    code, out = run(
+        capsys, data_dir, "checkin", "add", "--date", "2026-04-02", "--symptoms", "chest_pain"
+    )
+    assert code == 2 and "symptoms recorded" in out["message"]

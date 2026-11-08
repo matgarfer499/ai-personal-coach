@@ -474,7 +474,7 @@ NONE_WORDS = ("none", "no", "nothing", "ninguno", "ninguna", "nada")
 
 def _missing(profile: Profile, name: str) -> bool:
     if name == "emergency_number":  # the region's number counts (coach safety prints it)
-        return safety.flags(profile).emergency_number is None and profile.emergency_number is None
+        return profile.emergency_number is None and regions.emergency_number(profile.region) is None
     return getattr(profile, name) is None
 
 
@@ -516,7 +516,7 @@ def _parse_profile_value(field: str, raw: str) -> Any:
             )
     if field in ("medications", "conditions"):
         items = [item.strip() for item in raw.split(",") if item.strip()]
-        return [] if [fold(i) for i in items] in ([w] for w in NONE_WORDS) else items
+        return [] if len(items) == 1 and fold(items[0]) in NONE_WORDS else items
     if field in CONDITION_TOKENS:
         raise ValueError(
             f"{field!r} is not a profile field: store it as a condition, e.g. "
@@ -690,7 +690,10 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
     today = args.today or date.today()
     when = args.date or today
     if when > today:
-        raise ValueError(f"{when} is after today ({today}); a check-in is for today or a past day")
+        recorded = " (the symptoms recorded: run `coach safety`)" if symptoms else ""
+        raise ValueError(
+            f"{when} is after today ({today}); a check-in is for today or a past day{recorded}"
+        )
     checkin = Checkin(
         date=when,
         weight_kg=args.weight,
@@ -702,7 +705,9 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
         ),
     )
     given = [k for k, v in vars(checkin).items() if k != "date" and v not in (None, "")]
-    jump = weight_jump(checkin, read_checkins(args.data_dir / "checkins.csv"))
+    # Rows dated after today (stored before they were refused) are not weigh-ins to compare with.
+    past = [c for c in read_checkins(args.data_dir / "checkins.csv") if c.date <= today]
+    jump = weight_jump(checkin, past)
     stored = append_checkin(checkin, args.data_dir / "checkins.csv")
     return dataclasses.asdict(stored) | {
         "warnings": [jump] if jump else [],

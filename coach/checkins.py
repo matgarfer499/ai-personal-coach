@@ -19,8 +19,10 @@ RANGES = {
 
 # convention: a typo check, not coaching: nutrition.md "Read the scale with weekly averages"
 # puts normal within-week swings near 0.35% of body weight, so a change of more than 1 kg per
-# day from the nearest other weigh-in is flagged for the client to confirm.
+# day from the nearest other weigh-in is flagged for the client to confirm; the allowance stops
+# growing after a week, so a typo after a long gap is still caught.
 JUMP_KG_PER_DAY = 1.0
+JUMP_MAX_DAYS = 7
 
 
 def weight_jump(checkin: Checkin, earlier: list[Checkin]) -> str | None:
@@ -30,7 +32,7 @@ def weight_jump(checkin: Checkin, earlier: list[Checkin]) -> str | None:
         return None
     near = min(others, key=lambda c: abs((c.date - checkin.date).days))
     change, days = checkin.weight_kg - near.weight_kg, abs((near.date - checkin.date).days)
-    if abs(change) <= JUMP_KG_PER_DAY * days:
+    if abs(change) <= JUMP_KG_PER_DAY * min(days, JUMP_MAX_DAYS):
         return None
     return (
         f"weight {checkin.weight_kg:g} kg is {abs(change):g} kg away from {near.weight_kg:g} kg on "
