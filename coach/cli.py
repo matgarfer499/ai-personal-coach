@@ -69,6 +69,7 @@ from coach.sessions.importers import base as importers  # the package registers 
 from coach.sessions.model import ExerciseSet
 from coach.sessions.store import append, read_sets
 from coach.text import fold, fold_words
+from coach.text import number as say_number
 
 # convention: generic-name endings of common blood-pressure medicines (ACE inhibitors -pril, ARBs
 # -sartan, dihydropyridine calcium channel blockers -dipine), the classes cardio-health.md "Blood
@@ -145,7 +146,9 @@ def cmd_macros(profile: Profile, args: argparse.Namespace) -> dict:
 def cmd_trend(profile: Profile, args: argparse.Namespace) -> dict:
     today = args.today or date.today()
     checkins = [c for c in read_checkins(args.data_dir / "checkins.csv") if c.date <= today]
-    result = trend.weight_trend(weigh_ins(checkins), safety.flags(profile, args.today))
+    result = trend.weight_trend(
+        weigh_ins(checkins), safety.flags(profile, args.today), profile.language
+    )
     recalibrated = None
     if result.status == "ok" and result.can_recalibrate:
         intakes = [
@@ -571,18 +574,28 @@ VEG_FRUIT_NOTE = (
 )
 
 
-def _menu_day(totals: foods.MenuTotals, targets: dict, share: float = 1.0) -> dict:
+def _menu_day(
+    totals: foods.MenuTotals, targets: dict, share: float = 1.0, language: str | None = None
+) -> dict:
     check = menu_check(dataclasses.asdict(totals), targets, share)
     warnings = []
     floor = VEG_FRUIT_MIN_G * share  # a free meal carries its share, as in menu_check
     if totals.veg_fruit_g < floor:
         # With a free meal the planned meals carry their share of the day's 400 g.
-        of_day = f" of the {VEG_FRUIT_MIN_G} g a day" if share < 1 else " a day"
-        warnings.append(
-            f"{round(totals.veg_fruit_g, OUTPUT_DECIMALS):g} g of vegetables and fruit, under the "
-            f'{round(floor, OUTPUT_DECIMALS):g} g{of_day} of nutrition.md "Dietary fibre" for '
-            "the planned meals"
-        )
+        if language == "es":  # docs/glossary.md's Spanish for this warning
+            of_day = f" (su parte de los {VEG_FRUIT_MIN_G} g al día)" if share < 1 else ""
+            warnings.append(
+                f"Ese día las comidas planificadas suman {say_number(totals.veg_fruit_g, language)}"
+                f" g de verdura y fruta, por debajo de los {say_number(floor, language)} g{of_day}"
+                ' de nutrition.md "Dietary fibre"'
+            )
+        else:
+            of_day = f" of the {VEG_FRUIT_MIN_G} g a day" if share < 1 else " a day"
+            warnings.append(
+                f"{round(totals.veg_fruit_g, OUTPUT_DECIMALS):g} g of vegetables and fruit, under "
+                f'the {round(floor, OUTPUT_DECIMALS):g} g{of_day} of nutrition.md "Dietary fibre" '
+                "for the planned meals"
+            )
     return {
         "totals": totals,
         "targets": targets,
@@ -632,7 +645,7 @@ def cmd_menu(profile: Profile, args: argparse.Namespace) -> foods.MenuTotals | d
     totals = foods.menu_totals(items, _menu_table(profile, args))
     if not args.targets:
         return totals
-    return _menu_day(totals, cmd_macros(profile, args))
+    return _menu_day(totals, cmd_macros(profile, args), language=profile.language)
 
 
 def _in_data_dir(args: argparse.Namespace, path: Path) -> Path:
@@ -687,19 +700,26 @@ def cmd_mealplan(profile: Profile, args: argparse.Namespace) -> dict:
     timed: set[str] = set()  # a batch is cooked once: its time is checked on its first day
     for day in days:
         totals = foods.menu_totals(day.items, table)
-        checked.append(_menu_day(totals, targets, day.share))
+        checked.append(_menu_day(totals, targets, day.share, profile.language))
         if day.free_meals:
             checked[-1]["free_meal"] = _free_meal(day, totals, targets)
         if day.date < today:
-            checked[-1]["warnings"].append(f"dated before today ({today})")
+            checked[-1]["warnings"].append(
+                f"fechado antes de hoy ({today})"
+                if profile.language == "es"
+                else f"dated before today ({today})"
+            )
         for dish in (d for m in day.meals for d in m.dishes if not d.eat_out):
             if fold(dish.name) in timed:
                 continue
             timed.add(fold(dish.name))
             if cooking_minutes and dish.minutes and dish.minutes > cooking_minutes:
                 checked[-1]["warnings"].append(
-                    f"{dish.name} takes {dish.minutes} min, over the client's cooking_minutes "
+                    f"{dish.name} lleva {dish.minutes} min, más que tu cooking_minutes "
                     f"({cooking_minutes})"
+                    if profile.language == "es"
+                    else f"{dish.name} takes {dish.minutes} min, over the client's "
+                    f"cooking_minutes ({cooking_minutes})"
                 )
     repeats = mealplan.repeats(days)
     ok = not repeats and not blocking and all(c["ok"] for c in checked)
@@ -1228,6 +1248,12 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
     when = args.date or today
     if when > today:
         recorded = " (the symptoms recorded: run `coach safety`)" if symptoms else ""
+        if profile.language == "es":
+            recorded = " (los síntomas sí se guardaron: ejecuta `coach safety`)" if symptoms else ""
+            raise ValueError(
+                f"{when} es posterior a hoy ({today}); un check-in es de hoy o de un día pasado"
+                f"{recorded}"
+            )
         raise ValueError(
             f"{when} is after today ({today}); a check-in is for today or a past day{recorded}"
         )
@@ -1244,7 +1270,7 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
     given = [k for k, v in vars(checkin).items() if k != "date" and v not in (None, "")]
     # Rows dated after today (stored before they were refused) are not weigh-ins to compare with.
     past = [c for c in read_checkins(args.data_dir / "checkins.csv") if c.date <= today]
-    jump = weight_jump(checkin, past)
+    jump = weight_jump(checkin, past, profile.language)
     stored = append_checkin(checkin, args.data_dir / "checkins.csv")
     possible = [w for w in safety.red_flag_words(args.notes or "") if w not in symptoms]
     out = dataclasses.asdict(stored) | {
@@ -1693,9 +1719,18 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
         raise ValueError(f"no plan at {path}: /plan writes it")
     flags = safety.flags(profile, args.today)
     stale = (
-        "the plan is stale: safety now stops training ("
+        (
+            "El plan anterior ya no vale: hay que parar el entrenamiento hasta que te vea un "
+            "médico ("
+            if profile.language == "es"
+            else "the plan is stale: safety now stops training ("
+        )
         + "; ".join(safety.stop_reasons(flags))
-        + "); run /plan again once a clinician clears it"
+        + (
+            "); vuelve a /plan cuando un médico te dé el alta (`coach clearance add`)"
+            if profile.language == "es"
+            else "); run /plan again once a clinician clears it (`coach clearance add`)"
+        )
         if flags.no_training
         else None
     )

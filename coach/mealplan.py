@@ -483,7 +483,7 @@ def shopping(
         "chains": {
             chain: [
                 {"name": name, UNIT_KEY[unit]: round(total, 1)}
-                | _units(total, unit_g.get((name, unit)))
+                | _units(total, unit_g.get((name, unit)), language)
                 | _packs(total, packs.get((name, unit)))
                 for (name, unit), total in sorted(amounts[chain].items())
             ]
@@ -521,11 +521,18 @@ def _packs(amount: float, size: float | None) -> dict:
     return {"packs": math.ceil(round(amount / size, 2)), "pack_size": size}
 
 
-def _units(grams: float, unit: tuple[str, float] | None) -> dict:
+def _units(grams: float, unit: tuple[str, float] | None, language: str | None = None) -> dict:
     """`units` and `unit_name` for a countable food, else nothing."""
     if unit is None:
         return {}
     name, weight = unit
+    # `unit_name` stays the table's value (the PDF translates it); `unit_label` is for reading.
+    if language == "es":  # the PDF's Spanish unit words (export.LABELS)
+        from coach.export import LABELS  # imported here: the PDF module is optional weight
+
+        label = {"unit_label": LABELS["es"]["unit_names"].get(name, name)}
+    else:
+        label = {}
     # convention: whole units, rounded up (one buys whole eggs); 2 decimals first, so 600 g of
     # 50 g eggs is 12, not 13 from float noise.
-    return {"units": math.ceil(round(grams / weight, 2)), "unit_name": name}
+    return {"units": math.ceil(round(grams / weight, 2)), "unit_name": name} | label
