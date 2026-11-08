@@ -111,7 +111,7 @@ def all_zones(
         return Zones(
             method="no_training",
             zones=[],
-            notes=[r for r in flags.reasons if r.startswith(safety.TRAINING_STOPS)],
+            notes=safety.stop_reasons(flags),
         )
 
     if profile.has_condition(HEART_DISEASE):

@@ -142,7 +142,8 @@ With `no_training` (cardiac symptoms, BP 180+, or the ACSM clearance cell), `coa
 is not ok ("the plan is stale") and `coach plan export` refuses: an old plan.md or PDF that
 prescribes training never outlives a stop. /plan runs again once a clinician clears it. An
 injury whose `exercises` list running (`running`, `correr`, ...) makes `runs add` and `runs
-week` report `paused` with the injury's reason. Under a training stop the BP cap is moot, but a
+week` report `paused` with the injury's reason; `runs week` then gives no next-run cap and
+`runs taper` refuses. Under a training stop the BP cap is moot, but a
 reason stays asking the clinician to check blood pressure at the same visit.
 
 ### `no_training` and the energy estimate

@@ -1928,9 +1928,7 @@ def test_a_training_stop_makes_the_plan_stale_and_refuses_the_export(capsys, dat
     _plan_md(data_dir, macros["kcal"], "false")
     run(capsys, data_dir, "profile", "set", "screening.regular_exercise", "false")
     run(capsys, data_dir, "profile", "set", "screening.symptoms", "no")
-    if stop[0] == "profile":
-        pass
-    else:
+    if stop[0] != "profile":
         run(capsys, data_dir, "profile", "set", "screening.known_disease", "no")
     run(capsys, data_dir, *stop)
     _, out = run(capsys, data_dir, "plan", "check")
@@ -2004,3 +2002,37 @@ def test_bp_reason_survives_a_training_stop_as_a_check_to_ask_for(capsys, data_d
     run(capsys, data_dir, "checkin", "add", "--symptoms", "chest_pain")
     _, flags = run(capsys, data_dir, "safety")
     assert any("blood pressure" in r and "light-to-moderate" not in r for r in flags["reasons"])
+
+
+def test_the_stale_plan_names_only_the_stop_not_the_bp_check(capsys, data_dir):
+    _, macros = run(capsys, data_dir, "macros")
+    _plan_md(data_dir, macros["kcal"], "false")
+    run(capsys, data_dir, "profile", "set", "conditions", "hypertension")
+    run(capsys, data_dir, "checkin", "add", "--symptoms", "chest_pain")
+    _, out = run(capsys, data_dir, "plan", "check")
+    stale = next(p for p in out["problems"] if "stale" in p)
+    assert "same visit" not in stale and "Cardiac" in stale
+
+
+def test_suggested_tokens_stop_once_bp_medication_is_stored(capsys, data_dir):
+    _, out = run(capsys, data_dir, "profile", "set", "medications", "enalapril,bp_medication")
+    assert out["suggested_tokens"] == {}
+
+
+def test_checkin_notes_report_plural_swollen_joints(capsys, data_dir):
+    _, out = run(capsys, data_dir, "checkin", "add", "--notes", "rodillas hinchadas")
+    assert out["possible_injury"]
+
+
+def test_a_running_pause_drops_the_next_run_cap_and_the_taper(capsys, data_dir):
+    run(capsys, data_dir, "runs", "add", "--km", "8", "--minutes", "48", "--date", "2026-03-30")
+    run(capsys, data_dir, "injury", "add", "rodilla", "--exercises", "running")
+    _, week = run(capsys, data_dir, "runs", "week")
+    assert week["paused"] and week["long_run_cap_km"] is None
+    code, out = run(capsys, data_dir, "runs", "taper", "--race-date", "2026-05-01")
+    assert code == 2 and "running is paused" in out["message"]
+
+
+def test_plain_fatigue_is_not_the_cardiac_token(capsys, data_dir):
+    code, out = run(capsys, data_dir, "checkin", "add", "--symptoms", "fatigue")
+    assert code == 2 and "unusual_fatigue" in out["message"]

@@ -41,11 +41,9 @@ INJURY = 'recovery-habits.md: "Some pain during exercise is acceptable in chroni
 CARDIAC = 'recovery-habits.md: "Cardiac warning symptoms: stop and refer"'
 BP = 'recovery-habits.md: "Resting BP thresholds to defer or refer"'
 UNDER_18 = 'nutrition.md: "Under-18s"'
-KNEE = 'recovery-habits.md: "Knee injury: signs of ligament or meniscus damage"'
 # The "clearance before any exercise" cell: not exercising regularly, or not answered.
 ACSM_STOP = (f"{ACSM}: not exercising regularly", f"{ACSM}: regular exercise not answered")
-# The rules whose reasons explain `no_training` and `review_before_vigorous`, respectively.
-TRAINING_STOPS = (CARDIAC, BP, ACSM)
+# The rules whose reasons explain `review_before_vigorous`.
 VIGOROUS_CAPS = (PARQ_THRESHOLDS, ACSM)
 
 # nutrition.md: "Under-18s" and recovery-habits.md "Adolescents: no deficits": under-18s are
@@ -131,19 +129,23 @@ SYMPTOM_SYNONYMS = {
     "fainting": "faint",
     "heart_racing": "palpitations",
     "swollen_ankles": "ankle_swelling",
-    "fatigue": "unusual_fatigue",
 }
 # convention: words for a swollen joint in free-text notes (es and en). A hit is a prompt to ask
-# about an injury (KNEE: swelling after a knee injury means stop loading and get it assessed),
+# about an injury (recovery-habits.md: "Knee injury: signs of ligament or meniscus damage":
+# swelling after a knee injury means stop loading and get it assessed),
 # never a cardiac token: ankle swelling without an injury is the cardiac one.
 INJURY_WORDS = (
     "swollen",
     "swelling",
     "hinchada",
     "hinchado",
+    "hinchadas",
+    "hinchados",
     "hinchazon",
     "inflamada",
     "inflamado",
+    "inflamadas",
+    "inflamados",
 )
 # convention: the names under an injury's `exercises` that pause running (es and en).
 RUN_NAMES = ("running", "run", "runs", "correr", "carrera", "carreras", "trotar")
@@ -297,7 +299,6 @@ def flags(profile: Profile, today: date | None = None) -> SafetyFlags:
         if out.cap_moderate:
             moot += [r for r in out.reasons if r.startswith(BP)]
             # The cap is moot, the GP check is not: ask for it at the same visit.
-            screening = profile.screening
             reading = (
                 f"{screening.get('bp_systolic', '?')}/{screening.get('bp_diastolic', '?')}"
                 if "bp_systolic" in screening or "bp_diastolic" in screening
@@ -319,11 +320,20 @@ def flags(profile: Profile, today: date | None = None) -> SafetyFlags:
     return out
 
 
+def _is_stop(reason: str) -> bool:
+    """A reason that stops training: cardiac, BP 180+ or the ACSM clearance cell."""
+    return NO_TRAINING_NO_DEFICIT in reason or reason.startswith(ACSM_STOP)
+
+
+def stop_reasons(out: SafetyFlags) -> list[str]:
+    """The reasons behind `no_training` (not the BP check asked for at the same visit)."""
+    return [r for r in out.reasons if _is_stop(r)]
+
+
 def _priority(reason: str) -> tuple[bool, int]:
-    # A training stop (cardiac, BP 180+ or the ACSM clearance cell) goes first whatever rule set it.
+    # A training stop goes first whatever rule set it.
     rank = next((i for i, rule in enumerate(PRIORITY) if reason.startswith(rule)), len(PRIORITY))
-    stop = NO_TRAINING_NO_DEFICIT in reason or reason.startswith(ACSM_STOP)
-    return not stop, rank
+    return not _is_stop(reason), rank
 
 
 def _has_word(folded: str, words) -> bool:

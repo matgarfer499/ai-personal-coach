@@ -383,8 +383,11 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
     if args.runs_cmd == "taper":
         flags = safety.flags(profile, args.today)
         if flags.no_training:
-            stops = [r for r in flags.reasons if r.startswith(safety.TRAINING_STOPS)]
+            stops = safety.stop_reasons(flags)
             raise ValueError("no taper while training is on hold: " + "; ".join(stops))
+        paused = safety.running_paused(profile)
+        if paused:
+            raise ValueError("no taper while running is paused: " + "; ".join(paused))
         return runs.taper(args.race_date, today, logged)
     if args.runs_cmd == "add":
         when = args.date or today
@@ -410,7 +413,11 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
     shown = zones.hr_zones(profile, flags, hr_rest, hr_max, args.today)
     every = runs.zones_to_describe(profile, flags, hr_rest, hr_max, args.today)
     week = runs.week(logged, end, shown, every, today, flags.hold_progression)
-    return week | {"paused": safety.running_paused(profile)}
+    paused = safety.running_paused(profile)
+    if paused:
+        # An injury that lists running: no next run to cap until it is assessed or cleared.
+        week = week | {"long_run_cap_km": None}
+    return week | {"paused": paused}
 
 
 def menu_check(totals: dict, targets: dict, share: float = 1.0) -> dict:
@@ -807,7 +814,9 @@ def cmd_profile(profile: Profile, args: argparse.Namespace) -> dict:
         },
         "unrecognised_note": "recorded as given; no calculation depends on these items",
         "suggested_tokens": {
-            m: BP_MEDICATION for m in profile.medications if fold(m).endswith(BP_DRUG_ENDINGS)
+            m: BP_MEDICATION
+            for m in profile.medications
+            if fold(m).endswith(BP_DRUG_ENDINGS) and BP_MEDICATION not in profile.medications
         },
     }
 
@@ -1324,7 +1333,7 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
     flags = safety.flags(profile, args.today)
     stale = (
         "the plan is stale: safety now stops training ("
-        + "; ".join(r for r in flags.reasons if r.startswith(safety.TRAINING_STOPS))
+        + "; ".join(safety.stop_reasons(flags))
         + "); run /plan again once a clinician clears it"
         if flags.no_training
         else None
