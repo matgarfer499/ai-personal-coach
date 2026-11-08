@@ -184,9 +184,16 @@ Ask about one step per message. Store each answer as soon as you have it with
    run CSV, or one `coach runs add --date D --km K --minutes M` per run they remember with
    figures) so `coach runs week` has the baseline the single-run spike rule needs. Their runs per
    week count as training days for `activity_level` below.
-   `experience` (convention, listed in `docs/conventions.md`; no rule defines the levels): the
-   levels describe lifting only, also for runners; a runner who does not lift is `novice`, and
-   their running experience is the weekly km and runs above, not this field. Ask
+   Then ask whether a goal race is coming. If so, store its date, distance and the finish time
+   they aim for: `coach profile set race_date YYYY-MM-DD`, `coach profile set race_km KM`,
+   `coach profile set race_goal_time H:MM:SS` (skip the time if they have none). A recent race
+   result is not stored: /plan asks for it and passes it to `coach runs plan --recent-km K
+   --recent-time T` for a predicted time (`coach knowledge section cardio-health
+   "Half-marathon goal pace from a recent race"`).
+   `experience` (convention, listed in `docs/conventions.md`; no rule defines the levels): it
+   describes lifting. For a runner who does not lift, say so in one line ("this one is about
+   weights; your running experience is the weekly km and runs you just gave me") and store
+   `novice`: /plan reads running experience from the logged runs, never from this field. Ask
    how many months they have trained consistently (about 2 or more sessions a week), then store
    `novice` for under 12 months; `intermediate` for 12 months or more while they still add load
    or reps most months; `advanced` for 12 months or more once progress has slowed to a plateau.

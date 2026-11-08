@@ -2226,7 +2226,7 @@ def test_race_in_the_profile_feeds_taper_and_plan(capsys, data_dir):
     code, out = run(capsys, data_dir, "runs", "taper")
     assert code == 0 and out["race_date"] == "2026-04-12"
     code, plan = run(capsys, data_dir, "runs", "plan")
-    assert code == 0 and plan["race"] == {"date": "2026-04-12", "km": 21.1}
+    assert code == 0 and plan["race"]["date"] == "2026-04-12" and plan["race"]["km"] == 21.1
     assert plan["easy_share_min"] == 0.7 and plan["long_run_cap_km"] == pytest.approx(13.2)
     assert plan["taper"]["in_window"] is True and plan["weekly_km_max"] is None
 

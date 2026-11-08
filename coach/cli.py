@@ -61,7 +61,9 @@ from coach.profile import (
     SCREENING_KEYS,
     Profile,
     ProfileIncomplete,
+    format_duration,
     load_profile,
+    parse_duration,
     save_profile,
 )
 from coach.regioncode import NO_REGION, real_region
@@ -189,6 +191,7 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
     if args.strength_cmd == "e1rm":
         return {"e1rm": strength.e1rm(args.weight, args.reps, args.rir)}
     if args.strength_cmd == "deload":
+        _refuse_deload_on_hold(profile, args)
         signs = {s.strip() for s in args.signs.split(",") if s.strip()}
         return {"deload": strength.deload(signs)}
     if args.strength_cmd == "alias":
@@ -437,6 +440,25 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
         return runs.taper(_race_date(profile, args), today, logged)
     if args.runs_cmd == "plan":
         return _runs_plan(profile, args, today, logged)
+    if args.runs_cmd == "deload":
+        refusal = _taper_refusal(profile, args, "deload")
+        if refusal:
+            raise ValueError(refusal)
+        signs = {s.strip() for s in args.signs.split(",") if s.strip()}
+        lighter = strength.deload(signs)  # the same signs, thresholds and 30-50% cut as lifting
+        # the last logged week, as `runs week` and `runs plan` count last_week_km
+        end = max((r.date for r in logged), default=today)
+        last = _runs_week(profile, args, today, logged, end)["km"]
+        return {
+            "deload": lighter is not None,
+            "last_week_km": last,
+            "deload_week_km": [round(last * (1 - cut), 1) for cut in lighter.volume_cut[::-1]]
+            if lighter
+            else None,
+            "extra_rest_days": lighter.extra_rest_days if lighter else None,
+            "keep": ["the intensity of the runs you keep", "easy runs easy"] if lighter else [],
+            "rule": runs.RUN_DELOAD_RULE,
+        }
     if args.runs_cmd == "add":
         when = args.date or today
         if when > today:
@@ -457,6 +479,45 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
     # Default: the 7 days ending on the last logged run, the latest week with data.
     end = args.week_ending or max((r.date for r in logged), default=today)
     return _runs_week(profile, args, today, logged, end)
+
+
+def _refuse_deload_on_hold(profile: Profile, args: argparse.Namespace) -> None:
+    flags = safety.flags(profile, args.today)
+    if flags.no_training:
+        raise ValueError(
+            "no deload while training is on hold: " + "; ".join(safety.stop_reasons(flags))
+        )
+
+
+def _race(profile: Profile, args: argparse.Namespace) -> dict | None:
+    """The race, its goal pace, and a Riegel prediction from a recent race when one is given."""
+    km = profile.race_km
+    recent_km, recent_time = getattr(args, "recent_km", None), getattr(args, "recent_time", None)
+    if (recent_km is None) != (recent_time is None):
+        raise ValueError("give --recent-km and --recent-time together")
+    if recent_km is not None and not (profile.race_date and km):
+        raise ValueError("a recent race predicts the goal race: store race_date and race_km first")
+    if recent_km is not None and not 0 < recent_km < km:
+        raise ValueError(
+            f"--recent-km must be a race shorter than race_km ({km:g}): {runs.RIEGEL_RULE} "
+            "predicts from a recent shorter race"
+        )
+    if not profile.race_date:
+        return None
+    goal = parse_duration(profile.race_goal_time) if profile.race_goal_time else None
+    out = {
+        "date": profile.race_date,
+        "km": km,
+        "goal_time": profile.race_goal_time,
+        "goal_pace_per_km": format_duration(goal / km) if goal and km else None,
+        "predicted_time": None,
+        "predicted_pace_per_km": None,
+    }
+    if recent_km is not None and km <= runs.RIEGEL_MAX_KM:
+        predicted = runs.riegel(parse_duration(recent_time), recent_km, km)
+        out["predicted_time"] = format_duration(predicted)
+        out["predicted_pace_per_km"] = format_duration(predicted / km)
+    return out
 
 
 def _runs_week(
@@ -481,12 +542,12 @@ def _race_date(profile: Profile, args: argparse.Namespace) -> date:
     return race
 
 
-def _taper_refusal(profile: Profile, args: argparse.Namespace) -> str | None:
+def _taper_refusal(profile: Profile, args: argparse.Namespace, what: str = "taper") -> str | None:
     flags = safety.flags(profile, args.today)
     if flags.no_training:
-        return "no taper while training is on hold: " + "; ".join(safety.stop_reasons(flags))
+        return f"no {what} while training is on hold: " + "; ".join(safety.stop_reasons(flags))
     if safety.running_unassessed(profile):
-        return "no taper while running is paused: " + "; ".join(safety.running_paused(profile))
+        return f"no {what} while running is paused: " + "; ".join(safety.running_paused(profile))
     return None
 
 
@@ -498,7 +559,7 @@ def _runs_plan(profile: Profile, args: argparse.Namespace, today: date, logged: 
     hold = safety.flags(profile, args.today).hold_progression or bool(week["paused"])
     novice = profile.experience == "novice"
     out = {
-        "race": {"date": profile.race_date, "km": profile.race_km} if profile.race_date else None,
+        "race": _race(profile, args),
         "last_week_km": week["km"],
         "long_run_cap_km": week["long_run_cap_km"],
         # novices (the rule gives experienced runners no weekly cap), or anyone on a hold: no rise
@@ -513,6 +574,16 @@ def _runs_plan(profile: Profile, args: argparse.Namespace, today: date, logged: 
             f"about {runs.EASY_SHARE_MIN:.0%} or more of the week's running easy",
         ],
     }
+    if getattr(args, "recent_km", None) and profile.race_km > runs.RIEGEL_MAX_KM:
+        out["notes"].append(
+            f"{runs.RIEGEL_RULE}: no prediction for a race longer than a half marathon (the "
+            "formula comes out too fast for a marathon)"
+        )
+    if out["race"] and out["race"]["predicted_time"]:
+        out["notes"].append(
+            f"{runs.RIEGEL_RULE}: predicted_time is an estimate from the recent race, not a "
+            "guarantee"
+        )
     if profile.race_date and profile.race_date >= today:
         refusal = _taper_refusal(profile, args)
         out["taper"] = None if refusal else runs.taper(profile.race_date, today, logged)
@@ -819,6 +890,7 @@ _PROFILE_TYPES = {
     "birth_date": date.fromisoformat,
     "race_date": date.fromisoformat,
     "race_km": float,
+    "race_goal_time": str,
     "height_cm": float,
     "weight_kg": float,
     "pal_override": float,
@@ -867,9 +939,15 @@ def _parse_profile_value(field: str, raw: str) -> Any:
                 raise ValueError(f"{field} must be a whole number, not {raw!r}")
             return int(raw)
         return raw
-    if field in ("pal_override", "hr_max", "hr_rest", "sport", "race_date", "race_km") and (
-        raw.lower() == "none"
-    ):
+    if field in (
+        "pal_override",
+        "hr_max",
+        "hr_rest",
+        "sport",
+        "race_date",
+        "race_km",
+        "race_goal_time",
+    ) and (raw.lower() == "none"):
         return None
     if field == "injuries":
         raise ValueError("injuries are set with `coach injury add` and `coach injury clear`")
@@ -1978,9 +2056,17 @@ def build_parser() -> argparse.ArgumentParser:
     runs_taper.add_argument(
         "--race-date", type=date.fromisoformat, default=None, help="default: profile race_date"
     )
-    runs_sub.add_parser(
+    runs_plan = runs_sub.add_parser(
         "plan", parents=[json_flag], help="next week's limits: long run, weekly km, easy share"
     )
+    runs_plan.add_argument("--recent-km", type=float, default=None, help="a recent race's km")
+    runs_plan.add_argument(
+        "--recent-time", default=None, help="its finish time, H:MM:SS or MM:SS (with --recent-km)"
+    )
+    runs_deload = runs_sub.add_parser(
+        "deload", parents=[json_flag], help="a lighter week in km, from the same signs as lifting"
+    )
+    runs_deload.add_argument("--signs", required=True, help="as `coach strength deload --signs`")
 
     menu_cmd = add("menu", cmd_menu, "macro totals for foods and grams")
     menu_cmd.add_argument("--item", action="append", required=True, help='"NAME=GRAMS", repeat')
