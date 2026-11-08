@@ -2217,3 +2217,73 @@ def test_a_low_energy_label_within_20_kcal_is_not_refused(capsys, data_dir):
     args[9:17] = coffee
     code, out = run(capsys, data_dir, *args)
     assert code == 0 and out["warnings"]
+
+
+def test_race_in_the_profile_feeds_taper_and_plan(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "race_date", "2026-04-12")
+    run(capsys, data_dir, "profile", "set", "race_km", "21.1")
+    run(capsys, data_dir, "runs", "add", "--km", "12", "--minutes", "70", "--date", "2026-03-29")
+    code, out = run(capsys, data_dir, "runs", "taper")
+    assert code == 0 and out["race_date"] == "2026-04-12"
+    code, plan = run(capsys, data_dir, "runs", "plan")
+    assert code == 0 and plan["race"] == {"date": "2026-04-12", "km": 21.1}
+    assert plan["easy_share_min"] == 0.7 and plan["long_run_cap_km"] == pytest.approx(13.2)
+    assert plan["taper"]["in_window"] is True and plan["weekly_km_max"] is None
+
+
+def test_runs_taper_without_a_race_is_a_clear_error(capsys, data_dir):
+    code, out = run(capsys, data_dir, "runs", "taper")
+    assert code == 2 and "race_date" in out["message"]
+
+
+def test_runs_plan_prints_no_taper_while_running_is_paused(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "race_date", "2026-04-12")
+    run(capsys, data_dir, "runs", "add", "--km", "8", "--minutes", "48", "--date", "2026-03-30")
+    run(capsys, data_dir, "injury", "add", "rodilla", "--exercises", "running")
+    code, plan = run(capsys, data_dir, "runs", "plan")
+    assert code == 0 and plan["taper"] is None
+    assert any("running is paused" in n for n in plan["notes"])
+
+
+def test_runs_plan_holds_a_novice_weekly_km_while_progression_is_on_hold(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "experience", "novice")
+    run(capsys, data_dir, "runs", "add", "--km", "8", "--minutes", "48", "--date", "2026-03-30")
+    _, plan = run(capsys, data_dir, "runs", "plan")
+    assert plan["weekly_km_max"] == pytest.approx(10.4)
+    run(
+        capsys,
+        data_dir,
+        "injury",
+        "add",
+        "rodilla",
+        "--professional",
+        "fisio",
+        "--exercises",
+        "running",
+    )
+    _, plan = run(capsys, data_dir, "runs", "plan")
+    assert plan["weekly_km_max"] == 8 and plan["long_run_cap_km"] == 8
+
+
+def test_race_km_must_be_positive(capsys, data_dir):
+    code, out = run(capsys, data_dir, "profile", "set", "race_km", "-5")
+    assert code == 2 and "race_km must be above 0" in out["message"]
+
+
+@pytest.mark.parametrize("value", ["inf", "nan"])
+def test_profile_numbers_must_be_finite(capsys, data_dir, value):
+    code, out = run(capsys, data_dir, "profile", "set", "height_cm", value)
+    assert code == 2 and "height_cm" in out["message"]
+
+
+def test_runs_plan_hold_note_is_dropped_inside_the_taper(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "experience", "novice")
+    run(capsys, data_dir, "profile", "set", "race_date", "2026-04-12")
+    run(capsys, data_dir, "runs", "add", "--km", "8", "--minutes", "48", "--date", "2026-03-30")
+    run(
+        capsys, data_dir, "injury", "add", "rodilla", "--professional", "fisio",
+        "--exercises", "running",
+    )  # fmt: skip
+    _, plan = run(capsys, data_dir, "runs", "plan")
+    assert plan["taper"]["in_window"] is True and plan["weekly_km_max"] is None
+    assert not any("weekly km stay at last_week_km" in n for n in plan["notes"])

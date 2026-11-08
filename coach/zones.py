@@ -172,6 +172,10 @@ def all_zones(
         # %HRmax has no floor for very light: print only its top ("under 107"), not "0 bpm".
         floor = None if low == 0 else round(low)
         zones.append(Zone(name, band["rpe"], TALK_TEST[name], (floor, round(high))))
+    # convention: printed bands are whole bpm, so each zone runs up to one below the next one's
+    # floor; rounding the rule's percentages separately left a 1-2 bpm gap between bands.
+    for zone, above in zip(zones, zones[1:], strict=False):
+        zone.bpm = (zone.bpm[0], above.bpm[0] - 1)
     return Zones(
         method="hrr" if hr_rest is not None else "hrmax",
         zones=zones,
@@ -183,9 +187,9 @@ def all_zones(
 
 
 def zone_for(zones: list[Zone], hr: float) -> Zone | None:
-    """The bpm zone a heart rate falls in: the highest zone starting at or below it, so the
-    1 bpm gaps rounding leaves between bands, and rates above HRmax, still land in one. The
-    lowest zone has no floor here: an average under resting HR is still very light."""
+    """The bpm zone a heart rate falls in: the highest zone starting at or below it, so rates
+    above HRmax still land in one. The lowest zone has no floor here: an average under resting
+    HR is still very light."""
     bpm = [z for z in zones if z.bpm]
     return next((z for z in reversed(bpm[1:]) if z.bpm[0] <= hr), bpm[0] if bpm else None)
 

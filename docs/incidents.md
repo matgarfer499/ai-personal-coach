@@ -64,3 +64,7 @@ One line per bug that reached main: what broke, and which review layer should ha
   day with it, so a 202 g day read ok against a 155 g top. Layer: code review (a target computed
   and never read).
 - 2026-11-08 (beta2 p4-sara-I6): rating a dish in another case renamed it. Layer: tests.
+- 2026-11-08 (beta2 p6-james-I2): the taper reference was the single week before the taper, so
+  it moved with the race date onto a spike week. Layer: tests (one race date only).
+- 2026-11-08 (beta2, a panel opinion confirmed): printed HR zones left 1-2 bpm in no zone.
+  Layer: tests (zone tops were checked one by one, never against the next floor).

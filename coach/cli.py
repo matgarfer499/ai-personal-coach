@@ -419,14 +419,12 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
     today = args.today or date.today()
     logged = [r for r in runs.read_runs(path) if r.date <= today]
     if args.runs_cmd == "taper":
-        flags = safety.flags(profile, args.today)
-        if flags.no_training:
-            stops = safety.stop_reasons(flags)
-            raise ValueError("no taper while training is on hold: " + "; ".join(stops))
-        if safety.running_unassessed(profile):
-            paused = safety.running_paused(profile)
-            raise ValueError("no taper while running is paused: " + "; ".join(paused))
-        return runs.taper(args.race_date, today, logged)
+        refusal = _taper_refusal(profile, args)
+        if refusal:
+            raise ValueError(refusal)
+        return runs.taper(_race_date(profile, args), today, logged)
+    if args.runs_cmd == "plan":
+        return _runs_plan(profile, args, today, logged)
     if args.runs_cmd == "add":
         when = args.date or today
         if when > today:
@@ -446,6 +444,12 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
         }
     # Default: the 7 days ending on the last logged run, the latest week with data.
     end = args.week_ending or max((r.date for r in logged), default=today)
+    return _runs_week(profile, args, today, logged, end)
+
+
+def _runs_week(
+    profile: Profile, args: argparse.Namespace, today: date, logged: list, end: date
+) -> dict:
     flags = safety.flags(profile, args.today)
     hr_rest, hr_max = _heart_rates(profile, args)
     shown = zones.hr_zones(profile, flags, hr_rest, hr_max, args.today)
@@ -456,6 +460,58 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
     hold = flags.hold_progression or bool(paused)
     week = runs.week(logged, end, shown, every, today, hold, safety.running_unassessed(profile))
     return week | {"paused": paused}
+
+
+def _race_date(profile: Profile, args: argparse.Namespace) -> date:
+    race = getattr(args, "race_date", None) or profile.race_date
+    if race is None:
+        raise ValueError("no race date: give --race-date or `coach profile set race_date D`")
+    return race
+
+
+def _taper_refusal(profile: Profile, args: argparse.Namespace) -> str | None:
+    flags = safety.flags(profile, args.today)
+    if flags.no_training:
+        return "no taper while training is on hold: " + "; ".join(safety.stop_reasons(flags))
+    if safety.running_unassessed(profile):
+        return "no taper while running is paused: " + "; ".join(safety.running_paused(profile))
+    return None
+
+
+def _runs_plan(profile: Profile, args: argparse.Namespace, today: date, logged: list) -> dict:
+    """Next week's limits from the rules that exist; a full build-up plan has no rule
+    (docs/dropped-claims.md D268), so the skill writes the runs within these limits."""
+    week = _runs_week(profile, args, today, logged, max((r.date for r in logged), default=today))
+    # Safety hold or a running injury: no added load, so weekly km stay where they are.
+    hold = safety.flags(profile, args.today).hold_progression or bool(week["paused"])
+    novice = profile.experience == "novice"
+    out = {
+        "race": {"date": profile.race_date, "km": profile.race_km} if profile.race_date else None,
+        "last_week_km": week["km"],
+        "long_run_cap_km": week["long_run_cap_km"],
+        # novices (the rule gives experienced runners no weekly cap), or anyone on a hold: no rise
+        "weekly_km_max": week["km"] * (1 if hold else 1 + runs.NOVICE_WEEKLY_INCREASE)
+        if (novice or hold) and week["km"] and week["long_run_cap_km"] is not None
+        else None,
+        "easy_share_min": runs.EASY_SHARE_MIN,
+        "paused": week["paused"],
+        "notes": [
+            f"{runs.LOAD_RULE}: lengthen the long run in small steps, up to long_run_cap_km",
+            'cardio-health.md: "Keep most running easy: pyramidal or polarized intensity": '
+            f"about {runs.EASY_SHARE_MIN:.0%} or more of the week's running easy",
+        ],
+    }
+    if profile.race_date and profile.race_date >= today:
+        refusal = _taper_refusal(profile, args)
+        out["taper"] = None if refusal else runs.taper(profile.race_date, today, logged)
+        if refusal:
+            out["notes"].append(refusal)
+        elif out["taper"]["in_window"]:
+            # Inside the taper the cut decides weekly km; a growth cap beside it would conflict.
+            out["weekly_km_max"] = None
+    if hold and out["weekly_km_max"] is not None:
+        out["notes"].append("progression is on hold (coach safety): weekly km stay at last_week_km")
+    return out
 
 
 def menu_check(totals: dict, targets: dict, share: float = 1.0) -> dict:
@@ -730,6 +786,8 @@ PROFILE_REQUIRED = [
 ]
 _PROFILE_TYPES = {
     "birth_date": date.fromisoformat,
+    "race_date": date.fromisoformat,
+    "race_km": float,
     "height_cm": float,
     "weight_kg": float,
     "pal_override": float,
@@ -775,7 +833,9 @@ def _parse_profile_value(field: str, raw: str) -> Any:
                 raise ValueError(f"{field} must be a whole number, not {raw!r}")
             return int(raw)
         return raw
-    if field in ("pal_override", "hr_max", "hr_rest", "sport") and raw.lower() == "none":
+    if field in ("pal_override", "hr_max", "hr_rest", "sport", "race_date", "race_km") and (
+        raw.lower() == "none"
+    ):
         return None
     if field == "injuries":
         raise ValueError("injuries are set with `coach injury add` and `coach injury clear`")
@@ -1636,7 +1696,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--week-ending", type=date.fromisoformat, default=None, help="default: last logged run"
     )
     runs_taper = runs_sub.add_parser("taper", parents=[json_flag], help="taper before a race")
-    runs_taper.add_argument("--race-date", type=date.fromisoformat, required=True)
+    runs_taper.add_argument(
+        "--race-date", type=date.fromisoformat, default=None, help="default: profile race_date"
+    )
+    runs_sub.add_parser(
+        "plan", parents=[json_flag], help="next week's limits: long run, weekly km, easy share"
+    )
 
     menu_cmd = add("menu", cmd_menu, "macro totals for foods and grams")
     menu_cmd.add_argument("--item", action="append", required=True, help='"NAME=GRAMS", repeat')

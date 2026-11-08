@@ -10,6 +10,7 @@ the record and ignored by the code.
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import asdict, dataclass, field, fields
 from datetime import date
@@ -161,9 +162,10 @@ def check_pal(value: float, label: str = "PAL") -> None:
         )
 
 
-NUMBERS = ("height_cm", "weight_kg", "pal_override")
+NUMBERS = ("height_cm", "weight_kg", "pal_override", "race_km")
 TYPES = {
     "birth_date": date,
+    "race_date": date,
     "research_reminder_months": int,
     "hr_max": int,
     "hr_rest": int,
@@ -198,6 +200,10 @@ class Profile:
     # measured morning resting HR, used by `coach zones` instead of the formula.
     hr_max: int | None = None
     hr_rest: int | None = None
+    # A goal race (cardio-health.md: "Taper before a goal race"): `coach runs taper` and
+    # `coach runs plan` read it.
+    race_date: date | None = None
+    race_km: float | None = None
     language: str | None = None
     region: str | None = None
     emergency_number: str | None = None  # the client's own; else their region's (coach safety)
@@ -240,7 +246,8 @@ def _validate(data: dict) -> None:
         raise ValueError(f"unknown profile keys: {', '.join(unknown)}")
     for name in NUMBERS:
         value = data.get(name)
-        if value is not None and (isinstance(value, bool) or not isinstance(value, int | float)):
+        bad = isinstance(value, bool) or not isinstance(value, int | float)
+        if value is not None and (bad or not math.isfinite(value)):
             raise ValueError(f"{name} must be a number, not {value!r}")
     pal = data.get("pal_override")
     if pal is not None:
@@ -250,6 +257,8 @@ def _validate(data: dict) -> None:
         if value is not None and (isinstance(value, bool) or not isinstance(value, kind)):
             hint = "a date YYYY-MM-DD, unquoted" if kind is date else kind.__name__
             raise ValueError(f"{name} must be {hint}, not {value!r}")
+    if data.get("race_km") is not None and not data["race_km"] > 0:
+        raise ValueError(f"race_km must be above 0, not {data['race_km']!r}")
     for name, limits in (("hr_max", HR_MAX_RANGE), ("hr_rest", HR_REST_RANGE)):
         value = data.get(name)
         if value is not None and not limits[0] <= value <= limits[1]:
