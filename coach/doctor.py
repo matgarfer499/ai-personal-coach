@@ -53,6 +53,21 @@ def _profile(data_dir: Path) -> tuple[bool, str, str]:
     return not missing, "missing: " + ", ".join(missing) if missing else "complete", SETUP_FIX
 
 
+def text(report: dict) -> str:
+    """The report as a list a person reads; `coach doctor --json` gives the JSON."""
+    lines = [
+        f"{'ok  ' if c['ok'] else 'FIX '} {c['check']}: {c['detail']}"
+        + ("" if c["ok"] else f"\n      -> {c['fix']}")
+        for c in report["checks"]
+    ]
+    profile = next(c for c in report["checks"] if c["check"] == "profile")
+    if report["ok"]:
+        lines.append("All good.")
+    elif not profile["ok"]:
+        lines.append("A missing or incomplete profile is expected before /setup finishes.")
+    return "\n".join(lines) + "\n"
+
+
 def run(data_dir: Path) -> dict:
     data_dir = Path(data_dir)
     python = sys.version_info[:2]

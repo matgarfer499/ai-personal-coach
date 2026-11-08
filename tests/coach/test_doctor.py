@@ -63,3 +63,23 @@ def test_broken_profile_fix_names_the_file_not_setup(tmp_path):
     (tmp_path / "profile.yaml").write_text("sex: [", encoding="utf-8")
     profile = _by_name(doctor.run(tmp_path))["profile"]
     assert profile["ok"] is False and "profile.yaml" in profile["fix"]
+
+
+# Beta 3 p7-nuevo-N1: a readable list by default, JSON with --json, and ok:false explained.
+def test_doctor_prints_a_readable_list_by_default(tmp_path, capsys):
+    from coach.cli import main
+
+    assert main(["--data-dir", str(tmp_path), "doctor"]) == 0
+    out = capsys.readouterr().out
+    assert not out.lstrip().startswith("{")
+    assert "profile" in out and "/setup" in out
+    assert "expected before /setup" in out
+
+
+def test_doctor_json_stays_json(tmp_path, capsys):
+    import json
+
+    from coach.cli import main
+
+    assert main(["--data-dir", str(tmp_path), "doctor", "--json"]) == 0
+    assert json.loads(capsys.readouterr().out)["ok"] is False

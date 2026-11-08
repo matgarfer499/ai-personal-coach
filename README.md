@@ -37,7 +37,8 @@ rule in `knowledge/` with its sources.
 ## Why this one
 
 - **Every number from code.** Calories, macros, zones, loads and the weight trend come from the
-  `coach` CLI (`uv run python -m coach ... --json`), with tests, not from the model.
+  `coach` CLI (`uv run python -m coach ... --json`; `--json` goes after the subcommand, as in
+  `coach energy --json`), with tests, not from the model.
 - **Every rule graded and sourced.** Each rule in `knowledge/` is graded strong, moderate or
   emerging and cites the studies or guidelines it rests on; what could not be confirmed is listed in
   [`docs/dropped-claims.md`](docs/dropped-claims.md).
@@ -67,7 +68,16 @@ You need a terminal (Terminal on macOS, PowerShell on Windows); new to it? See t
    Python 3.12 and the coach's libraries for you, and [Git](https://git-scm.com/downloads) if
    `git --version` says it is missing (on Windows, Git for Windows also helps Claude Code).
 3. **Make your own private copy** before adding anything about you: on GitHub, "Use this
-   template" and choose Private (see [Your data stays private](#your-data-stays-private)).
+   template" and choose Private (see [Your data stays private](#your-data-stays-private)). No
+   GitHub account? Download it and keep it on your computer only:
+
+   ```
+   git clone https://github.com/matgarfer499/ai-personal-coach.git ai-personal-coach
+   cd ai-personal-coach
+   git remote remove origin
+   ```
+
+   With no `origin`, nothing you add can be pushed anywhere (then skip the clone in step 4).
 4. **Download it and install the coach**, using your copy's address:
 
    ```
@@ -78,7 +88,9 @@ You need a terminal (Terminal on macOS, PowerShell on Windows); new to it? See t
    ```
 
    `coach doctor` checks Python, the PDF extra, the data folder, uv and Claude Code, and prints
-   the command that fixes anything missing.
+   one line per check with the command that fixes anything missing (`--json` for the same as
+   JSON). On a fresh install the `profile` line says `FIX ... no profile yet`: that is expected
+   until `/setup` has run.
 5. **Start the coach**: run `claude` in that folder. At Claude's prompt (where you type to it),
    type `/setup` and press Enter. It asks one question per message, in your language, for about
    15 minutes: you, three health questions from the ACSM preparticipation method (regular
@@ -86,6 +98,12 @@ You need a terminal (Terminal on macOS, PowerShell on Windows); new to it? See t
    eating-disorder prompt, medication and blood pressure. The PAR-Q+ questionnaire is offered by
    link as an optional extra ([forms/README.md](forms/README.md)). Then it gives your starting
    targets, and `/plan` writes your first plan.
+
+   Claude Code asks once whether you trust the folder, then asks before running a command or
+   editing a file (the coach runs `uv run python -m coach ...` and writes to `data/`). Approve
+   them, or choose "don't ask again" for `uv run python -m coach` commands in this folder; that
+   choice is yours to make, so the repo ships no permission settings
+   ([permissions](https://code.claude.com/docs/en/permissions)).
 
 Words such as RIR, RPE or bpm are explained the first time they come up, from
 [`docs/glossary.md`](docs/glossary.md) (Spanish and English).

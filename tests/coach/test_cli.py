@@ -2322,3 +2322,10 @@ def test_profile_set_screening_symptoms_accepts_synonyms(capsys, data_dir):
     code, _ = run(capsys, data_dir, "profile", "set", "screening.symptoms", "chest_tightness")
     assert code == 0
     assert load_profile(data_dir / "profile.yaml").screening["symptoms"] == ["chest_pain"]
+
+
+# Beta 3 p4-sara-N11, p4-sara-I11 (b1): `--today` after the subcommand is in its --help.
+def test_today_after_the_subcommand_is_in_its_help(capsys):
+    with pytest.raises(SystemExit):
+        main(["menu", "--help"])
+    assert "--today" in capsys.readouterr().out
