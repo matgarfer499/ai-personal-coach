@@ -75,6 +75,7 @@ Every one is labelled where it lives: `# convention:` in code, "convention", "he
 | Constant | Value | Purpose |
 |---|---|---|
 | `cli.OUTPUT_DECIMALS` | 2 | numbers a skill quotes verbatim |
+| `doctor.PYTHON_MIN` | 3.12 | `coach doctor` flags an older Python; the same floor as `requires-python` in `pyproject.toml` |
 | `tastes.POSTAL_CODE` | 3 to 10 letters, digits, spaces or hyphens | rejects typos; fits any country's format |
 | `checkins.JUMP_KG_PER_DAY`, `JUMP_MAX_DAYS` | 1 kg per day from the nearest other weigh-in, at most 7 kg however long the gap | `checkin add` stores the weight but warns so the client can fix a typo (99 for 72); normal within-week swings are near 0.35% of body weight (nutrition.md "Read the scale with weekly averages") |
 | `store.SAME_LOAD_KG` | 0.1 kg | a re-imported set whose load differs by more is a `conflict` (an edit or another unit); pounds converted back to kilograms land within it |

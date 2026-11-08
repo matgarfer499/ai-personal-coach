@@ -28,6 +28,7 @@ import yaml
 
 from coach import (
     catalogue,
+    doctor,
     energy,
     export,
     foods,
@@ -167,6 +168,10 @@ def _heart_rates(profile: Profile, args: argparse.Namespace) -> tuple[int | None
 def cmd_zones(profile: Profile, args: argparse.Namespace) -> zones.Zones:
     hr_rest, hr_max = _heart_rates(profile, args)
     return zones.hr_zones(profile, safety.flags(profile, args.today), hr_rest, hr_max, args.today)
+
+
+def cmd_doctor(profile: Profile, args: argparse.Namespace) -> dict:
+    return doctor.run(args.data_dir)
 
 
 def cmd_safety(profile: Profile, args: argparse.Namespace) -> safety.SafetyFlags:
@@ -1637,6 +1642,7 @@ def build_parser() -> argparse.ArgumentParser:
     zones_cmd.add_argument("--hr-rest", type=int, default=None, help="default: profile hr_rest")
     zones_cmd.add_argument("--hr-max", type=int, default=None, help="default: profile hr_max")
     add("safety", cmd_safety, "screening flags and the rules behind them")
+    add("doctor", cmd_doctor, "first-run checks: Python, the pdf extra, data folder, claude")
 
     strength_cmd = add("strength", cmd_strength, "e1RM, weekly sets, progression, deload")
     strength_sub = strength_cmd.add_subparsers(dest="strength_cmd", required=True)
@@ -1902,7 +1908,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     compact = getattr(args, "json", False)
     try:
-        profile = load_profile(args.data_dir / "profile.yaml")
+        # doctor reports a broken profile instead of failing on it
+        doctor_cmd = args.func is cmd_doctor
+        profile = Profile() if doctor_cmd else load_profile(args.data_dir / "profile.yaml")
         _print(args.func(profile, args), compact)
     except ProfileIncomplete as err:
         _print({"error": "profile_incomplete", "field": err.field}, compact)
