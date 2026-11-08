@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from statistics import fmean
 
+from coach.text import number
 from coach.safety import SafetyFlags, weight_block_reason
 
 # convention: at least 7 weigh-ins covering 14 days (chosen when the coach was designed), built on
@@ -99,8 +100,10 @@ def weight_trend(
             start=window[0][0],
             end=last,
             notes=[
-                f"hacen falta al menos {MIN_POINTS} pesajes que cubran {MIN_DAYS} días: faltan "
-                f"{max(0, MIN_POINTS - len(window))} pesajes y {max(0, MIN_DAYS - days)} días"
+                # docs/glossary.md's Spanish for this note, so the skill reads the same words
+                "Aún no hay datos para ver la tendencia: faltan "
+                f"{max(0, MIN_POINTS - len(window))} pesajes más y "
+                f"{max(0, MIN_DAYS - days)} días más."
                 if language == "es"
                 else f"need at least {MIN_POINTS} weigh-ins covering {MIN_DAYS} days: "
                 f"{max(0, MIN_POINTS - len(window))} more weigh-ins and "
@@ -117,15 +120,19 @@ def weight_trend(
     rate = (current - fmean(kg for _, kg in first_week)) / weeks_apart
     notes = []
     if rate < -MAX_LOSS_KG_WEEK:
-        notes.append(
-            f"{MAX_LOSS_RULE}: losing {-rate:.2f} kg a week, faster than about "
-            f"{MAX_LOSS_KG_WEEK:g} kg: "
-            + (
-                "tell the prescriber"
-                if flags is not None and flags.prescriber_owns_weight
-                else "reduce the deficit"
+        prescriber = flags is not None and flags.prescriber_owns_weight
+        if language == "es":
+            notes.append(
+                f"{MAX_LOSS_RULE}: pierdes {number(-rate, language)} kg a la semana, más rápido "
+                f"que unos {number(MAX_LOSS_KG_WEEK, language)} kg: "
+                + ("díselo a quien te lo prescribe" if prescriber else "reduce el déficit")
             )
-        )
+        else:
+            notes.append(
+                f"{MAX_LOSS_RULE}: losing {-rate:.2f} kg a week, faster than about "
+                f"{MAX_LOSS_KG_WEEK:g} kg: "
+                + ("tell the prescriber" if prescriber else "reduce the deficit")
+            )
     return Trend(
         notes=notes,
         status="ok",

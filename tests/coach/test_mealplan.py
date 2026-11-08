@@ -1016,7 +1016,7 @@ def test_shopping_counts_whole_units_of_countable_foods(capsys, data_dir):
         "grams": 600,
         "units": 12,
         "unit_name": "large",
-        "unit_label": "tamaño grande",
+        "unit_label": "ud. grandes",
     }
     assert "units" not in lines["tomate"]  # no unit in the table: grams only
     assert "whole units" in shop["note"]
@@ -1042,7 +1042,7 @@ def test_egg_forms_are_bought_as_raw_eggs_in_one_line(capsys, data_dir):
             "grams": 360,
             "units": 8,
             "unit_name": "large",
-            "unit_label": "tamaño grande",
+            "unit_label": "ud. grandes",
         }
     ]
 
@@ -1127,6 +1127,6 @@ def test_unit_names_follow_the_language():
     assert _units(600, ("large", 50), "es") == {
         "units": 12,
         "unit_name": "large",
-        "unit_label": "tamaño grande",
+        "unit_label": "ud. grandes",
     }
     assert _units(600, ("large", 50), "en") == {"units": 12, "unit_name": "large"}

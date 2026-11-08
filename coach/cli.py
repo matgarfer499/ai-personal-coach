@@ -67,7 +67,8 @@ from coach.regioncode import NO_REGION, real_region
 from coach.sessions.importers import base as importers  # the package registers importers
 from coach.sessions.model import ExerciseSet
 from coach.sessions.store import append, read_sets
-from coach.text import fold, fold_words, number
+from coach.text import fold, fold_words
+from coach.text import number as say_number
 
 # convention: generic-name endings of common blood-pressure medicines (ACE inhibitors -pril, ARBs
 # -sartan, dihydropyridine calcium channel blockers -dipine), the classes cardio-health.md "Blood
@@ -580,12 +581,12 @@ def _menu_day(
     floor = VEG_FRUIT_MIN_G * share  # a free meal carries its share, as in menu_check
     if totals.veg_fruit_g < floor:
         # With a free meal the planned meals carry their share of the day's 400 g.
-        if language == "es":
-            of_day = f" de los {VEG_FRUIT_MIN_G} g al día" if share < 1 else " al día"
+        if language == "es":  # docs/glossary.md's Spanish for this warning
+            of_day = f" (su parte de los {VEG_FRUIT_MIN_G} g al día)" if share < 1 else ""
             warnings.append(
-                f"{number(totals.veg_fruit_g, language)} g de verdura y fruta, por debajo de los "
-                f'{number(floor, language)} g{of_day} de nutrition.md "Dietary fibre" para las '
-                "comidas planificadas"
+                f"Ese día las comidas planificadas suman {say_number(totals.veg_fruit_g, language)}"
+                f" g de verdura y fruta, por debajo de los {say_number(floor, language)} g{of_day}"
+                ' de nutrition.md "Dietary fibre"'
             )
         else:
             of_day = f" of the {VEG_FRUIT_MIN_G} g a day" if share < 1 else " a day"
@@ -1694,7 +1695,8 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
     flags = safety.flags(profile, args.today)
     stale = (
         (
-            "el plan está caducado: la seguridad para ahora el entrenamiento ("
+            "El plan anterior ya no vale: hay que parar el entrenamiento hasta que te vea un "
+            "médico ("
             if profile.language == "es"
             else "the plan is stale: safety now stops training ("
         )

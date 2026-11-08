@@ -99,6 +99,9 @@ primera vez que aparece, en el idioma del cliente.
 ## CLI notes / Notas del CLI
 
 How the skills say the CLI's English notes to a client, so the same note always reads the same.
+With language es the CLI already prints the Spanish column for the weigh-in note, the
+vegetables-and-fruit warning and the stale-plan problem (quote it as printed); rule citations
+and safety reasons stay English and follow this table.
 Keep every number exactly as the CLI prints it (N, D, X below). Rule citations (`file.md:
 "Heading"`) are not said: they go in the Fuentes / Rules used line.
 

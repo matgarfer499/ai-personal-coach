@@ -16,7 +16,11 @@ def fold_words(*texts: str) -> list[str]:
     return re.findall(r"\w+", fold(" ".join(texts)))
 
 
-def number(value: float, language: str | None, decimals: int = 2) -> str:
+# convention: 2 decimals, as cli.OUTPUT_DECIMALS (skills quote numbers verbatim).
+SAY_DECIMALS = 2
+
+
+def number(value: float, language: str | None, decimals: int = SAY_DECIMALS) -> str:
     """A number for a sentence the client reads: rounded, trailing zeros dropped, and a decimal
     comma in Spanish (header lines and JSON fields keep the point)."""
     text = f"{round(value, decimals):.{decimals}f}".rstrip("0").rstrip(".")

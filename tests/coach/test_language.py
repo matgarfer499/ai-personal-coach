@@ -47,7 +47,7 @@ def test_number_uses_a_decimal_comma_in_spanish():
 
 def test_trend_notes_in_spanish():
     out = weight_trend([(date(2026, 11, 1), 82.0)], language="es")
-    assert out.notes[0].startswith("hacen falta al menos 7 pesajes")
+    assert out.notes[0].startswith("Aún no hay datos para ver la tendencia: faltan 6 pesajes")
     assert weight_trend([], language="es").notes == ["sin pesajes"]
 
 
@@ -68,12 +68,12 @@ def test_a_future_checkin_is_refused_in_spanish(capsys, data_dir):
 def test_the_protein_note_uses_a_decimal_comma(capsys, data_dir):
     _, out = run(capsys, data_dir, "macros")
     note = next(n for n in out["notes"] if n.startswith("convención"))
-    assert "65,61 kg" in note and "1,60 g" in note
+    assert "65,61 kg" in note and "1,6 g" in note
 
 
 def test_the_veg_and_fruit_warning_is_spanish(capsys, data_dir):
     _, out = run(capsys, data_dir, "menu", "--targets", "--item", "pechuga de pollo, cruda=150")
-    assert any("de verdura y fruta" in w for w in out["warnings"])
+    assert any(w.startswith("Ese día las comidas planificadas suman") for w in out["warnings"])
 
 
 def test_a_stale_plan_says_so_in_spanish(capsys, data_dir):
@@ -82,4 +82,4 @@ def test_a_stale_plan_says_so_in_spanish(capsys, data_dir):
     )
     run(capsys, data_dir, "checkin", "add", "--symptoms", "dizzy")
     _, out = run(capsys, data_dir, "plan", "check")
-    assert any(p.startswith("el plan está caducado") for p in out["problems"])
+    assert any(p.startswith("El plan anterior ya no vale") for p in out["problems"])
