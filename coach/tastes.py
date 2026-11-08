@@ -147,7 +147,11 @@ class Tastes:
         return [r.dish for wanted in ratings for r in self.ratings if r.rating == wanted]
 
     def rate(self, rating: Rating) -> None:
-        """A new rating of the same dish (case and accents ignored) replaces the earlier one."""
+        """A new rating of the same dish (case and accents ignored) replaces the earlier one and
+        keeps its name as first written."""
+        earlier = next((r for r in self.ratings if fold(r.dish) == fold(rating.dish)), None)
+        if earlier is not None:
+            rating.dish = earlier.dish
         self.ratings = [r for r in self.ratings if fold(r.dish) != fold(rating.dish)]
         self.ratings.append(rating)
 
