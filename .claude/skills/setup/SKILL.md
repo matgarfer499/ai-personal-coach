@@ -31,8 +31,9 @@ the `coach` CLI.
   in brackets (one short line is enough for a reason unrelated to the task, such as heart-rate
   zones in /menu), then any CLI note that adds something new. Name the professional the reason
   names (prescriber, midwife or obstetrician, eating-disorder professional), else the GP. If
-  `refer_gp` is set, end with the deferral line from `docs/safety.md`, copied exactly, in the
-  profile language.
+  `refer_gp` is set, end with the `deferral_line` that `coach safety` prints, copied
+  exactly. Give its `instruction` first: it is the most urgent reason. Never give the
+  `superseded` lines as advice.
 
 ## When to use
 
@@ -45,7 +46,6 @@ the `coach` CLI.
 
 - `coach profile show` (what is already there and what is missing).
 - `docs/safety.md`: the medication and condition token table, the deferral line.
-- `forms/parq-plus-es.pdf` or `forms/parq-plus.pdf`, when present: the official PAR-Q+ (step 4).
 
 ## Steps
 
@@ -99,33 +99,24 @@ Ask about one step per message. Store each answer as soon as you have it with
    weighing), per `coach knowledge section nutrition "Under-18s"`. After a positive screen (`coach safety` shows `no_weight_targets`), ask whether they are happy to share an approximate
    weight for the estimates; never ask them to weigh themselves. If they decline, leave
    `weight_kg` unset and give no calorie or macro targets (say they are optional).
-4. **PAR-Q+.** The form says "NO changes are permitted", so its questions are never reworded,
-   shortened or translated
-   (`coach knowledge section recovery-habits "PAR-Q+ 2023 as the default entry screen"`).
-   If they have already filled it in, ask the two questions at the end of this step. Otherwise, if `forms/parq-plus-es.pdf` (Spanish clients) or `forms/parq-plus.pdf`
-   exists, read it and ask the questions yourself:
-   - First message: the form's title and introduction, then the 7 GENERAL HEALTH QUESTIONS,
-     copied exactly with their numbers and notes, asking YES or NO to each. If the form is not in
-     the profile language, say once that the official form must be asked as printed; when the
-     client asks what a word means, explain it in their language after the question, without
-     replacing it.
-   - All NO: quote the form's text for that case. Any YES: ask each follow-up condition question
-     (1 to 10) exactly as printed and, for each YES, its lettered questions; follow the form's
-     "If NO go to question N". Then quote the form's text for the result.
-   - Quote the form's "Delay becoming more active if" list once.
-   - With no PDF in `forms/`, send the form: to a Spanish client "PAR-Q+ en español"
-     (https://eparmedx.com/wp-content/uploads/2023/12/Spanish.pdf) and the listing page
-     https://eparmedx.com/print-versions-of-par-q/languages/ in case the file moves; to an
-     English client https://eparmedx.com/print-versions-of-par-q/. Say in one plain line what to
-     do: fill it in, then send it back or answer the two questions below.
-   - If the client sends a filled-in PDF: read it where it is, without copying it. List back only
-     the outcome: any YES on the 7 questions, and any YES on the follow-ups (the answers
-     themselves are not stored). Ask the client to confirm, then store the two values below. A
-     field you cannot read: ask the client that question aloud, using the wording of the
-     standard PAR-Q+ question. If the PDF's questions do not match the 7 standard questions, do
-     not map it; ask the client the 7 standard questions instead. Never store the file in `data/`, and
-     do not copy its contents, the client's name or its path into notes or the profile; only
-     the two screening fields.
+4. **PAR-Q+.** The PAR-Q+ Collaboration's terms forbid putting the form's questions into a
+   chat or app, translating or rewording them without written permission
+   (`coach knowledge section recovery-habits "PAR-Q+ 2023 as the default entry screen"`;
+   docs/safety.md, Screening). So never read, quote, paraphrase or translate its questions.
+   - If they have already filled it in, go to the two questions below.
+   - Otherwise send one link in their language and say in one plain line what it is (a short
+     official health questionnaire, about 5 minutes, on paper or screen) and that you will ask
+     two questions about it afterwards. Spanish: "PAR-Q+ en español"
+     (https://eparmedx.com/wp-content/uploads/2023/12/Spanish.pdf; the listing page
+     https://eparmedx.com/print-versions-of-par-q/languages/ in case the file moves). English:
+     https://eparmedx.com/print-versions-of-par-q/. Then wait.
+   - Then ask the two outcome questions, one per message, in their language and in your own
+     words, never the form's: first whether they answered YES to any of the questions on the
+     first page (the general health questions); only if yes, whether they answered YES to any
+     of the follow-up questions. A filled-in PDF they send: read only those two outcomes, ask
+     them to confirm, never store the file or copy its contents, name or path anywhere.
+   - If they will not open the form, store nothing and say in one line that the coach then
+     keeps to light-to-moderate work and no sprints until they do (the CLI applies it).
    Any YES on the 7 questions? Any YES on the follow-up questions? Store
    `screening.parq_any_yes` and `screening.parq_followup_yes`. With any YES, or over 45, ask
    whether a qualified exercise professional or clinician has reviewed vigorous or maximal

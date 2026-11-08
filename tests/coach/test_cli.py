@@ -111,7 +111,7 @@ def test_pal_override_reaches_energy_and_macros(capsys, data_dir):
     _stopped_active(data_dir)
     run(capsys, data_dir, "profile", "set", "pal_override", str(energy.DESK_PAL))
     _, out = run(capsys, data_dir, "energy")
-    kcal = round(_rmr(data_dir) * energy.DESK_PAL) - energy.DEFICIT_KCAL
+    kcal = round(_rmr(data_dir) * energy.DESK_PAL)  # no deficit while training is stopped
     assert out["target"]["kcal"] == kcal
     assert any("using stored pal_override" in n for n in out["target"]["notes"])
     _, macros = run(capsys, data_dir, "macros")
@@ -151,10 +151,10 @@ def test_macros_with_the_desk_pal_match_the_energy_rerun(capsys, data_dir):
     pal = str(energy.DESK_PAL)
     _, rerun = run(capsys, data_dir, "energy", "--pal", pal)
     kcal = rerun["target"]["kcal"]
-    assert kcal == round(_rmr(data_dir) * energy.DESK_PAL) - energy.DEFICIT_KCAL
+    assert kcal == round(_rmr(data_dir) * energy.DESK_PAL)  # no deficit while training is stopped
     _, with_kcal = run(capsys, data_dir, "macros", "--pal", pal, "--kcal", str(kcal))
     _, derived = run(capsys, data_dir, "macros", "--pal", pal)
-    assert with_kcal["kcal"] == derived["kcal"] == kcal and derived["in_deficit"] is True
+    assert with_kcal["kcal"] == derived["kcal"] == kcal and derived["in_deficit"] is False
 
 
 def test_goal_typo_is_rejected(capsys, data_dir):
@@ -1416,3 +1416,35 @@ def test_label_energy_warning_does_not_blame_the_source(capsys, data_dir):
     warning = out["warnings"][0]
     assert "source uses" not in warning and "4/4/9" in warning
     assert "read the label again" in warning and "check the pack" not in warning
+
+
+# Beta p3-antonio-I1/I5, p1-lucia-I8.
+def test_cardiac_symptoms_hold_the_target_at_maintenance(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "screening.cardiac_symptoms", "true")
+    _, out = run(capsys, data_dir, "energy")
+    assert out["target"]["deficit"] == 0
+    _, macros = run(capsys, data_dir, "macros")
+    assert macros["in_deficit"] is False
+    _, raised = run(capsys, data_dir, "macros", "--kcal", "1700", "--in-deficit")
+    assert raised["kcal"] == out["target"]["kcal"] and raised["in_deficit"] is False
+
+
+def test_checkin_symptoms_set_the_cardiac_flag(capsys, data_dir):
+    code, out = run(capsys, data_dir, "checkin", "add", "--symptoms", "dizzy, chest_pain")
+    assert code == 0 and out["symptoms"] == ["dizzy", "chest_pain"]
+    assert "dizzy" in out["notes"]
+    assert load_profile(data_dir / "profile.yaml").screening["cardiac_symptoms"] is True
+    _, safety = run(capsys, data_dir, "safety")
+    assert safety["refer_gp"] and safety["no_training"] and safety["deferral_line"]
+
+
+def test_checkin_unknown_symptom_is_refused(capsys, data_dir):
+    code, out = run(capsys, data_dir, "checkin", "add", "--symptoms", "headache")
+    assert code == 2 and "chest_pain" in out["message"]
+    assert "cardiac_symptoms" not in load_profile(data_dir / "profile.yaml").screening
+
+
+def test_checkin_notes_report_possible_red_flags_without_setting_one(capsys, data_dir):
+    code, out = run(capsys, data_dir, "checkin", "add", "--notes", "mareo al subir escaleras")
+    assert code == 0 and out["possible_red_flags"] == ["dizzy"]
+    assert "cardiac_symptoms" not in load_profile(data_dir / "profile.yaml").screening

@@ -30,8 +30,9 @@ A weekly review: what the data says, and whether the plan should change.
   in brackets (one short line is enough for a reason unrelated to the task, such as heart-rate
   zones in /menu), then any CLI note that adds something new. Name the professional the reason
   names (prescriber, midwife or obstetrician, eating-disorder professional), else the GP. If
-  `refer_gp` is set, end with the deferral line from `docs/safety.md`, copied exactly, in the
-  profile language.
+  `refer_gp` is set, end with the `deferral_line` that `coach safety` prints, copied
+  exactly. Give its `instruction` first: it is the most urgent reason. Never give the
+  `superseded` lines as advice.
 
 ## When to use
 
@@ -129,5 +130,5 @@ CLI, then whether to rerun `/plan`: yes when the client agreed to a calorie or d
   pain-free.
 - With `review_before_vigorous` or `no_all_out_sprints`, propose no vigorous work, intervals or
   sprints; give the reason and suggest the review if the client asks for them.
-- If `coach safety` shows `refer_gp`, end with the deferral line from `docs/safety.md`, copied
-  exactly.
+- If `coach safety` shows `refer_gp`, end with the `deferral_line` that `coach safety`
+  prints (the line in `docs/safety.md`), copied exactly.

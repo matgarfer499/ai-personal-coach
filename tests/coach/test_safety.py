@@ -1,11 +1,12 @@
 import re
 from datetime import date
+from pathlib import Path
 
 import pytest
 
 from coach import knowledge
 from coach.profile import Profile
-from coach.safety import SafetyFlags, flags
+from coach.safety import SafetyFlags, flags, red_flag_words
 
 SCREENED_OK = {"scoff_positive": False, "parq_any_yes": False}
 
@@ -328,3 +329,66 @@ def test_the_clients_own_emergency_number_wins():
 
 def test_no_region_and_no_number_means_unknown():
     assert flags(Profile(screening=SCREENED_OK)).emergency_number is None
+
+
+# Beta p3-antonio-I1/I2/I3: one instruction, no contradictions, lines printed by code.
+STOPPED = SCREENED_OK | {"cardiac_symptoms": True}
+
+
+def test_no_training_also_blocks_the_deficit():
+    for screening in (STOPPED, SCREENED_OK | {"bp_systolic": 185, "bp_diastolic": 95}):
+        result = flags(Profile(screening=screening))
+        assert result.no_training and result.no_deficit
+        assert any("convention: no deficit" in r for r in result.reasons)
+
+
+def test_parq_followup_alone_keeps_the_deficit():
+    assert not flags(Profile(screening=SCREENED_OK | {"parq_followup_yes": True})).no_deficit
+
+
+def test_no_training_supersedes_the_light_to_moderate_lines():
+    # PAR-Q+ unanswered and hypertension with BP unknown both say "light-to-moderate work".
+    profile = Profile(conditions=["hypertension"], screening={"cardiac_symptoms": True})
+    result = flags(profile)
+    assert not any("light-to-moderate" in r for r in result.reasons)
+    assert any("light-to-moderate" in r for r in result.superseded)
+    assert result.instruction == result.reasons[0]
+    assert result.instruction.startswith('recovery-habits.md: "Cardiac warning symptoms')
+
+
+def test_reasons_are_ordered_by_priority():
+    profile = Profile(
+        medications=["beta_blocker"],
+        screening={"scoff_positive": True, "bp_systolic": 150, "bp_diastolic": 95},
+    )
+    reasons = flags(profile).reasons
+    assert reasons[0].startswith('nutrition.md: "Eating-disorder screening')
+    assert reasons[-1].startswith('cardio-health.md: "Beta-blockers')
+
+
+def test_clean_screen_has_no_instruction_or_lines():
+    result = flags(Profile(sex="male", screening=SCREENED_OK))
+    assert result.instruction is None and result.deferral_line is None
+    assert result.emergency_line is None and result.superseded == []
+
+
+@pytest.mark.parametrize("language", ["es", "en"])
+def test_deferral_line_matches_docs(language):
+    docs = (Path(__file__).parents[2] / "docs" / "safety.md").read_text(encoding="utf-8")
+    line = re.search(rf"- \*\*{language}:\*\* `([^`]+)`", docs).group(1)
+    result = flags(Profile(language=language, screening=STOPPED))
+    assert result.deferral_line == line
+
+
+def test_emergency_line_names_the_number():
+    result = flags(Profile(language="es", region="es", screening=STOPPED))
+    assert result.emergency_number in result.emergency_line
+    english = flags(Profile(language="en", emergency_number="none", screening=STOPPED))
+    assert "local emergency number" in english.emergency_line
+
+
+def test_red_flag_words_in_notes():
+    assert red_flag_words("mareo al subir escaleras") == ["dizzy"]
+    assert red_flag_words("Some chest tightness on the stairs") == ["chest_pain"]
+    assert red_flag_words("dormí bien, entreno de pierna") == []
+    assert red_flag_words("mareado y con palpitaciones") == ["dizzy", "palpitations"]

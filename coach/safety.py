@@ -8,6 +8,7 @@ skill can quote it and a reader can grep it.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import date
 
@@ -53,6 +54,79 @@ BP_NO_TRAINING_SYSTOLIC = 180
 BP_GP_REVIEW = (160, 90)
 BP_MODERATE_SYSTOLIC = 140
 
+# convention: no rule covers dieting while cardiac symptoms or a very high BP await a
+# clinician, so the coach holds calories at maintenance until training is cleared (the
+# cautious direction; listed in docs/conventions.md).
+NO_TRAINING_NO_DEFICIT = "; convention: no deficit until then, calories stay at maintenance"
+
+# docs/safety.md "The deferral line": copied exactly; tests/coach/test_safety.py checks the docs.
+DEFERRAL_LINE = {
+    "es": "Esto es orientación general de un entrenador automatizado, no consejo médico. Por lo "
+    "que me has contado, habla con tu médico (o con el profesional que te indico arriba) antes "
+    "de ponerlo en práctica.",
+    "en": "This is general guidance from an automated coach, not medical advice. Because of what "
+    "you told me, talk to your doctor (or the professional named above) before acting on it.",
+}
+# recovery-habits.md: "Cardiac warning symptoms: stop and refer" (its first-aid sentence).
+EMERGENCY_LINE = {
+    "es": "Si tienes dolor en el pecho en reposo, te desmayas, o dolor en el pecho con falta de "
+    "aire y sudor, llama ya al {number}.",
+    "en": "If you have chest pain at rest, faint, or have chest pain with breathlessness and "
+    "sweating, call {number} now.",
+}
+NO_EMERGENCY_NUMBER = {"es": "número de emergencias local", "en": "local emergency number"}
+
+# recovery-habits.md: "Cardiac warning symptoms: stop and refer": the symptom tokens /checkin
+# records (`checkin add --symptoms`), from the rule's list.
+SYMPTOMS = (
+    "chest_pain",
+    "breathless",
+    "dizzy",
+    "faint",
+    "palpitations",
+    "ankle_swelling",
+    "calf_pain",
+    "unusual_fatigue",
+)
+# convention: words that suggest a token in free-text check-in notes (es and en, accents
+# ignored). A hit is only reported for the skill to ask about; it never sets a flag.
+SYMPTOM_WORDS = {
+    "chest_pain": (
+        "dolor en el pecho",
+        "dolor de pecho",
+        "opresion en el pecho",
+        "presion en el pecho",
+        "chest pain",
+        "chest tightness",
+        "chest pressure",
+        "tight chest",
+    ),
+    "breathless": ("falta de aire", "me ahogo", "short of breath", "breathless"),
+    "dizzy": ("mareo", "mareos", "mareada", "mareado", "dizzy", "dizziness", "lightheaded"),
+    "faint": ("desmayo", "desmaye", "desmayada", "desmayado", "fainted", "faint", "passed out"),
+    "palpitations": ("palpitaciones", "palpitations", "heart racing", "corazon acelerado"),
+    "ankle_swelling": ("tobillos hinchados", "swollen ankles", "ankle swelling"),
+    "calf_pain": ("dolor de gemelo al caminar", "calf pain when walking"),
+}
+
+# Reasons are listed most urgent first; `instruction` is the first. The order: stop training,
+# out-of-scope and eating-disorder blocks, medical hand-offs, referrals, then intensity caps.
+PRIORITY = (
+    CARDIAC,
+    UNDER_18,
+    SCOFF,
+    MENSTRUAL,
+    PREGNANCY_NUTRITION,
+    PREGNANCY_ACTIVITY,
+    GLP1_RULE,
+    BP,
+    PARQ,
+    INJURY,
+    PARQ_THRESHOLDS,
+    PREGNANCY_INTENSITY,
+    BETA_BLOCKER_RULE,
+)
+
 # recovery-habits.md: "PAR-Q+ specific thresholds": anyone over 45 (or with any PAR-Q+ YES) gets
 # a qualified exercise professional or clinician review before vigorous or maximal work. "Over 45"
 # is read as aged 45 or more, the cautious side of the cut-off.
@@ -86,7 +160,12 @@ class SafetyFlags:
     emergency_number: str | None = None
     # logged exercise name -> why its load is paused (an active injury)
     paused_exercises: dict[str, Pause] = field(default_factory=dict)
-    reasons: list[str] = field(default_factory=list)
+    reasons: list[str] = field(default_factory=list)  # most urgent first
+    instruction: str | None = None  # the first reason: what to do above all else
+    # intensity caps that a training stop makes moot, kept for the record, not to act on
+    superseded: list[str] = field(default_factory=list)
+    deferral_line: str | None = None  # with refer_gp: docs/safety.md, in the profile language
+    emergency_line: str | None = None  # with cardiac symptoms: when to call the number now
 
 
 def flags(profile: Profile, today: date | None = None) -> SafetyFlags:
@@ -157,12 +236,40 @@ def flags(profile: Profile, today: date | None = None) -> SafetyFlags:
         out.refer_gp = out.no_training = True
         out.reasons.append(
             f"{CARDIAC}: stop exercising and seek medical evaluation; no training until a "
-            "clinician clears it"
+            f"clinician clears it{NO_TRAINING_NO_DEFICIT}"
         )
 
     if out.no_training:
-        out.hold_progression = True
+        out.hold_progression = out.no_deficit = True
+        # "light-to-moderate work only" contradicts "no training": keep it out of the reasons.
+        moot = [r for r in out.reasons if r.startswith(PARQ_THRESHOLDS)]
+        if out.cap_moderate:
+            moot += [r for r in out.reasons if r.startswith(BP)]
+        out.superseded = moot
+        out.reasons = [r for r in out.reasons if r not in moot]
+    out.reasons.sort(key=_priority)
+    out.instruction = out.reasons[0] if out.reasons else None
+    language = profile.language or "en"
+    if out.refer_gp:
+        out.deferral_line = DEFERRAL_LINE[language]
+    if screening.get("cardiac_symptoms"):
+        number = out.emergency_number or NO_EMERGENCY_NUMBER[language]
+        out.emergency_line = EMERGENCY_LINE[language].format(number=number)
     return out
+
+
+def _priority(reason: str) -> int:
+    return next((i for i, rule in enumerate(PRIORITY) if reason.startswith(rule)), len(PRIORITY))
+
+
+def red_flag_words(text: str) -> list[str]:
+    """Symptom tokens whose words appear in free text (a prompt to ask, never a flag)."""
+    folded = fold(text)
+    return [
+        token
+        for token, words in SYMPTOM_WORDS.items()
+        if any(re.search(rf"\b{re.escape(w)}\b", folded) for w in words)
+    ]
 
 
 def _regional_emergency_number(profile: Profile) -> str | None:
@@ -262,11 +369,13 @@ def _blood_pressure(profile: Profile, out: SafetyFlags) -> None:
         out.reasons.append(
             f"{BP}: {reading}, no exercise; re-measure after 5-10 min and see a "
             "doctor promptly if it stays high (urgently with headache, chest pain, visual "
-            "change, neurological symptoms or breathlessness)"
+            f"change, neurological symptoms or breathlessness){NO_TRAINING_NO_DEFICIT}"
         )
     elif systolic >= BP_NO_TRAINING_SYSTOLIC:
         out.no_training = out.refer_gp = True
-        out.reasons.append(f"{BP}: {reading}, no training until reviewed by a GP")
+        out.reasons.append(
+            f"{BP}: {reading}, no training until reviewed by a GP{NO_TRAINING_NO_DEFICIT}"
+        )
     elif systolic >= BP_GP_REVIEW[0] or diastolic >= BP_GP_REVIEW[1]:
         out.cap_moderate = out.refer_gp = out.hold_progression = True
         out.reasons.append(

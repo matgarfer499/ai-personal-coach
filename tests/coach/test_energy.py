@@ -131,11 +131,11 @@ def test_no_training_from_blood_pressure_uses_the_desk_band():
     assert tdee(p, today=TODAY) == pytest.approx(RMR * energy.DESK_PAL)
 
 
-def test_no_training_desk_band_still_respects_the_floor_and_no_deficit():
+def test_no_training_desk_band_holds_maintenance():
     cardiac = OK | {"cardiac_symptoms": True}
     small = woman(activity_level="desk_training", weight_kg=45, height_cm=150, screening=cardiac)
     t = target(small, tdee_kcal=tdee(small, today=TODAY))
-    assert t.kcal == energy.FLOOR_KCAL["female"] and t.clamped
+    assert t.deficit == 0 and t.kcal == round(t.maintenance) and not t.clamped
     ed = man(activity_level="desk_training", screening=cardiac | {"scoff_positive": True})
     t = target(ed, tdee_kcal=tdee(ed, today=TODAY))
     assert t.kcal == round(RMR * energy.DESK_PAL) and t.deficit == 0

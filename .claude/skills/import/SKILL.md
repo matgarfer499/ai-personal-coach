@@ -30,8 +30,9 @@ Adds an exported workout log to `data/sessions.csv` without duplicates.
   in brackets (one short line is enough for a reason unrelated to the task, such as heart-rate
   zones in /menu), then any CLI note that adds something new. Name the professional the reason
   names (prescriber, midwife or obstetrician, eating-disorder professional), else the GP. If
-  `refer_gp` is set, end with the deferral line from `docs/safety.md`, copied exactly, in the
-  profile language.
+  `refer_gp` is set, end with the `deferral_line` that `coach safety` prints, copied
+  exactly. Give its `instruction` first: it is the most urgent reason. Never give the
+  `superseded` lines as advice.
 
 ## When to use
 
@@ -81,5 +82,5 @@ say fewer sets suffice.
 
 - An `ImporterError` names the bad line: show it and stop; never edit the client's export.
 - With `no_training`, import as usual but say training waits for a clinician's clearance.
-- If `coach safety` shows `refer_gp`, end with the deferral line from `docs/safety.md`, copied
-  exactly.
+- If `coach safety` shows `refer_gp`, end with the `deferral_line` that `coach safety`
+  prints (the line in `docs/safety.md`), copied exactly.
