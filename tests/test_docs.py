@@ -64,3 +64,21 @@ def test_every_convention_constant_is_in_conventions_doc():
     assert len(constants) >= 15
     missing = [f"{f}: {name}" for f, name in sorted(constants) if name not in CONVENTIONS_DOC]
     assert not missing, missing
+
+
+CITATION = re.compile(r'([\w-]+\.md): "([^"{}]+)"')
+
+
+def test_every_rule_cited_in_the_code_exists():
+    """Every `file.md: "Heading"` in coach/ names a `### Heading` of that knowledge file."""
+    headings = {}
+    missing = []
+    for path in sorted((ROOT / "coach").glob("**/*.py")):
+        for name, heading in CITATION.findall(path.read_text(encoding="utf-8")):
+            if name not in headings:
+                text = (ROOT / "knowledge" / name).read_text(encoding="utf-8")
+                headings[name] = set(re.findall(r"^### (.+?)\s*$", text, re.M))
+            if heading not in headings[name]:
+                missing.append(f"{path.name}: {name} {heading!r}")
+    assert len(headings) >= 3
+    assert not missing, missing

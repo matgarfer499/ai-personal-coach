@@ -198,8 +198,8 @@ def week(
     found = spikes(runs, start, end)
     if found:
         notes.append(
-            f"{LOAD_RULE}: a run more than about 10% longer than the longest run of the previous "
-            "30 days raised the injury rate"
+            f"{LOAD_RULE}: a run more than about {SPIKE_RATIO - 1:.0%} longer than the longest run "
+            f"of the previous {SPIKE_LOOKBACK_DAYS} days raised the injury rate"
         )
     zone_minutes = None
     if shown.method in HR_METHODS:
@@ -235,7 +235,7 @@ def week(
     if hold_progression and cap_base is not None and shown.method != "no_training":
         notes.append(
             "progression is on hold (coach safety): the next long run stays at or below the "
-            "longest run of the last 30 days"
+            f"longest run of the last {SPIKE_LOOKBACK_DAYS} days"
         )
     return {
         "week": {"start": start, "end": end},
