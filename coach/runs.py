@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import csv
 import os
+from collections import Counter
 from dataclasses import astuple, dataclass, fields
 from datetime import date, timedelta
 from pathlib import Path
@@ -121,11 +122,14 @@ def append_runs(new: list[Run], path: Path) -> AppendResult:
         check(run)
     path = Path(path)
     stored = read_runs(path)
-    seen = {r.key for r in stored}
+    # Matched one for one: two identical runs in one log are two runs, and a re-import of that
+    # log matches both stored copies.
+    unmatched = Counter(r.key for r in stored)
     added = []
     for run in new:
-        if run.key not in seen:
-            seen.add(run.key)
+        if unmatched[run.key]:
+            unmatched[run.key] -= 1
+        else:
             added.append(run)
     rows = sorted(stored + added, key=lambda r: (r.date, r.source))
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -174,10 +178,18 @@ def zones_to_describe(
     return every.zones if every.method in HR_METHODS else []
 
 
-def week(runs: list[Run], end: date, shown: zones.Zones, every: list[zones.Zone]) -> dict:
+def week(
+    runs: list[Run],
+    end: date,
+    shown: zones.Zones,
+    every: list[zones.Zone],
+    today: date | None = None,
+    hold_progression: bool = False,
+) -> dict:
     """The 7 days ending on `end`: totals, the week before, spikes, the next run's cap and,
     with HR zones, minutes per zone. `shown` is `coach zones` (capped); `every` the uncapped
-    zones (`zones_to_describe`)."""
+    zones (`zones_to_describe`). The next run's cap counts back from `today` (default `end`);
+    with `hold_progression` (safety) it is the longest run itself, no 10% more."""
     start = end - timedelta(days=6)
     days = [r for r in runs if start <= r.date <= end]
     before = [r for r in runs if start - timedelta(days=7) <= r.date < start]
@@ -217,7 +229,14 @@ def week(runs: list[Run], end: date, shown: zones.Zones, every: list[zones.Zone]
         notes.append("no time per zone: the zones are RPE only, so judge intensity by RPE")
     else:
         notes += shown.notes  # no zones at all (training on hold, or the cardiac team's zones)
-    cap_base = longest(runs, end - timedelta(days=SPIKE_LOOKBACK_DAYS - 1), end)
+    today = today or end
+    cap_base = longest(runs, today - timedelta(days=SPIKE_LOOKBACK_DAYS - 1), today)
+    ratio = 1.0 if hold_progression else SPIKE_RATIO
+    if hold_progression and cap_base is not None and shown.method != "no_training":
+        notes.append(
+            "progression is on hold (coach safety): the next long run stays at or below the "
+            "longest run of the last 30 days"
+        )
     return {
         "week": {"start": start, "end": end},
         "runs": len(days),
@@ -229,7 +248,7 @@ def week(runs: list[Run], end: date, shown: zones.Zones, every: list[zones.Zone]
         "spikes": found,
         # The next run's cap under the rule: 10% over the longest run of the last 30 days.
         # None while training is on hold: no next run to cap.
-        "long_run_cap_km": cap_base * SPIKE_RATIO
+        "long_run_cap_km": cap_base * ratio
         if cap_base is not None and shown.method != "no_training"
         else None,
         "zone_method": shown.method,

@@ -397,7 +397,7 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
     hr_rest, hr_max = _heart_rates(profile, args)
     shown = zones.hr_zones(profile, flags, hr_rest, hr_max, args.today)
     every = runs.zones_to_describe(profile, flags, hr_rest, hr_max, args.today)
-    return runs.week(logged, end, shown, every)
+    return runs.week(logged, end, shown, every, today, flags.hold_progression)
 
 
 def menu_check(totals: dict, targets: dict, share: float = 1.0) -> dict:

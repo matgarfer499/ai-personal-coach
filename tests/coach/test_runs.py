@@ -168,3 +168,44 @@ def test_no_zones_means_no_time_per_zone_and_no_next_run_cap(kw):
     assert result["zone_minutes"] is None and result["notes"]
     if f.no_training:
         assert result["long_run_cap_km"] is None
+
+
+# The next run comes after today, so its cap counts the 30 days back from today, not from the
+# reviewed week's end: after a break with no run in 30 days there is no baseline to cap from.
+def test_next_long_run_cap_counts_back_from_today():
+    profile, f = zones_for()
+    shown = hr_zones(profile, f, today=TODAY)
+    old = TODAY - timedelta(days=40)
+    result = week([Run(old, 20.0, 120)], old, shown, [], today=TODAY)
+    assert result["long_run_cap_km"] is None
+    recent = [Run(TODAY - timedelta(days=10), 10.0, 60)]
+    assert week(recent, TODAY - timedelta(days=10), shown, [], today=TODAY)[
+        "long_run_cap_km"
+    ] == pytest.approx(11.0)
+
+
+# docs/safety.md hold_progression: no added load or intensity, so the long run does not grow.
+def test_no_longer_long_run_while_progression_is_on_hold():
+    profile, f = zones_for()
+    shown = hr_zones(profile, f, today=TODAY)
+    result = week([Run(TODAY, 10.0, 60)], TODAY, shown, [], hold_progression=True)
+    assert result["long_run_cap_km"] == pytest.approx(10.0)
+    assert any("on hold" in n for n in result["notes"])
+
+
+# Two identical runs in one log (a morning and an evening 5 km) are two runs; re-importing the
+# same log adds neither again.
+def test_identical_runs_in_one_batch_are_both_stored(tmp_path):
+    path = tmp_path / "runs.csv"
+    twice = [Run(TODAY, 5.0, 30), Run(TODAY, 5.0, 30)]
+    assert (append_runs(twice, path).added, len(read_runs(path))) == (2, 2)
+    result = append_runs(twice, path)
+    assert (result.added, result.duplicates) == (0, 2)
+
+
+def test_an_average_below_the_resting_floor_is_very_light_not_no_hr():
+    profile, f = zones_for()
+    shown = hr_zones(profile, f, hr_rest=60, hr_max=190, today=TODAY)
+    result = week([Run(TODAY, 3.0, 30, avg_hr=58)], TODAY, shown, shown.zones)
+    assert result["zone_minutes"]["very_light"] == 30
+    assert result["zone_minutes"]["no_hr"] == 0
