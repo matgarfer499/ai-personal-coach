@@ -89,8 +89,8 @@ The coach explains terms such as RIR, RPE or bpm the first time they come up, fr
 [`docs/glossary.md`](docs/glossary.md) (Spanish and English).
 
 [`docs/examples/`](docs/examples/) has dry runs of `/setup`, `/checkin`, `/import`, `/plan`,
-`/review` and `/menu` with an invented client, including the red-flag cases. They were
-regenerated with the current skills.
+`/review` and `/menu` with an invented client, including the red-flag cases. Each one names the
+date it was run; skills changed after that date can differ from the transcript.
 
 The CLI behind the skills can also be used directly, for example
 `uv run python -m coach energy` or `uv run python -m coach --help`.
@@ -118,7 +118,7 @@ To try every command, including the red-flag cases with invented personas, follo
 
 ## Your data stays private
 
-Everything about you (profile, screening answers, tastes, check-ins, workouts, plans, menus, reviews) is written
+Everything about you (profile, screening answers, tastes, check-ins, workouts, runs, plans, menus, reviews, saved recipes) is written
 to `data/`, which git ignores. Two ways to keep it that way:
 
 1. **Private copy (recommended).** Make your own private repository from this one (on GitHub:
@@ -247,9 +247,10 @@ How the original evidence base was built, and its limits:
 - **One region, two languages, metric units:** Spain, Spanish and English, cm and kg (see
   "Using it outside Spain"). There is no seasonal produce calendar yet: the Spanish ministry's
   calendar is the intended source, but its reuse terms could not be confirmed.
-- **Millilitres:** products sold per 100 ml go into menus in ml and are never mixed with grams,
-  but the coach compares Open Food Facts' pack unit, not the basis of its nutrition table, so a
-  product labelled per 100 g and sold in ml can be stored as per 100 ml.
+- **Millilitres:** products sold per 100 ml go into menus in ml and are never mixed with grams.
+  The basis comes from the Open Food Facts nutrition table; a search hit or a product with no
+  stated basis falls back to the pack unit, so a product labelled per 100 g and sold in ml can
+  still be stored as per 100 ml.
 - **Allergies** are matched against menu items by name only, with no synonyms or hidden
   ingredients: read the labels.
 - **Known gaps** (tracked as issues): with `no_training` the energy estimate is fixed for
@@ -273,6 +274,7 @@ How the original evidence base was built, and its limits:
 ```
 uv run pytest                                   # code, skills, docs and knowledge tests
 uv run ruff check .
+uv run ruff format --check .
 uv run python scripts/check_knowledge.py        # IDs, grades, format, index and README counts
 uv run python scripts/build_knowledge_index.py  # after editing knowledge/; also updates the README counts
 ```

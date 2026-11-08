@@ -9,13 +9,13 @@ evidence base lives in `knowledge/`.
 
 - `knowledge/*.md`: rules with grades and `[Sxxx]` source IDs. `knowledge/sources.md`: the sources.
 - `docs/research-methodology.md`, `docs/dropped-claims.md`: how the evidence was gathered.
-- `coach/`: the numbers package. `tests/` mirrors it. `scripts/`: knowledge checks and index build.
+- `coach/`: the numbers package. `tests/` mirrors it. `scripts/`: knowledge checks, index and food table builds, `/research` helper.
 
 ## Changing the code
 
 1. Test first. Then code.
 2. Run the checks below; fix root causes, never weaken a test or a check.
-3. Commit style: `feat(coach): ...`, `docs(knowledge): ...`, `chore: ...`.
+3. Commit style: `feat(coach): ...`, `fix(coach): ...`, `docs(knowledge): ...`, `chore: ...`.
 4. Never force-push, never change repo visibility.
 
 ## Checks

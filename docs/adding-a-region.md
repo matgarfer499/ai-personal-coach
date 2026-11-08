@@ -104,7 +104,8 @@ fibre_g, url, checked_on, label_quote`.
   Facts products (above) are the shareable alternative.
 - `per` is `100 g` or `100 ml`; leave `sugars_g` or `fibre_g` blank when the label omits them.
   A product per 100 ml is a menu item in millilitres (`NAME=15ml`), a product per 100 g in grams;
-  the coach has no densities and never converts or mixes the two.
+  a product is never converted between the two. Only base-table liquids sold per 100 g that carry
+  a `g_per_ml` density (milks, juices, stock) can be given in ml.
 - `label_quote` is a verbatim snippet containing the values; the tests check that each recorded
   number appears in it as a whole number token.
 - Open Food Facts never fills this file. Clients add the products they buy from OFF to their own

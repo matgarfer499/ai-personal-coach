@@ -125,7 +125,7 @@ Ask about one step per message. Store each answer as soon as you have it with
    - If they will not open the form, store nothing and say in one line that the coach then
      keeps to light-to-moderate work and no sprints until they do (the CLI applies it).
    Any YES on the 7 questions? Any YES on the follow-up questions? Store
-   `screening.parq_any_yes` and `screening.parq_followup_yes`. With any YES, or over 45, ask
+   `screening.parq_any_yes` and `screening.parq_followup_yes`. With any YES, or aged 45 or more, ask
    whether a qualified exercise professional or clinician has reviewed vigorous or maximal
    work for them (`coach knowledge section recovery-habits "PAR-Q+ specific thresholds"`); only
    a clear yes is stored as `screening.vigorous_reviewed true`. At a redo, store the PAR-Q+

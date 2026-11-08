@@ -38,6 +38,7 @@ One concern per pull request.
    ```
    uv run pytest
    uv run ruff check .
+   uv run ruff format --check .
    uv run python scripts/check_knowledge.py
    uv run python scripts/build_knowledge_index.py  # after editing knowledge/, then commit the result
    ```
