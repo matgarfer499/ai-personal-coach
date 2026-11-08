@@ -1836,6 +1836,13 @@ def test_plan_check_rejects_a_thousands_separator(capsys, data_dir):
     assert out["ok"] is False and any("must be a number" in p for p in out["problems"])
 
 
+@pytest.mark.parametrize("value", ["inf", "nan"])
+def test_plan_check_rejects_a_target_that_is_not_finite(capsys, data_dir, value):
+    _plan_md(data_dir, value)
+    _, out = run(capsys, data_dir, "plan", "check")
+    assert out["ok"] is False and any("must be a number" in p for p in out["problems"])
+
+
 # Audit: any in_deficit other than "true" silently counted as false.
 def test_plan_check_rejects_an_unknown_in_deficit(capsys, data_dir):
     _, macros = run(capsys, data_dir, "macros")

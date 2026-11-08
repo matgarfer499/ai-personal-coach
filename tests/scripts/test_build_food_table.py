@@ -31,5 +31,5 @@ def test_a_unit_must_name_exactly_one_portion(unit):
 def test_a_food_with_an_unknown_category_names_the_food(tmp_path):
     (tmp_path / "food_category.csv").write_text("id,description\n1,Fruits\n", encoding="utf-8")
     (tmp_path / "food.csv").write_text("fdc_id,food_category_id\n7,9\n", encoding="utf-8")
-    with pytest.raises(ValueError, match="7"):
+    with pytest.raises(SystemExit, match="7"):
         build_food_table.load_groups(tmp_path, {"7"})

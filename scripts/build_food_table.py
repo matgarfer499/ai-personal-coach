@@ -61,7 +61,7 @@ def load_groups(fdc_dir: Path, ids: set[str]) -> dict[str, str]:
         rows = [r for r in csv.DictReader(handle) if r["fdc_id"] in ids]
     unknown = [r["fdc_id"] for r in rows if r["food_category_id"] not in categories]
     if unknown:
-        raise ValueError(f"fdc_id {', '.join(unknown)}: food category missing from the release")
+        raise SystemExit(f"fdc_id {', '.join(unknown)}: food category missing from the release")
     return {r["fdc_id"]: categories[r["food_category_id"]] for r in rows}
 
 

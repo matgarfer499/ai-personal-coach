@@ -69,3 +69,18 @@ def test_same_notes_twice_are_stored_once(tmp_path):
     append_checkin(Checkin(date(2026, 3, 2), notes="symptoms: chest_pain"), path)
     append_checkin(Checkin(date(2026, 3, 2), notes="symptoms: chest_pain"), path)
     assert read_checkins(path)[0].notes == "symptoms: chest_pain"
+
+
+def test_re_sent_notes_with_symptoms_are_stored_once(tmp_path):
+    # `coach checkin add` joins free text and symptoms with "; ".
+    path = tmp_path / "checkins.csv"
+    append_checkin(Checkin(date(2026, 3, 2), notes="tired; symptoms: dizziness"), path)
+    append_checkin(Checkin(date(2026, 3, 2), notes="tired; symptoms: dizziness"), path)
+    assert read_checkins(path)[0].notes == "tired; symptoms: dizziness"
+
+
+def test_a_repeated_part_never_drops_an_earlier_symptom(tmp_path):
+    path = tmp_path / "checkins.csv"
+    append_checkin(Checkin(date(2026, 3, 2), notes="slept badly; symptoms: chest_pain"), path)
+    append_checkin(Checkin(date(2026, 3, 2), notes="slept badly; knee ok"), path)
+    assert read_checkins(path)[0].notes == "slept badly; symptoms: chest_pain; knee ok"

@@ -89,9 +89,11 @@ def append_checkin(checkin: Checkin, path: Path) -> Checkin:
     rows = read_checkins(path)
     for earlier in (c for c in rows if c.date == checkin.date):
         given = {k: v for k, v in vars(checkin).items() if v is not None and v != ""}
-        # notes add up: a symptom noted earlier must stay
-        if earlier.notes and checkin.notes and checkin.notes not in earlier.notes.split("; "):
-            given["notes"] = f"{earlier.notes}; {checkin.notes}"
+        if earlier.notes and checkin.notes:
+            # notes add up (a symptom noted earlier must stay); a part stored once is not repeated
+            parts = earlier.notes.split("; ")
+            parts += [p for p in checkin.notes.split("; ") if p not in parts]
+            given["notes"] = "; ".join(parts)
         checkin = replace(earlier, **given)
     rows = [c for c in rows if c.date != checkin.date] + [checkin]
     rows.sort(key=lambda c: c.date)

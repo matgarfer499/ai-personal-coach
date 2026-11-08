@@ -13,6 +13,7 @@ import argparse
 import dataclasses
 import hashlib
 import json
+import math
 import os
 import re
 import sys
@@ -122,9 +123,7 @@ def cmd_macros(profile: Profile, args: argparse.Namespace) -> dict:
         if kcal < allowed and energy.deficit_blockers(profile, flags, args.today):
             kcal, in_deficit = allowed, False
             notes.append(f"raised to {allowed:,} kcal: the safety rules forbid a deficit")
-        elif kcal > allowed and (
-            flags.no_weight_targets or flags.prescriber_owns_weight or flags.no_training
-        ):
+        elif kcal > allowed and energy.surplus_blocked(flags):
             kcal = allowed
             notes.append(f"lowered to {allowed:,} kcal: the safety rules forbid a surplus")
     result = macros.macro_targets(profile, kcal, in_deficit=in_deficit, today=args.today)
@@ -1299,6 +1298,8 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
     if "target_kcal" in fields and "in_deficit" in fields:
         try:
             kcal = float(fields["target_kcal"])
+            if not math.isfinite(kcal):
+                raise ValueError
         except ValueError:
             kcal = None
             problems.append(f"target_kcal must be a number, not {fields['target_kcal']!r}")
