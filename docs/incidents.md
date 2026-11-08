@@ -71,3 +71,6 @@ One line per bug that reached main: what broke, and which review layer should ha
 - 2026-11-08 (beta2 p7-nuevo-I3): the README's install line ran `uv sync` without the pdf extra
   that /plan's export needs, and asked to clone a private copy before saying how to make one.
   Layer: skill dry run from a clean clone (no dry run started from the README alone).
+- 2026-11-08 (beta2 p4-sara-I2): a catalogue product and the generic food it stands for got two
+  shopping lines in different stores. Layer: tests (no fixture with a product and its generic food
+  in one menu).

@@ -32,6 +32,8 @@ FIELDS = [
     "url",
     "fetched_on",
     "source",
+    "pack_size",
+    "replaces",
 ]
 
 
@@ -51,6 +53,10 @@ class CatalogueProduct:
     url: str
     fetched_on: date
     source: str = SOURCE
+    pack_size: float | None = (
+        None  # one pack, in the unit of `per` (g or ml); shopping counts packs
+    )
+    replaces: str = ""  # a generic food's name_en: shopping buys this product for it
 
     @classmethod
     def from_row(cls, row: dict) -> CatalogueProduct:
@@ -66,6 +72,9 @@ class CatalogueProduct:
             url=row["url"],
             fetched_on=date.fromisoformat(row["fetched_on"]),
             source=row["source"],
+            # files written before these columns lack them
+            pack_size=float(row["pack_size"]) if (row.get("pack_size") or "").strip() else None,
+            replaces=row.get("replaces") or "",
         )
 
     def to_row(self) -> dict:
@@ -84,6 +93,8 @@ class CatalogueProduct:
             "url": self.url,
             "fetched_on": self.fetched_on.isoformat(),
             "source": self.source,
+            "pack_size": number(self.pack_size),
+            "replaces": self.replaces,
         }
 
     def missing(self) -> list[str]:
@@ -99,6 +110,8 @@ class CatalogueProduct:
             barcode=self.barcode,
             chain=self.chain,
             per=self.per,
+            pack_size=self.pack_size,
+            replaces=self.replaces,
         )
 
 

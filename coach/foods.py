@@ -37,6 +37,7 @@ FIELDS = [
     "unit_name",
     "unit_g",
     "food_group",
+    "buy_as",
 ]
 NUMBERS = ("kcal", "protein_g", "carbs_g", "fat_g", "fibre_g")
 # nutrition.md: "EU label rules and tolerances": fibre counts 2 kcal/g in label energy.
@@ -92,6 +93,9 @@ class Food:
     unit_name: str = ""  # countable foods: the source's portion name ("large" for an egg)
     unit_g: float | None = None  # grams in one such unit
     food_group: str = ""  # the source's food category; blank for products
+    buy_as: str = ""  # another form's name_en, bought instead (boiled egg -> raw egg), by unit
+    pack_size: float | None = None  # catalogue products: one pack, in this food's unit
+    replaces: str = ""  # catalogue products: the generic food's name_en it is bought for
 
     @classmethod
     def from_row(cls, row: dict) -> Food:

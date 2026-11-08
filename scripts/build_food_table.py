@@ -151,6 +151,7 @@ def build_rows(
             "unit_name": unit,
             "unit_g": "" if unit_g is None else unit_g,
             "food_group": (groups or {}).get(fdc_id, ""),
+            "buy_as": (item.get("buy_as") or "").strip(),
         }
         row["kcal_exception"] = energy_exception(row) or ""
         rows.append(row)

@@ -432,9 +432,14 @@ def shopping(
     named in `eaten_out`. Foods that match the client's `pantry` words are left out and named in
     `pantry_skipped`; names not in the table are listed in `unknown`. A food with a unit in the
     table (`unit_name`, `unit_g`: an egg is "large", 50 g) also gets `units`, the grams in whole
-    units, rounded up."""
+    units, rounded up. A food with `buy_as` (a boiled or fried egg) is bought as that form, by
+    unit weight; a catalogue product that `replaces` a generic food is bought for it (grams and
+    ml converted with the food's density); a product with a `pack_size` gets `packs`, whole
+    packs rounded up."""
+    replaced = {fold(f.replaces): f for f in table if f.replaces}
     amounts: dict[str, dict[tuple[str, str], float]] = defaultdict(lambda: defaultdict(float))
     unit_g: dict[tuple[str, str], tuple[str, float]] = {}
+    packs: dict[tuple[str, str], float] = {}
     unknown: list[str] = []
     skipped: dict[str, str] = {}
     cooked = []
@@ -463,15 +468,22 @@ def shopping(
             if any(matches(word, food.name_en, food.name_es) for word in pantry or []):
                 skipped[fold(label)] = label
                 continue
-            key = (label, getattr(amount, "unit", food.unit))
+            unit = getattr(amount, "unit", food.unit)
+            food, amount, unit = _bought_as(food, amount, unit, table, replaced)
+            label = food.name_en if language == "en" else food.name_es
+            key = (label, unit)
             amounts[food.chain or ANY_CHAIN][key] += amount * times
-            if food.unit_g and key[1] == "g":
+            if food.unit_g and unit == "g":
                 unit_g[key] = (food.unit_name, food.unit_g)
+            if food.pack_size and unit == food.unit:
+                packs[key] = food.pack_size
     chains = sorted(amounts, key=lambda chain: (chain == ANY_CHAIN, fold(chain)))
     return {
         "chains": {
             chain: [
-                {"name": name, UNIT_KEY[unit]: total} | _units(total, unit_g.get((name, unit)))
+                {"name": name, UNIT_KEY[unit]: round(total, 1)}
+                | _units(total, unit_g.get((name, unit)))
+                | _packs(total, packs.get((name, unit)))
                 for (name, unit), total in sorted(amounts[chain].items())
             ]
             for chain in chains
@@ -481,6 +493,31 @@ def shopping(
         "eaten_out": eaten_out,
         "pantry_skipped": [skipped[key] for key in sorted(skipped)],
     }
+
+
+def _bought_as(
+    food: Food, amount: float, unit: str, table: list[Food], replaced: dict[str, Food]
+) -> tuple[Food, float, str]:
+    """The food actually bought for this item, with the amount in its unit."""
+    target = find(food.buy_as, table) if food.buy_as else None
+    if target is not None and unit == "g" and food.unit_g and target.unit_g:
+        food, amount = target, amount / food.unit_g * target.unit_g
+    product = replaced.get(fold(food.name_en))
+    if product is None:
+        return food, amount, unit
+    if unit != product.unit:
+        if not food.g_per_ml:
+            return food, amount, unit  # no density: stays the generic line
+        amount = amount / food.g_per_ml if unit == "g" else amount * food.g_per_ml
+    return product, amount, product.unit
+
+
+def _packs(amount: float, size: float | None) -> dict:
+    """`packs` and `pack_size` for a product with a pack size, else nothing."""
+    if size is None:
+        return {}
+    # convention: whole packs, rounded up, 2 decimals first (as for `units`).
+    return {"packs": math.ceil(round(amount / size, 2)), "pack_size": size}
 
 
 def _units(grams: float, unit: tuple[str, float] | None) -> dict:

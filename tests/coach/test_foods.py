@@ -31,6 +31,7 @@ def row(**kw):
         unit_name="",
         unit_g="",
         food_group="",
+        buy_as="",
     )
     return base | kw
 
