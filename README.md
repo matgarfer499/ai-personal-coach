@@ -51,9 +51,48 @@ rule in `knowledge/` with its sources.
 - **Menus you would eat.** Dishes from real recipes and the products you buy, checked against
   your targets, with a shopping list and a printable PDF.
 
+## First 10 minutes
+
+You need a terminal (Terminal on macOS, PowerShell on Windows); new to it? See the
+[terminal guide](https://code.claude.com/docs/en/terminal-guide).
+
+1. **Install Claude Code**, the app the coach runs in
+   ([setup docs](https://code.claude.com/docs/en/setup)):
+   - macOS, Linux, WSL: `curl -fsSL https://claude.ai/install.sh | bash`
+   - Windows PowerShell: `irm https://claude.ai/install.ps1 | iex`
+
+   It needs a paid Claude plan (Pro, Max, Team, Enterprise) or a Console (API) account; the free
+   plan does not include it. You log in the first time you run `claude`, in the browser.
+2. **Install [uv](https://docs.astral.sh/uv/getting-started/installation/)**, which installs
+   Python 3.12 and the coach's libraries for you, and [Git](https://git-scm.com/downloads) if
+   `git --version` says it is missing (on Windows, Git for Windows also helps Claude Code).
+3. **Make your own private copy** before adding anything about you: on GitHub, "Use this
+   template" and choose Private (see [Your data stays private](#your-data-stays-private)).
+4. **Download it and install the coach**, using your copy's address:
+
+   ```
+   git clone https://github.com/YOUR-NAME/YOUR-COPY.git ai-personal-coach
+   cd ai-personal-coach
+   uv sync --extra pdf
+   uv run python -m coach doctor
+   ```
+
+   `coach doctor` checks Python, the PDF extra, the data folder, uv and Claude Code, and prints
+   the command that fixes anything missing.
+5. **Start the coach**: run `claude` in that folder. At Claude's prompt (where you type to it),
+   type `/setup` and press Enter. It asks one question per message, in your language, for about
+   15 minutes: you, three health questions from the ACSM preparticipation method (regular
+   exercise, a diagnosed heart, metabolic or kidney disease, warning symptoms), a short
+   eating-disorder prompt, medication and blood pressure. The PAR-Q+ questionnaire is offered by
+   link as an optional extra ([forms/README.md](forms/README.md)). Then it gives your starting
+   targets, and `/plan` writes your first plan.
+
+Words such as RIR, RPE or bpm are explained the first time they come up, from
+[`docs/glossary.md`](docs/glossary.md) (Spanish and English).
+
 ## How you use it
 
-Each command below is typed at Claude's prompt, inside the `claude` session.
+Each `/command` below is typed at Claude's prompt, inside the `claude` session.
 
 <p align="center">
   <img src="assets/loop.png" alt="Weekly loop: /setup, coach safety and /plan; /checkin every day, /review weekly, agreed changes back to /plan; /menu from the plan" width="960">
@@ -88,53 +127,12 @@ needs the optional extra: `uv sync --extra pdf`.
 (`--out FILE`, `--no-qr`), the plan with a video search link and QR code per exercise for
 checking technique (no exercise pictures). It aims at one page; a long plan may run over.
 
-The coach explains terms such as RIR, RPE or bpm the first time they come up, from
-[`docs/glossary.md`](docs/glossary.md) (Spanish and English).
-
 [`docs/examples/`](docs/examples/) has dry runs of `/setup`, `/checkin`, `/import`, `/plan`,
 `/review` and `/menu` with an invented client, including the red-flag cases. Each one names the
 date it was run; skills changed after that date can differ from the transcript.
 
 The CLI behind the skills can also be used directly, for example
 `uv run python -m coach energy` or `uv run python -m coach --help`.
-
-## First 10 minutes
-
-You need a terminal (Terminal on macOS, PowerShell on Windows); new to it? See the
-[terminal guide](https://code.claude.com/docs/en/terminal-guide).
-
-1. **Install Claude Code**, the app the coach runs in
-   ([setup docs](https://code.claude.com/docs/en/setup)):
-   - macOS, Linux, WSL: `curl -fsSL https://claude.ai/install.sh | bash`
-   - Windows PowerShell: `irm https://claude.ai/install.ps1 | iex`
-
-   It needs a paid Claude plan (Pro, Max, Team, Enterprise) or a Console (API) account; the free
-   plan does not include it. You log in the first time you run `claude`, in the browser.
-2. **Install [uv](https://docs.astral.sh/uv/getting-started/installation/)**, which installs
-   Python 3.12 and the coach's libraries for you.
-3. **Make your own private copy** before adding anything about you: on GitHub, "Use this
-   template" and choose Private (see [Your data stays private](#your-data-stays-private)).
-4. **Download it and install the coach**, using your copy's address:
-
-   ```
-   git clone https://github.com/YOUR-NAME/YOUR-COPY.git ai-personal-coach
-   cd ai-personal-coach
-   uv sync --extra pdf
-   uv run python -m coach doctor
-   ```
-
-   `coach doctor` checks Python, the PDF extra, the data folder, uv and Claude Code, and prints
-   the command that fixes anything missing.
-5. **Start the coach**: run `claude` in that folder. At Claude's prompt (where you type to it),
-   type `/setup` and press Enter. It asks one question per message, in your language, for about
-   15 minutes: you, three health questions from the ACSM preparticipation method (regular
-   exercise, a diagnosed heart, metabolic or kidney disease, warning symptoms), a short
-   eating-disorder prompt, medication and blood pressure. The PAR-Q+ questionnaire is offered by
-   link as an optional extra ([forms/README.md](forms/README.md)). Then it gives your starting
-   targets, and `/plan` writes your first plan.
-
-Words such as RIR, RPE or bpm are explained the first time they come up, from
-[`docs/glossary.md`](docs/glossary.md).
 
 To try every command, including the red-flag cases with invented personas, follow
 [`docs/testing-guide.md`](docs/testing-guide.md).

@@ -42,3 +42,24 @@ def test_doctor_runs_from_the_cli_without_a_profile(capsys, tmp_path):
     code = main(["--data-dir", str(tmp_path), "doctor", "--json"])
     out = json.loads(capsys.readouterr().out)
     assert code == 0 and "checks" in out
+
+
+def test_unusable_data_dir_is_reported_with_a_fix(tmp_path):
+    not_a_folder = tmp_path / "data"
+    not_a_folder.write_text("", encoding="utf-8")
+    checks = _by_name(doctor.run(not_a_folder))
+    assert checks["data_dir"]["ok"] is False and "COACH_DATA_DIR" in checks["data_dir"]["fix"]
+    assert checks["profile"]["detail"] == "no profile yet"
+
+
+def test_unreadable_profile_is_a_failed_check_not_an_error(capsys, tmp_path):
+    (tmp_path / "profile.yaml").mkdir()
+    code = main(["--data-dir", str(tmp_path), "doctor", "--json"])
+    profile = _by_name(json.loads(capsys.readouterr().out))["profile"]
+    assert code == 0 and profile["ok"] is False and "profile.yaml" in profile["fix"]
+
+
+def test_broken_profile_fix_names_the_file_not_setup(tmp_path):
+    (tmp_path / "profile.yaml").write_text("sex: [", encoding="utf-8")
+    profile = _by_name(doctor.run(tmp_path))["profile"]
+    assert profile["ok"] is False and "profile.yaml" in profile["fix"]

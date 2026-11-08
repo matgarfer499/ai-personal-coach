@@ -7,7 +7,7 @@ import shutil
 import sys
 from pathlib import Path
 
-# The Python the project declares in pyproject.toml (`requires-python`).
+# convention: tooling, not coaching: the Python pyproject.toml declares (`requires-python`).
 PYTHON_MIN = (3, 12)
 
 
@@ -34,26 +34,30 @@ def _data_dir(data_dir: Path) -> tuple[bool, str]:
     return True, str(data_dir.resolve())
 
 
-def _profile(data_dir: Path) -> tuple[bool, str]:
+SETUP_FIX = "start `claude` in this folder and type /setup at its prompt"
+
+
+def _profile(data_dir: Path) -> tuple[bool, str, str]:
     from coach.cli import PROFILE_REQUIRED, _missing  # the same list `coach profile show` uses
     from coach.profile import load_profile
 
     path = data_dir / "profile.yaml"
     if not path.exists():
-        return False, "no profile yet"
+        return False, "no profile yet", SETUP_FIX
     try:
         profile = load_profile(path)
-    except ValueError as err:
-        return False, str(err)
+    except (ValueError, OSError) as err:
+        # /setup reads the profile first, so it fails on this file too
+        return False, str(err), f"fix the line named above in {path}, or move the file away"
     missing = [f for f in PROFILE_REQUIRED if _missing(profile, f)]
-    return not missing, "missing: " + ", ".join(missing) if missing else "complete"
+    return not missing, "missing: " + ", ".join(missing) if missing else "complete", SETUP_FIX
 
 
 def run(data_dir: Path) -> dict:
     data_dir = Path(data_dir)
     python = sys.version_info[:2]
     data_ok, data_detail = _data_dir(data_dir)
-    profile_ok, profile_detail = _profile(data_dir) if data_ok else (False, "no data folder")
+    profile_ok, profile_detail, profile_fix = _profile(data_dir)
     checks = [
         _check(
             "python",
@@ -89,7 +93,7 @@ def run(data_dir: Path) -> dict:
             "profile",
             profile_ok,
             profile_detail,
-            "start `claude` in this folder and type /setup at its prompt",
+            profile_fix,
         ),
     ]
     return {"ok": all(c["ok"] for c in checks), "checks": checks}
