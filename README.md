@@ -77,7 +77,8 @@ You need a terminal (Terminal on macOS, PowerShell on Windows); new to it? See t
    git remote remove origin
    ```
 
-   With no `origin`, nothing you add can be pushed anywhere (then skip the clone in step 4).
+   With no `origin`, nothing you add can be pushed anywhere (then start step 4 at
+   `uv sync --extra pdf`: you are already in the folder).
 4. **Download it and install the coach**, using your copy's address:
 
    ```

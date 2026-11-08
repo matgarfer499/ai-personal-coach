@@ -300,8 +300,9 @@ saying the `pdf` extra is missing, tell the client to run `uv sync --extra pdf`.
   near-maximal zone, race efforts). Near-maximal lifts include the 1RM tests that
   "PAR-Q+ specific thresholds" names as maximal work; the knowledge base has no rep or %1RM
   cut-off, so (convention, the cautious side) also count any max attempt and any heavy single,
-  double or triple as near-maximal. A rep range such as 4-6 is not near-maximal; a 3-6 range
-  is near-maximal only in its sets of 3, so under these flags write it as 4-6. With
+  double or triple as near-maximal. A rep range such as 4-6 at the RIR the rules give is not
+  near-maximal; a 3-6 range is near-maximal only in its sets of 3, so under these flags write it
+  as 4-6. With
   `review_before_vigorous`, say a qualified exercise professional or clinician reviews it first
   if the client wants it; record that review with `coach profile set
   screening.vigorous_reviewed true` only when the client says it happened.

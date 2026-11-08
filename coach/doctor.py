@@ -56,14 +56,17 @@ def _profile(data_dir: Path) -> tuple[bool, str, str]:
 def text(report: dict) -> str:
     """The report as a list a person reads; `coach doctor --json` gives the JSON."""
     lines = [
-        f"{'ok  ' if c['ok'] else 'FIX '} {c['check']}: {c['detail']}"
+        f"{'ok  ' if c['ok'] else 'FIX '} {c['check']}: {' '.join(c['detail'].split())}"
         + ("" if c["ok"] else f"\n      -> {c['fix']}")
         for c in report["checks"]
     ]
     profile = next(c for c in report["checks"] if c["check"] == "profile")
+    others = [c["check"] for c in report["checks"] if not c["ok"] and c is not profile]
     if report["ok"]:
         lines.append("All good.")
-    elif not profile["ok"]:
+    if others:
+        lines.append(f"Fix these first: {', '.join(others)}.")
+    if not profile["ok"] and profile["fix"] == SETUP_FIX:
         lines.append("A missing or incomplete profile is expected before /setup finishes.")
     return "\n".join(lines) + "\n"
 

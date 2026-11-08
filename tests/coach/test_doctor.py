@@ -83,3 +83,10 @@ def test_doctor_json_stays_json(tmp_path, capsys):
 
     assert main(["--data-dir", str(tmp_path), "doctor", "--json"]) == 0
     assert json.loads(capsys.readouterr().out)["ok"] is False
+
+
+def test_doctor_text_keeps_a_broken_profile_on_one_line_and_never_calls_it_expected(tmp_path):
+    (tmp_path / "profile.yaml").write_text("sex: [\n", encoding="utf-8")
+    out = doctor.text(doctor.run(tmp_path))
+    line = next(x for x in out.splitlines() if "profile:" in x)
+    assert "FIX" in line and "expected before /setup" not in out
