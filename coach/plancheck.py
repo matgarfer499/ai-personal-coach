@@ -31,6 +31,23 @@ NUTRIENTS = {
 # A whole number; "1,850" and "1.850" are thousands. Per-kg and % figures ("1.6 g/kg", "30% of
 # energy") are not the day's grams, so the next number is read instead.
 _NUMBER = re.compile(r"(?<![\d.,])(\d+(?:[.,]\d+)*)(?!\d|[.,]\d|\s*(?:%|g\s*/\s*kg))")
+# convention: a Nutrition line lists its nutrients in parts split at ; or at a comma that is not a
+# decimal or thousands one ("1648 kcal, proteina 131,22 g"); a nutrient's number is in its part,
+# or in the next part when that names no nutrient ("protein: 1.6 g/kg, about 120 g").
+_PARTS = re.compile(r";|,(?!\d)")
+# The number just before the word, with only g and de/of between ("1648 kcal", "131 g de
+# proteina", "141 g protein"); any other number before it ("3 meals with protein", "1650 kcal
+# protein") is not its.
+_BEFORE = re.compile(_NUMBER.pattern + r"\s*g?\s*(?:de|of)?\s*$")
+# A word that is a label ("week 2 calories: 1850") or a per-kg unit ("1,6 g de proteina por kg")
+# does not own the number before it.
+_NOT_BEFORE = re.compile(r"\s*(?::|(?:/|per|por)\s*kg\b)")
+# A number in the next part needs the nutrient's unit: "4 meals" is no protein, "200 g" no kcal.
+_UNIT = {
+    key: re.compile(_NUMBER.pattern + (r"\s*k?cal\b" if key == "kcal" else r"\s*g\b"))
+    for key in NUTRIENTS
+}
+_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 _THOUSANDS = re.compile(r"\d{1,3}(?:[.,]\d{3})+")
 _KG = re.compile(r"(\d+(?:[.,]\d+)?)\s*kg\b", re.I)
 _KM = re.compile(r"(\d+(?:[.,]\d+)?)\s*km\b", re.I)
@@ -63,20 +80,38 @@ def _number(text: str) -> float:
     return float(text.replace(",", "."))
 
 
+def _hit(part: str, words: tuple[str, ...]) -> re.Match | None:
+    """The leftmost of `words` in `part`."""
+    hits = (m for w in words if (m := re.search(rf"\b{w}\b", part)))
+    return min(hits, key=lambda m: m.start(), default=None)
+
+
 def nutrition_numbers(text: str) -> dict[str, float]:
-    """The first number after each nutrient's word in the Nutrition section."""
+    """Each nutrient's number in the Nutrition section: the one just before its word, else the
+    first after it in the same part of the line, else the first in a next part with no nutrient."""
     found: dict[str, float] = {}
     for heading, lines in export._plan_sections(text):
         if fold(heading) not in NUTRITION:
             continue
         for line in lines:
-            folded = fold(line)
-            for key, words in NUTRIENTS.items():
-                if key in found:
-                    continue
-                hit = next((m for w in words if (m := re.search(rf"\b{w}\b", folded))), None)
-                number = _NUMBER.search(folded, hit.end()) if hit else None
-                if number:
+            parts = _PARTS.split(fold(line))
+            for part, after in zip(parts, [*parts[1:], ""], strict=True):
+                for key, words in NUTRIENTS.items():
+                    if key in found or not (hit := _hit(part, words)):
+                        continue
+                    number = (
+                        (
+                            not _NOT_BEFORE.match(part, hit.end())
+                            and _BEFORE.search(part[: hit.start()])
+                        )
+                        or _NUMBER.search(part, hit.end())
+                        or (
+                            not any(_hit(after, w) for w in NUTRIENTS.values())
+                            and _UNIT[key].search(after)
+                        )
+                    )
+                    if not number:
+                        continue
                     raw = number.group(1)
                     thousands = _THOUSANDS.fullmatch(raw)
                     found[key] = float(re.sub("[.,]", "", raw)) if thousands else _number(raw)
@@ -226,3 +261,14 @@ def planned_km(text: str) -> list[float]:
         if line.startswith(("- ", "* ")) and km:
             out.append(max(km))
     return out
+
+
+def prescribes_training(text: str, muscle_map: dict[str, dict]) -> bool:
+    """The plan lists sessions of lifts, or a bullet with a number (sets, load, km, minutes,
+    hours) in its training week or Cardio: after a training stop it is stale."""
+    # convention: any number but a date in a training bullet counts, so an unread format errs on
+    # stale.
+    return bool(export.plan_sessions(text, muscle_map)) or any(
+        line.startswith(("- ", "* ")) and re.search(r"\d", _DATE.sub("", line))
+        for line in _prescribing_lines(text)
+    )

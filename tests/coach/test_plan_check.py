@@ -243,3 +243,111 @@ def test_run_bullets_are_not_lifts_missing_from_plan_week_yaml(capsys, data_dir)
     )
     _, out = run(capsys, data_dir, "plan", "check")
     assert not any("Easy run" in p for p in out["problems"]), out["problems"]
+
+
+# Beta 4 p1-lucia-F1, p5-elena-F1, p6-james-F1, p7-nuevo-F3: a one-line Nutrition section.
+@pytest.mark.parametrize(
+    "line",
+    [
+        "1648 kcal, proteína 131,22 g, grasa 45,78 g, hidratos 177,78 g, fibra 25 g.",
+        "1648 kcal; protein 131.22 g; fat 45.78 g; carbohydrate 177.78 g; fibre 25 g",
+        "1648 kcal, 131 g protein, 46 g fat, 178 g carbs, 25 g fibre",
+        "1.648 kcal, 131 g de proteína, 46 g de grasa, 178 g de hidratos, 25 g de fibra",
+    ],
+)
+def test_a_one_line_nutrition_section_is_read(line):
+    from coach.plancheck import nutrition_numbers
+
+    got = nutrition_numbers(f"## Nutrition\n\n{line}\n")
+    assert got["kcal"] == 1648 and round(got["protein"]) == 131 and round(got["fat"]) == 46
+    assert round(got["carbs"]) == 178 and got["fibre"] == 25
+
+
+def test_a_nutrient_with_no_number_in_its_part_is_not_read():
+    from coach.plancheck import nutrition_numbers
+
+    text = "## Nutrition\n\n- 3 meals with protein, fibre at every meal; 1650 kcal\n"
+    assert nutrition_numbers(text) == {"kcal": 1650}
+
+
+def test_the_kcal_figure_is_not_the_next_nutrients():
+    from coach.plancheck import nutrition_numbers
+
+    text = "## Nutrition\n\n- Calories 1650 kcal protein 120 g\n"
+    assert nutrition_numbers(text) == {"kcal": 1650, "protein": 120}
+
+
+def test_a_per_kg_figure_then_grams_after_a_comma_reads_the_grams():
+    from coach.plancheck import nutrition_numbers
+
+    text = "## Nutrition\n\n- Protein: 1.6 g/kg, about 120 g a day\n"
+    assert nutrition_numbers(text) == {"protein": 120}
+
+
+@pytest.mark.parametrize(
+    "line, expected",
+    [
+        ("Week 2 calories: 1850", {"kcal": 1850}),  # a label's number follows it
+        ("Objetivo diario: 1,6 g de proteína por kg, unos 120 g", {"protein": 120}),
+        ("Protein: 1.6 g/kg, spread over 4 meals", {}),  # a count is not grams
+        ("Carbs: rest of calories, about 200 g", {"carbs": 200}),  # grams are not kcal
+        ("1850 kcal/día (calorías de mantenimiento: 2100)", {"kcal": 1850}),  # leftmost word
+    ],
+)
+def test_a_nutrient_reads_only_its_own_figure(line, expected):
+    from coach.plancheck import nutrition_numbers
+
+    assert nutrition_numbers(f"## Nutrition\n\n- {line}\n") == expected
+
+
+# Beta 4 p3-antonio-F1: a plan written after a training stop prescribes no training.
+def _stopped(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "screening.symptoms", "chest_pain")
+    assert run(capsys, data_dir, "safety")[1]["no_training"] is True
+
+
+def test_a_no_training_plan_after_a_stop_is_ok_and_exports(capsys, data_dir):
+    write(capsys, data_dir)  # the plan before the stop, with its plan-week.yaml
+    _stopped(capsys, data_dir)
+    m = macros(capsys, data_dir)
+    (data_dir / "plan.md").write_text(
+        f"Date: {TODAY}\ntarget_kcal: {m['kcal']:g}\nin_deficit: false\n\n"
+        "## Training week\n\nNo training until a doctor has seen you.\n\n"
+        f"## Nutrition\n\n- Calories: {m['kcal']:g} kcal\n",
+        encoding="utf-8",
+    )
+    _, out = run(capsys, data_dir, "plan", "check")
+    assert out["ok"] is True, out["problems"]
+    assert run(capsys, data_dir, "plan", "export", "--no-qr")[0] == 0
+
+
+@pytest.mark.parametrize(
+    "week, cardio",
+    [
+        (WEEK, "- Rest."),
+        ([], "- Sunday: easy run 5 km."),
+        ([], "- Saturday: walk 45 minutes."),
+        ([], "- Saturday: walk 1 hour."),
+    ],
+)
+def test_a_plan_with_training_after_a_stop_is_stale(capsys, data_dir, week, cardio):
+    write(capsys, data_dir, week=week, cardio=cardio)
+    _stopped(capsys, data_dir)
+    _, out = run(capsys, data_dir, "plan", "check")
+    assert out["ok"] is False and any("stale" in p for p in out["problems"])
+
+
+def test_unlabelled_lift_bullets_are_training():
+    from coach.plancheck import prescribes_training
+    from coach.strength import load_muscle_map
+
+    text = "## Training week\n\n- Squat 3x8 60 kg\n- Bench press 3x8 40 kg\n"
+    assert prescribes_training(text, load_muscle_map())
+
+
+def test_a_date_in_a_stop_bullet_is_not_training():
+    from coach.plancheck import prescribes_training
+    from coach.strength import load_muscle_map
+
+    text = "## Training week\n\n- Paused until a doctor clears you (stop since 2026-11-01).\n"
+    assert not prescribes_training(text, load_muscle_map())

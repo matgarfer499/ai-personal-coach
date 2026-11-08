@@ -78,7 +78,9 @@ def test_the_veg_and_fruit_warning_is_spanish(capsys, data_dir):
 
 def test_a_stale_plan_says_so_in_spanish(capsys, data_dir):
     (data_dir / "plan.md").write_text(
-        "Fecha: 2026-11-01\ntarget_kcal: 1600\nin_deficit: true\n", encoding="utf-8"
+        "Fecha: 2026-11-01\ntarget_kcal: 1600\nin_deficit: true\n\n"
+        "## Semana de entrenamiento\n\n- A: Sentadilla 3x8 60 kg\n",
+        encoding="utf-8",
     )
     run(capsys, data_dir, "checkin", "add", "--symptoms", "dizzy")
     _, out = run(capsys, data_dir, "plan", "check")
