@@ -9,15 +9,15 @@ Fields: type, DOI, canonical URL, opened URL, which files cite it, and what in t
 | Type | Count |
 |---|---|
 | Meta-analysis | 304 |
-| Other | 117 |
+| Other | 118 |
 | RCT | 97 |
-| Cohort | 89 |
-| Systematic review | 97 |
-| Guideline | 82 |
-| Narrative review | 50 |
+| Cohort | 91 |
+| Systematic review | 100 |
+| Guideline | 83 |
+| Narrative review | 51 |
 | Position stand | 39 |
 | Umbrella review | 15 |
-| **Total** | **890** |
+| **Total** | **898** |
 
 ## List
 
@@ -6217,3 +6217,59 @@ Type: Guideline · DOI: none · Files: nutrition
 URL: <https://ars.usda.gov/ARSUserFiles/80400535/Data/retn/USDA_CookingYields_MeatPoultry02.pdf>  
 Opened: <https://ars.usda.gov/ARSUserFiles/80400535/Data/retn/USDA_CookingYields_MeatPoultry02.xlsx>  
 Supports: Condensed: 'Yield (%) = 100 x (Wch / Wcr)'. Rows: chicken breast, meat and skin, roasted 72, stewed 77; thigh, meat and skin, roasted 69, stewed 74; drumstick, meat and skin, roasted 76; ground beef crumbles pan-fried, low fat (<12%) 69, medium (12%-22%) 67, high (>22%) 62; patty pan-broiled 77, 73, 69. Added by research 2026-11-08 (beta2).
+
+### S895
+Bognar A. 2002. Tables on weight yield of food and retention factors of food constituents for the calculation of nutrient composition of cooked foods (dishes). Berichte der Bundesforschungsanstalt fuer Ernaehrung BFE-R--02-03. Karlsruhe: Bundesforschungsanstalt fuer Ernaehrung  
+Type: Other · DOI: none · Files: nutrition  
+URL: <https://www.fao.org/uploads/media/bognar_bfe-r-02-03.pdf>  
+Opened: <https://www.fao.org/uploads/media/bognar_bfe-r-02-03.pdf>  
+Supports: Condensed: 'Rice, long corn, polished, boiled TR m.S a - - 2.98 0.05 140'; 'Noodles, hard wheat (egg-free pasta), boiled TR m.S a - - 2.10 0.20 4'; 'Lentils, boiled /stewed TP m.S a/c - - 2.73 0.06 6'; 'Beans (white and red), boiled / stewed TP ... 2.50 0.10 10'; 'Broccoli, boiled FR m.S a - - 1.11 0.02 3'; 'Green beans, boiled FR/TK ... 0.93 0.02 120'. Added by research 2026-11-08 (beta3).
+
+### S896
+Vickers AJ, Vertosick EA. 2016. An empirical study of race times in recreational endurance runners. BMC Sports Sci Med Rehabil 8(1):26  
+Type: Cohort · DOI: [10.1186/s13102-016-0052-y](https://doi.org/10.1186/s13102-016-0052-y) · Files: cardio-health  
+URL: <https://doi.org/10.1186/s13102-016-0052-y>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=27570626&rettype=abstract&retmode=text>  
+Supports: 'The commonly used Riegel formula for race time prediction was well-calibrated for races up to a half-marathon, but dramatically underestimated marathon time, giving times at least 10 min too fast for half of runners.' ... 'using a constant of k = 1.07' ... 'no evidence of a difference for half marathon and 10 k times, implying good calibration (p = 0.3 and p = 0.9, respectively).' Added by research 2026-11-08 (beta3).
+
+### S897
+Nikolaidis PT, Knechtle B. 2023. Predictors of half-marathon performance in male recreational athletes. EXCLI J 22:559-566  
+Type: Cohort · DOI: [10.17179/excli2023-6198](https://doi.org/10.17179/excli2023-6198) · Files: cardio-health  
+URL: <https://doi.org/10.17179/excli2023-6198>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=37534223&rettype=abstract&retmode=text>  
+Supports: 'Recreational runners (n=134, age 44.2±8.7 years; half-marathon race time 104.6±16.2 min) underwent a physical fitness battery consisting of anthropometric and physiological tests. [...] Performance groups differed in half-marathon race time, training days, training distance, age, weight, (body mass index) BMI, body fat (BF) and maximum oxygen uptake (VO2max) (p≤0.001, η2≥0.132), where faster groups had better scores than the slower groups. ...' Added by research 2026-11-08 (beta3).
+
+### S898
+Nikolaidis PT, Knechtle B. 2023. Participation and performance characteristics in half-marathon run: a brief narrative review. J Muscle Res Cell Motil 44(2):115-122  
+Type: Narrative review · DOI: [10.1007/s10974-022-09633-1](https://doi.org/10.1007/s10974-022-09633-1) · Files: cardio-health  
+URL: <https://doi.org/10.1007/s10974-022-09633-1>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=36326961&rettype=abstract&retmode=text>  
+Supports: 'Performance in HM was related with superior scores in aerobic capacity (maximal oxygen uptake, anaerobic threshold and running economy) and training characteristics (sport experience, weekly distance, training speed, frequency of sessions and long single endurance run distance), and lower scores in adiposity-related scores (e.g. body mass, body mass index, body fat percentage and skinfold thickness).' Added by research 2026-11-08 (beta3).
+
+### S899
+Rambaud AJM, Ardern CL, Thoreux P, Regnaux JP, Edouard P. 2018. Criteria for return to running after anterior cruciate ligament reconstruction: a scoping review. Br J Sports Med 52(22):1437-1444  
+Type: Systematic review · DOI: [10.1136/bjsports-2017-098602](https://doi.org/10.1136/bjsports-2017-098602) · Files: recovery-habits  
+URL: <https://doi.org/10.1136/bjsports-2017-098602>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=29720478&rettype=abstract&retmode=text>  
+Supports: '201 studies fulfilled the inclusion criteria and reported 205 time-based criteria for RTR. The median time from when RTR was permitted was 12 postoperative weeks (IQR=3.3, range 5-39 weeks). Fewer than one in five studies used additional clinical, strength or performance-based criteria for decision-making regarding RTR. Aside from time, the most frequently reported criteria for RTR were: full knee range of motion or >95% of the non-injured ...' Added by research 2026-11-08 (beta3).
+
+### S900
+Kotsifaki R, Korakakis V, King E, Barbosa O, Maree D, Pantouveris M, Bjerregaard A, Luomajoki J, Wilhelmsen J, Whiteley R. 2023. Aspetar clinical practice guideline on rehabilitation after anterior cruciate ligament reconstruction. Br J Sports Med 57(9):500-514  
+Type: Guideline · DOI: [10.1136/bjsports-2022-106158](https://doi.org/10.1136/bjsports-2022-106158) · Files: recovery-habits  
+URL: <https://doi.org/10.1136/bjsports-2022-106158>  
+Opened: <https://www.ncbi.nlm.nih.gov/pmc/oai/oai.cgi?verb=GetRecord&identifier=oai:pubmedcentral.nih.gov:11785408&metadataPrefix=pmc>  
+Supports: 'Return to running Despite an absence of research findings, we feel it is warranted to suggest criteria for return to running (where running has a volume and intensity to achieve cardiovascular adaptation): 95% knee flexion range of motion (ROM). Full extension ROM. No effusion/trace of effusion. Limb symmetry index (LSI)>80% for quadriceps strength. LSI>80% eccentric impulse during countermovement jump. Pain-free aqua jogging and Alter-G ...' Added by research 2026-11-08 (beta3).
+
+### S901
+George ERM, Sheerin KR, Reid D. 2024. Criteria and Guidelines for Returning to Running Following a Tibial Bone Stress Injury: A Scoping Review. Sports Med 54(9):2247-2265  
+Type: Systematic review · DOI: [10.1007/s40279-024-02051-y](https://doi.org/10.1007/s40279-024-02051-y) · Files: recovery-habits  
+URL: <https://doi.org/10.1007/s40279-024-02051-y>  
+Opened: <https://www.ncbi.nlm.nih.gov/pmc/oai/oai.cgi?verb=GetRecord&identifier=oai:pubmedcentral.nih.gov:11393297&metadataPrefix=pmc>  
+Supports: 'Fifty studies met the inclusion criteria and were included. ... There are five important components to address prior to introducing running, which are: the resolution of bony tenderness, pain-free walking, evidence of radiological healing in high-risk BSIs, strength, functional and loading tests, and the identification of contributing factors. ... Harmon et al. [41] specified 75-80% of lower extremity strength of the injured compared to ...' Added by research 2026-11-08 (beta3).
+
+### S902
+Van Cant J, Pairot de Fontenay B, Douaihy C, Rambaud A. 2022. Characteristics of return to running programs following an anterior cruciate ligament reconstruction: A scoping review of 64 studies with clinical perspectives. Phys Ther Sport 57:61-70  
+Type: Systematic review · DOI: [10.1016/j.ptsp.2022.07.006](https://doi.org/10.1016/j.ptsp.2022.07.006) · Files: recovery-habits  
+URL: <https://doi.org/10.1016/j.ptsp.2022.07.006>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=36731908,35921783&rettype=abstract&retmode=text>  
+Supports: 'One-third of the studies presented only one item of the RPC, and 48 of the 64 articles discussed less than three items. ... There is a serious lack of information concerning RTR program following ACLR in the literature and further studies are needed to establish a program based on the best evidence.' Added by research 2026-11-08 (beta3).
