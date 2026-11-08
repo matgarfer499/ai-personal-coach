@@ -2217,3 +2217,20 @@ def test_a_low_energy_label_within_20_kcal_is_not_refused(capsys, data_dir):
     args[9:17] = coffee
     code, out = run(capsys, data_dir, *args)
     assert code == 0 and out["warnings"]
+
+
+def test_race_in_the_profile_feeds_taper_and_plan(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "race_date", "2026-04-12")
+    run(capsys, data_dir, "profile", "set", "race_km", "21.1")
+    run(capsys, data_dir, "runs", "add", "--km", "12", "--minutes", "70", "--date", "2026-03-29")
+    code, out = run(capsys, data_dir, "runs", "taper")
+    assert code == 0 and out["race_date"] == "2026-04-12"
+    code, plan = run(capsys, data_dir, "runs", "plan")
+    assert code == 0 and plan["race"] == {"date": "2026-04-12", "km": 21.1}
+    assert plan["easy_share_min"] == 0.7 and plan["long_run_cap_km"] == pytest.approx(13.2)
+    assert plan["taper"]["in_window"] is True
+
+
+def test_runs_taper_without_a_race_is_a_clear_error(capsys, data_dir):
+    code, out = run(capsys, data_dir, "runs", "taper")
+    assert code == 2 and "race_date" in out["message"]

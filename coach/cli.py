@@ -426,7 +426,9 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
         if safety.running_unassessed(profile):
             paused = safety.running_paused(profile)
             raise ValueError("no taper while running is paused: " + "; ".join(paused))
-        return runs.taper(args.race_date, today, logged)
+        return runs.taper(_race_date(profile, args), today, logged)
+    if args.runs_cmd == "plan":
+        return _runs_plan(profile, args, today, logged)
     if args.runs_cmd == "add":
         when = args.date or today
         if when > today:
@@ -456,6 +458,40 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
     hold = flags.hold_progression or bool(paused)
     week = runs.week(logged, end, shown, every, today, hold, safety.running_unassessed(profile))
     return week | {"paused": paused}
+
+
+def _race_date(profile: Profile, args: argparse.Namespace) -> date:
+    race = getattr(args, "race_date", None) or profile.race_date
+    if race is None:
+        raise ValueError("no race date: give --race-date or `coach profile set race_date D`")
+    return race
+
+
+def _runs_plan(profile: Profile, args: argparse.Namespace, today: date, logged: list) -> dict:
+    """Next week's limits from the rules that exist; a full build-up plan has no rule
+    (docs/dropped-claims.md D268), so the skill writes the runs within these limits."""
+    args.week_ending = None
+    week = cmd_runs(profile, argparse.Namespace(**{**vars(args), "runs_cmd": "week"}))
+    novice = profile.experience == "novice"
+    out = {
+        "race": {"date": profile.race_date, "km": profile.race_km} if profile.race_date else None,
+        "last_week_km": week["km"],
+        "long_run_cap_km": week["long_run_cap_km"],
+        # novices only: the rule gives no weekly cap for experienced runners
+        "weekly_km_max": week["km"] * (1 + runs.NOVICE_WEEKLY_INCREASE)
+        if novice and week["km"] and week["long_run_cap_km"] is not None
+        else None,
+        "easy_share_min": runs.EASY_SHARE_MIN,
+        "paused": week["paused"],
+        "notes": [
+            f"{runs.LOAD_RULE}: lengthen the long run in small steps, up to long_run_cap_km",
+            'cardio-health.md: "Keep most running easy: pyramidal or polarized intensity": '
+            f"about {runs.EASY_SHARE_MIN:.0%} or more of the week's running easy",
+        ],
+    }
+    if profile.race_date and profile.race_date >= today:
+        out["taper"] = runs.taper(profile.race_date, today, logged)
+    return out
 
 
 def menu_check(totals: dict, targets: dict, share: float = 1.0) -> dict:
@@ -730,6 +766,8 @@ PROFILE_REQUIRED = [
 ]
 _PROFILE_TYPES = {
     "birth_date": date.fromisoformat,
+    "race_date": date.fromisoformat,
+    "race_km": float,
     "height_cm": float,
     "weight_kg": float,
     "pal_override": float,
@@ -775,7 +813,9 @@ def _parse_profile_value(field: str, raw: str) -> Any:
                 raise ValueError(f"{field} must be a whole number, not {raw!r}")
             return int(raw)
         return raw
-    if field in ("pal_override", "hr_max", "hr_rest", "sport") and raw.lower() == "none":
+    if field in ("pal_override", "hr_max", "hr_rest", "sport", "race_date", "race_km") and (
+        raw.lower() == "none"
+    ):
         return None
     if field == "injuries":
         raise ValueError("injuries are set with `coach injury add` and `coach injury clear`")
@@ -1636,7 +1676,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--week-ending", type=date.fromisoformat, default=None, help="default: last logged run"
     )
     runs_taper = runs_sub.add_parser("taper", parents=[json_flag], help="taper before a race")
-    runs_taper.add_argument("--race-date", type=date.fromisoformat, required=True)
+    runs_taper.add_argument(
+        "--race-date", type=date.fromisoformat, default=None, help="default: profile race_date"
+    )
+    runs_sub.add_parser(
+        "plan", parents=[json_flag], help="next week's limits: long run, weekly km, easy share"
+    )
 
     menu_cmd = add("menu", cmd_menu, "macro totals for foods and grams")
     menu_cmd.add_argument("--item", action="append", required=True, help='"NAME=GRAMS", repeat')

@@ -34,7 +34,7 @@ def test_hrmax_percent_zones_without_resting_hr():
     assert result.method == "hrmax"
     assert result.hr_max == 180 and result.hr_max_source == "tanaka"
     moderate = band(result, "moderate")
-    assert moderate.bpm == (round(0.64 * 180), round(0.76 * 180))
+    assert moderate.bpm == (round(0.64 * 180), round(0.77 * 180) - 1)  # up to vigorous's floor
     assert moderate.rpe == (12, 13)
     assert band(result, "vigorous").rpe == (14, 17)
     assert band(result, "light").rpe == (9, 11)
@@ -45,9 +45,9 @@ def test_karvonen_with_resting_hr_and_vigorous_cap_at_84():
     result = zones(person(), hr_rest=60)
     assert result.method == "hrr"
     moderate = band(result, "moderate")
-    assert moderate.bpm == (round(60 + 0.40 * 120), round(60 + 0.59 * 120))
+    assert moderate.bpm == (round(60 + 0.40 * 120), round(60 + 0.60 * 120) - 1)
     vigorous = band(result, "vigorous")
-    assert vigorous.bpm == (round(60 + 0.60 * 120), round(60 + 0.84 * 120))
+    assert vigorous.bpm == (round(60 + 0.60 * 120), round(60 + 0.85 * 120) - 1)
 
 
 def test_measured_hr_max_wins():
@@ -167,14 +167,14 @@ def test_five_zones_with_resting_hr():
     assert [z.name for z in result.zones] == FIVE
     assert band(result, "very_light").rpe == (6, 8)
     assert band(result, "near_maximal").rpe == (18, 20)
-    assert band(result, "very_light").bpm == (48, round(48 + 0.29 * 143))
+    assert band(result, "very_light").bpm == (48, round(48 + 0.30 * 143) - 1)
     assert band(result, "near_maximal").bpm == (round(48 + 0.85 * 143), 191)
 
 
 def test_five_zones_without_resting_hr():
     result = zones(person(), hr_max=191)
     assert [z.name for z in result.zones] == FIVE
-    assert band(result, "very_light").bpm[1] == round(0.56 * 191)
+    assert band(result, "very_light").bpm[1] == round(0.57 * 191) - 1
     assert band(result, "near_maximal").bpm == (round(0.96 * 191), 191)
 
 
@@ -226,3 +226,14 @@ def test_acsm_vigorous_cap_says_why_in_the_zones_note():
     result = zones(person(screening=screening), hr_rest=60)
     assert "vigorous" not in [z.name for z in result.zones]
     assert any("ACSM 2015" in n for n in result.notes)
+
+
+def test_bpm_zones_leave_no_gap_between_bands():
+    # beta 2: very_light 48-89 and light 91-104 left 90 bpm in no zone's printed range.
+    from coach.profile import Profile
+    from coach.safety import SafetyFlags
+    from coach.zones import hr_zones
+
+    shown = hr_zones(Profile(birth_date=date(1992, 1, 1)), SafetyFlags(), 48, 191)
+    bands = [z.bpm for z in shown.zones]
+    assert all(a[1] + 1 == b[0] for a, b in zip(bands, bands[1:], strict=False))

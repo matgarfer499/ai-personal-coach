@@ -74,8 +74,9 @@ Run these, all with the ground-rule flags:
   raises a stored target that the current flags no longer allow.
 - `coach zones`.
 - Runners (`sport` running or both): `coach runs week` (the last logged week by default) and
-  `coach injury list`. Ask whether a goal race is coming; with a race date D, run
-  `coach runs taper --race-date D`.
+  `coach injury list`. Ask whether a goal race is coming; store it once with
+  `coach profile set race_date D` and `coach profile set race_km KM`, then run `coach runs plan`
+  (next week's limits, and the taper when the race is near).
 - A plan or routine the client already follows (a PDF, a note, a pasted list): ask whether they
   have one, unless `data/plan.md` exists. Read it where it is (never copy it) and build from it:
   keep the lifts, days and order that work, and change only what a rule or a safety flag
@@ -212,13 +213,15 @@ Knowledge, by situation: run only the lines that apply.
    zone `coach zones` printed (its name, RPE and talk test, and bpm only if it printed them),
    most of them in the easier zones; never a zone it did not print (the caps hide vigorous and
    near-maximal). Distance, per "Running load progression": the long run stays at or below
-   `long_run_cap_km` from `coach runs week` (quote it; with no logged runs, ask their longest run
+   `long_run_cap_km` from `coach runs plan` (quote it; with no logged runs, ask their longest run
    of the last 30 days and log it with `coach runs add` before planning a longer one); with `paused` set, quote the injury's reason: unassessed, `long_run_cap_km` is null and `coach runs taper` refuses, so no runs; managed by a professional, the cap holds at the longest run within their limits); weekly km
-   stay near the last logged week's `km`, built gradually; novices (the highest-risk group per
+   stay near `last_week_km`, built gradually, at most `weekly_km_max` when it is printed; about
+   `easy_share_min` of the week's running easy ("Keep most running easy"); novices (the highest-risk group per
    "Common running injuries") keep weekly increases under 30% per week over 2 weeks, and the
    "10% weekly rule" is a convention, not a threshold. Quote km figures from the CLI only; when a
    figure you need is not printed, plan that run in minutes instead.
-   Taper: when `coach runs taper` says `in_window`, the last `weeks` before the race follow it:
+   There is no rule for a full build-up schedule (weeks, long-run share), so write the week within
+   these limits and say so. Taper: when `coach runs plan` shows `taper` with `in_window`, the last `weeks` before the race follow it:
    weekly km cut progressively down to `taper_week_km` (quote it), keeping the intensity of key
    sessions and the runs per week. Outside the window, say when it starts (`starts_on`). There is
    no generic runner deload week: the research found no evidence for routine deloads in runners

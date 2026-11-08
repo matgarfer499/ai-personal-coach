@@ -161,9 +161,10 @@ def check_pal(value: float, label: str = "PAL") -> None:
         )
 
 
-NUMBERS = ("height_cm", "weight_kg", "pal_override")
+NUMBERS = ("height_cm", "weight_kg", "pal_override", "race_km")
 TYPES = {
     "birth_date": date,
+    "race_date": date,
     "research_reminder_months": int,
     "hr_max": int,
     "hr_rest": int,
@@ -198,6 +199,10 @@ class Profile:
     # measured morning resting HR, used by `coach zones` instead of the formula.
     hr_max: int | None = None
     hr_rest: int | None = None
+    # A goal race (cardio-health.md: "Taper before a goal race"): `coach runs taper` and
+    # `coach runs plan` read it.
+    race_date: date | None = None
+    race_km: float | None = None
     language: str | None = None
     region: str | None = None
     emergency_number: str | None = None  # the client's own; else their region's (coach safety)
