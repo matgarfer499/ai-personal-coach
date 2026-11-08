@@ -114,18 +114,19 @@ def test_cli_rate_replaces_an_earlier_rating_of_the_same_dish(capsys, tmp_path):
     _, rated = run(capsys, tmp_path, "tastes", "rate", "bowl de pollo al limon", "loved", *bowl)
     # only the changed rating is printed, not the whole profile
     assert set(rated) == {"rating", "recipe_saved"}
-    assert rated["rating"]["dish"] == "bowl de pollo al limon"
+    # beta 2 p4-sara-I6: another spelling of the same dish keeps the stored name
+    assert rated["rating"]["dish"] == "Bowl de pollo al limón"
     _, out = run(capsys, tmp_path, "tastes", "show")
     ratings = out["tastes"]["ratings"]
-    assert [r["dish"] for r in ratings] == ["Revuelto de setas", "bowl de pollo al limon"]
+    assert [r["dish"] for r in ratings] == ["Revuelto de setas", "Bowl de pollo al limón"]
     assert ratings[1] == {
-        "dish": "bowl de pollo al limon",
+        "dish": "Bowl de pollo al limón",
         "rating": "loved",
         "date": TODAY,
         "source": "https://example.org/bowl",
         "note": "",
     }
-    assert out["favoured"] == ["bowl de pollo al limon"]
+    assert out["favoured"] == ["Bowl de pollo al limón"]
     assert out["excluded"] == ["Revuelto de setas"]
 
 
@@ -192,3 +193,30 @@ def test_a_phrase_matches_whole_words_of_a_food_name(phrase, name, expected):
 
 def test_a_phrase_may_match_either_language_name():
     assert matches("chicken", "pechuga de pollo, cruda", "chicken breast, raw")
+
+
+def test_cli_rate_refuses_a_dish_only_scheduled_after_the_rating_day(capsys, tmp_path):
+    menus = tmp_path / "menus"
+    menus.mkdir()
+    (menus / "2026-10-27.yaml").write_text(
+        "days:\n  - date: 2026-10-27\n    meals:\n      - meal: comida\n"
+        "        dishes:\n          - dish: Lentejas estofadas\n",
+        encoding="utf-8",
+    )
+    code, out = run(capsys, tmp_path, "tastes", "rate", "Lentejas estofadas", "loved")
+    assert code == 2 and "2026-10-27" in out["message"]
+    assert not (tmp_path / "tastes.yaml").exists()
+
+
+def test_cli_rate_takes_an_explicit_date_before_the_scheduled_day(capsys, tmp_path):
+    # Eaten off the menu (at a relative's) before the saved menu schedules it.
+    menus = tmp_path / "menus"
+    menus.mkdir()
+    (menus / "2026-10-27.yaml").write_text(
+        "days:\n  - date: 2026-10-27\n    meals:\n      - meal: comida\n"
+        "        dishes:\n          - dish: Lentejas estofadas\n",
+        encoding="utf-8",
+    )
+    code, _ = run(capsys, tmp_path, "tastes", "rate", "Lentejas estofadas", "loved",
+                  "--date", "2026-10-20")  # fmt: skip
+    assert code == 0

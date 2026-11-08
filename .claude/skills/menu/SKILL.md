@@ -179,7 +179,9 @@ Every lunch and dinner dish, whatever its source:
      never estimate one, and leave `--fibre` out when the label has none. Read the allergen
      declaration on the pack too: `--allergens` is required, `"a, b"` for the declared ones,
      `none` only if the pack declares none, `unknown` if the client cannot read it (the CLI then
-     warns). Say the product is "values from the label". If the CLI warns that kcal and macros
+     warns). Say the product is "values from the label". A kcal more than 50% (and 20 kcal) off its
+     macros is refused: read the label again with the client (per serving? kJ?); add `--confirm-kcal`
+     only if the label really says so. If the CLI warns that kcal and macros
      disagree, read the label again and fix the entry with `--replace`.
    - Exit code 2 naming `COACH_OFF_CONTACT`: use `--label` as above, and tell the person running
      the coach that Open Food Facts lookups need a contact email in that variable (set it under
@@ -250,7 +252,8 @@ Every lunch and dinner dish, whatever its source:
     `coach tastes rate "DISH" RATING --source URL`: `loved` ("me encantó"), `liked` ("estaba
     bien"), `disliked` ("no me gustó"), `never_again` ("no lo repetiría"). Ask when unclear.
     Write DISH exactly as the saved menu or the library names it; the CLI refuses a dish in
-    neither unless `--source` gives its link (ask for the link, or fix the name). Add
+    neither unless `--source` gives its link (ask for the link, or fix the name), and a dish whose
+    saved menus schedule it only after the rating day (rate it once it has been eaten). Add
     `--date YYYY-MM-DD` when the client ate it on an earlier day (never after today). The CLI
     prints only the new `rating` and `recipe_saved`.
     A loved or liked dish joins the library on its own (`recipe_saved`: its steps and items
@@ -309,7 +312,9 @@ says what to do without the `pdf` extra).
 ## Protein range
 
 `coach macros` prints `protein_g` (the target to plan towards) and `protein_min_g` to
-`protein_max_g` (the rule's range). `mealplan check` passes a day from `protein_min_g`, so for a
+`protein_max_g` (the rule's range). `mealplan check` passes a day from `protein_min_g`; above
+`protein_max_g` its protein check says `over` (the day still passes): lower the protein items or
+say in one line that the day is above the rule's range. For a
 tight budget plan cheaper dishes near the low end instead of egg whites and cottage cheese to hit
 `protein_g` exactly; say so in one line.
 

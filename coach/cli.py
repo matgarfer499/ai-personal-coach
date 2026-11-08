@@ -460,7 +460,8 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
 
 def menu_check(totals: dict, targets: dict, share: float = 1.0) -> dict:
     """'ok', 'under' or 'over' per target: kcal within [target, target + MENU_KCAL_MARGIN], protein
-    at least the low end of its range, fibre at least its target, fat at least its minimum.
+    at least the low end of its range ('over', still passing, above its top), fibre at least its
+    target, fat at least its minimum.
     Carbohydrate fills the rest.
 
     'missing' when an item lacks the value: always for kcal; for a floor only while the known
@@ -480,10 +481,11 @@ def menu_check(totals: dict, targets: dict, share: float = 1.0) -> dict:
         kcal_status = "over"
     else:
         kcal_status = "ok"
-    # Protein passes from the low end of the rule's range (macros `protein_min_g`).
+    # Protein passes from the low end of the rule's range (macros `protein_min_g`) up to its top
+    # (`protein_max_g`, the same rule's range); a free meal only adds, so the full top applies.
     protein = "protein_min_g" if "protein_min_g" in targets else "protein_g"
     floors = {"protein_g": protein, "fat_g": "fat_min_g", "fibre_g": "fibre_g"}
-    return {"kcal": kcal_status} | {
+    status = {"kcal": kcal_status} | {
         key: "ok"
         if totals[key] >= targets[target] * share
         else "missing"
@@ -491,6 +493,9 @@ def menu_check(totals: dict, targets: dict, share: float = 1.0) -> dict:
         else "under"
         for key, target in floors.items()
     }
+    if "protein_max_g" in targets and totals["protein_g"] > targets["protein_max_g"]:
+        status["protein_g"] = "over"
+    return status
 
 
 # nutrition.md: "Dietary fibre": at least 400 g/day of vegetables and fruit.
@@ -517,7 +522,9 @@ def _menu_day(totals: foods.MenuTotals, targets: dict, share: float = 1.0) -> di
         "totals": totals,
         "targets": targets,
         "check": check,
-        "ok": not totals.unknown and set(check.values()) == {"ok"},
+        # Protein over the rule's top is a warning, not a fail: the range is a target, not a limit.
+        "ok": not totals.unknown
+        and all(v == "ok" or (k, v) == ("protein_g", "over") for k, v in check.items()),
         "warnings": warnings,
         "veg_fruit_note": VEG_FRUIT_NOTE,
     }
@@ -924,8 +931,9 @@ def cmd_tastes(profile: Profile, args: argparse.Namespace) -> dict:
         when = args.date or today
         if when > today:
             raise ValueError(f"{when} is after today ({today}); rate a dish already eaten")
+        rated_before = any(fold(r.dish) == fold(args.dish) for r in current.ratings)
         known = (
-            any(fold(r.dish) == fold(args.dish) for r in current.ratings)
+            rated_before
             or recipes.find_in_menus(args.data_dir, args.dish)
             or any(
                 fold(r["dish"]) == fold(args.dish) for r in recipes.load_all(args.data_dir, current)
@@ -936,12 +944,19 @@ def cmd_tastes(profile: Profile, args: argparse.Namespace) -> dict:
                 f"{args.dish!r} is in no saved menu and not in the recipe library: check the "
                 "name, or give its recipe link with --source"
             )
+        # An explicit --date is the client saying when they ate it (off the menu, before it).
+        scheduled = recipes.menu_dates(args.data_dir, args.dish) if args.date is None else []
+        if scheduled and all(d > when for d in scheduled) and not rated_before:
+            raise ValueError(
+                f"{args.dish!r} is first scheduled for {scheduled[0]}, after {when}: rate it once "
+                "it has been eaten (or give --date for the day it was)"
+            )
         rating = tastes.Rating(args.dish.strip(), args.rating, when, args.source, args.note)
         current.rate(rating)
         tastes.save_tastes(current, path)
         # a dish the client likes joins the recipe library (data/recipes/)
         saved = (
-            recipes.save(args.data_dir, args.dish, args.source.strip(), today)
+            recipes.save(args.data_dir, rating.dish, args.source.strip(), today)
             if args.rating in recipes.SAVED_RATINGS
             else None
         )
@@ -1345,13 +1360,26 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         fetched_on=args.today or date.today(),
         source=catalogue.LABEL_SOURCE if args.label else catalogue.SOURCE,
     )
+    known = None not in (product.kcal, product.protein_g, product.carbs_g, product.fat_g)
+    computed = foods.label_energy(product.to_row()) if known else 0
+    kcal_off = abs(product.kcal - computed) if computed else 0
+    if (
+        args.label
+        and not args.confirm_kcal
+        and kcal_off > max(LABEL_REFUSE_KCAL, LABEL_REFUSE_GAP * computed)
+    ):
+        raise ValueError(
+            f"label kcal is {kcal_off / computed:.0%} from the 4/4/9 factors: more than "
+            f"{LABEL_REFUSE_GAP:.0%} off, so probably a typo or the wrong column (per serving, "
+            "kJ). Read the label again; if it really says so, add --confirm-kcal"
+        )
     catalogue.save([*others, product], args.data_dir)
     warnings = []
     if args.label and found["unrecognised"]:
         warnings.append(UNRECOGNISED_WARNING)
     elif args.label and "unknown" in product.allergens:
         warnings.append("allergens unknown: do not use for anyone with an allergy or intolerance")
-    if None not in (product.kcal, product.protein_g, product.carbs_g, product.fat_g):
+    if known:
         kind, reason = foods.energy_check(product.to_row(), typed=args.label) or ("", "")
         again = (
             ": read the label again, fix it with --replace" if args.label else "; check the pack"
@@ -1362,6 +1390,15 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         elif kind == foods.GAP:
             warnings.append(f"{lead} {reason}{again}")
     return {"added": product, "missing": product.missing(), "warnings": warnings}
+
+
+# convention: a typed label kcal more than 50% away from its 4/4/9 value is refused unless
+# confirmed: nutrition.md "EU label rules and tolerances" allows about 20%, so a gap this size is a
+# typo, a per-serving column or kJ, not a tolerance. Between 10% and 50% it is a warning.
+LABEL_REFUSE_GAP = 0.5
+# nutrition.md: "EU label rules and tolerances": do not argue over 10-20 kcal, so a low-energy
+# product (black coffee, a zero drink) whose rounded figures are far apart in % is not refused.
+LABEL_REFUSE_KCAL = 20
 
 
 # The header lines /plan writes at the top of data/plan.md (.claude/skills/plan/SKILL.md step 6).
@@ -1508,6 +1545,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--today", type=date.fromisoformat, default=None, help="for tests")
     json_flag = argparse.ArgumentParser(add_help=False)
     json_flag.add_argument("--json", action="store_true", help="one compact JSON line")
+    # Also after the subcommand (`coach menu ... --today D`); it overrides the global one.
+    json_flag.add_argument(
+        "--today", type=date.fromisoformat, default=argparse.SUPPRESS, help=argparse.SUPPRESS
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     def add(name: str, func, help_text: str) -> argparse.ArgumentParser:
@@ -1670,6 +1711,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--confirm-per",
         action="store_true",
         help="keep --per although the pack unit says otherwise (after reading the label)",
+    )
+    off_add.add_argument(
+        "--confirm-kcal",
+        action="store_true",
+        help="keep a label kcal far from its macros (after reading the label again)",
     )
     off_add.add_argument("--replace", action="store_true", help="refresh a product already added")
     off_add.add_argument(

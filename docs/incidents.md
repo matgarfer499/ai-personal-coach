@@ -60,3 +60,7 @@ One line per bug that reached main: what broke, and which review layer should ha
 - 2026-11-08 (beta2 p5-elena-I3, p4-sara-I5): the protein note rounded 70.56 kg to "71 kg", so
   its figures did not reproduce, and the veg-and-fruit warning said "400 g of the 400 g". Layer:
   code review (note text was never checked against the numbers next to it).
+- 2026-11-08 (beta2 p5-elena-I1): `mealplan check` computed `protein_max_g` but never compared a
+  day with it, so a 202 g day read ok against a 155 g top. Layer: code review (a target computed
+  and never read).
+- 2026-11-08 (beta2 p4-sara-I6): rating a dish in another case renamed it. Layer: tests.

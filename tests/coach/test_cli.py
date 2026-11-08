@@ -1290,7 +1290,8 @@ def test_label_over_another_source_says_how_to_get_a_separate_row(capsys, data_d
 
 @pytest.mark.parametrize("kcal", ["0,125", "0.500", "0.000"])
 def test_label_kcal_with_a_leading_zero_is_a_plain_decimal(capsys, data_dir, kcal):
-    code, _ = run(capsys, data_dir, *_label("--kcal", kcal))
+    # The kcal is far from the label's macros, so it needs --confirm-kcal; the test is the parse.
+    code, _ = run(capsys, data_dir, *_label("--kcal", kcal, "--confirm-kcal"))
     assert code == 0
 
 
@@ -2180,3 +2181,39 @@ def test_protein_basis_note_reproduces_the_grams_off_the_fixture_height(capsys, 
     note = next(n for n in out["notes"] if "BMI 30" in n)
     weight = float(re.search(r"from ([\d.]+) kg", note).group(1))
     assert round(weight * out["protein_g_per_kg"], 2) == out["protein_g"]
+
+
+def test_menu_check_flags_protein_above_the_ceiling():
+    from coach.cli import menu_check
+
+    totals = {"kcal": 2000, "protein_g": 202.5, "fat_g": 60, "fibre_g": 30, "missing": {}}
+    targets = {"kcal": 2000, "protein_min_g": 120, "protein_max_g": 155.23,
+               "fat_min_g": 40, "fibre_g": 25}  # fmt: skip
+    assert menu_check(totals, targets)["protein_g"] == "over"
+    assert menu_check(totals | {"protein_g": 150}, targets)["protein_g"] == "ok"
+
+
+def test_a_label_far_from_its_macros_is_refused_unless_confirmed(capsys, data_dir):
+    wrong = list(LABEL)
+    wrong[wrong.index("--kcal") + 1] = "900"  # 4/4/9 gives about 366
+    code, out = run(capsys, data_dir, *wrong)
+    assert code == 2 and "--confirm-kcal" in out["message"]
+    assert not (data_dir / "catalogue.csv").exists()
+    code, out = run(capsys, data_dir, *wrong, "--confirm-kcal")
+    assert code == 0 and out["warnings"]
+
+
+def test_today_after_the_subcommand_overrides_the_global_one(capsys, data_dir):
+    # The global --today (TODAY, 2026-04-01) comes first in `run`; the subcommand's wins.
+    code, out = run(capsys, data_dir, "checkin", "add", "--weight", "80",
+                    "--date", "2026-03-05", "--today", "2026-03-01")  # fmt: skip
+    assert code == 2 and "after today (2026-03-01)" in out["message"]
+
+
+def test_a_low_energy_label_within_20_kcal_is_not_refused(capsys, data_dir):
+    # Black coffee: 2 kcal against 0.4 from its rounded protein is 400% off but only 1.6 kcal.
+    coffee = ["--kcal", "2", "--protein", "0.1", "--carbs", "0", "--fat", "0"]
+    args = _label(name="Cafe solo")
+    args[9:17] = coffee
+    code, out = run(capsys, data_dir, *args)
+    assert code == 0 and out["warnings"]

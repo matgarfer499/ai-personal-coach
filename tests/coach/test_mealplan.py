@@ -117,7 +117,11 @@ def test_check_runs_the_menu_check_on_every_day(capsys, data_dir):
     assert code == 0 and out["ok"] is True and out["repeats"] == []
     assert [d["date"] for d in out["days"]] == ["2026-10-26", "2026-10-27", "2026-10-28"]
     assert [d["totals"]["kcal"] for d in out["days"]] == [2016, 2035, 2040]
-    assert all(d["ok"] and set(d["check"].values()) == {"ok"} for d in out["days"])
+    # The synthetic days carry more protein than the profile's range top (136.4 g): "over" is a
+    # status, not a fail (beta 2 p5-elena-I1).
+    assert all(d["ok"] for d in out["days"])
+    expected = {"kcal": "ok", "protein_g": "over", "fat_g": "ok", "fibre_g": "ok"}
+    assert [d["check"] for d in out["days"]] == [expected] * 3
     # The skyr has no fibre value: listed, and the floor is still met without it.
     assert out["days"][1]["totals"]["missing"] == {"fibre_g": [SKYR]}
     _, single = run(
