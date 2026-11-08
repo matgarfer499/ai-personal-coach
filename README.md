@@ -52,6 +52,29 @@ rule in `knowledge/` with its sources.
 - **Menus you would eat.** Dishes from real recipes and the products you buy, checked against
   your targets, with a shopping list and a printable PDF.
 
+## Scope: a base to build on
+
+The point of this repo is a solid, AI-ready evidence base, not a coach for everything. It covers
+the common ground for a healthy adult: energy and macros, strength training, general cardio and
+running basics, recovery and the safety screening, each as a graded, sourced rule that the coach
+can quote and the CLI can compute.
+
+It will not try to cover every sport or diet: running build-ups, contact sports, swimming, a
+sodium-restricted diet for high blood pressure, gluten-free or lactose-free menus each deserve
+their own rules, and nobody can write them all well. Instead it is built to be extended for your
+case:
+
+1. `/research "your topic"` (for example `"swimming volume for masters swimmers"` or
+   `"low-sodium diet and blood pressure"`) searches, verifies and adds graded rules to
+   `knowledge/` on a branch you review.
+2. When the new rules need numbers, add them to the `coach` package with a test, and cite the rule
+   next to each constant (see [`CLAUDE.md`](CLAUDE.md)).
+3. When they need a new conversation, add or adapt a skill in `.claude/skills/`.
+
+After four simulated betas (3.5, 3.7, 4.1 and 4.1 out of 5) the core is stable and active
+development has stopped. [`docs/roadmap.md`](docs/roadmap.md) lists what the betas asked for and
+was left out on purpose, as examples of extensions rather than a backlog.
+
 ## First 10 minutes
 
 You need a terminal (Terminal on macOS, PowerShell on Windows); new to it? See the
@@ -299,10 +322,11 @@ How the original evidence base was built, and its limits:
 
 ## Roadmap
 
-What the coach knowingly does not do yet, and why each item waits (most lack a rule in
-`knowledge/`), is in [docs/roadmap.md](docs/roadmap.md): run-by-run running schedules, dry forms
-for chickpeas and canned legumes, portions per eater, a few grades and wordings for the next
-research pass, and the rest of the CLI in Spanish.
+There is no planned work: the coach is meant to be extended per case (see
+[Scope](#scope-a-base-to-build-on)). [docs/roadmap.md](docs/roadmap.md) lists the gaps the betas
+found and why each was left out (most lack a rule in `knowledge/`): run-by-run running schedules,
+sodium-aware menus, portions per eater, a few grades and wordings for the next research pass, and
+the rest of the CLI in Spanish.
 
 ## What is inside
 
@@ -331,6 +355,8 @@ Every number in `coach/` cites the knowledge rule it comes from; numbers no rule
 
 ## Extending it
 
+- Another sport, diet or population: `/research` first, then code and a skill only if needed
+  (see [Scope](#scope-a-base-to-build-on)).
 - Another workout app: [`docs/adding-an-importer.md`](docs/adding-an-importer.md).
 - Another country's foods and supermarkets: [`docs/adding-a-region.md`](docs/adding-a-region.md).
 - Working on the repo with Claude Code: [`CLAUDE.md`](CLAUDE.md); with another agent:
