@@ -12,6 +12,7 @@ or `NAME=15ml`) and never converted, because the coach has no densities.
 from __future__ import annotations
 
 import csv
+import math
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -73,7 +74,7 @@ class CatalogueProduct:
             fetched_on=date.fromisoformat(row["fetched_on"]),
             source=row["source"],
             # files written before these columns lack them
-            pack_size=float(row["pack_size"]) if (row.get("pack_size") or "").strip() else None,
+            pack_size=_pack_size(row),
             replaces=row.get("replaces") or "",
         )
 
@@ -113,6 +114,16 @@ class CatalogueProduct:
             pack_size=self.pack_size,
             replaces=self.replaces,
         )
+
+
+def _pack_size(row: dict) -> float | None:
+    text = (row.get("pack_size") or "").strip()
+    if not text:
+        return None
+    size = float(text)
+    if not (math.isfinite(size) and size > 0):  # a hand edit; shopping divides by it
+        raise ValueError(f"{row['barcode']}: pack_size must be a positive number")
+    return size
 
 
 def load(data_dir: Path) -> list[CatalogueProduct]:

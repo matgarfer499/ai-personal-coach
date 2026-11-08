@@ -186,7 +186,8 @@ Every lunch and dinner dish, whatever its source:
    - Shopping in packs: `--pack-size N` is one pack's g or ml (Open Food Facts' is kept when it
      gives one in the label's unit); the shopping list then says how many packs. When the product
      is what the client buys for a generic food in the menus (their milk for `leche
-     semidesnatada`), add `--replaces "leche semidesnatada"`: the list puts both on one line.
+     semidesnatada`), add `--replaces "leche semidesnatada"`: the list puts both on one line. To
+     switch brands, clear the old product first (`--replace --replaces ""`).
    - Exit code 2 naming `COACH_OFF_CONTACT`: use `--label` as above, and tell the person running
      the coach that Open Food Facts lookups need a contact email in that variable (set it under
      `env` in `.claude/settings.local.json`, see the README, then restart Claude Code).

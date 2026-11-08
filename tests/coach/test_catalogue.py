@@ -378,6 +378,8 @@ def test_pack_size_and_replaces_are_typed_and_checked(capsys, data_dir, off_retu
     [
         (["--pack-size", "0"], "--pack-size"),
         (["--pack-size", "nan"], "--pack-size"),
+        (["--pack-size", "1.000"], "thousands"),  # a Spanish "1.000 ml" is not 1 ml
+        (["--replaces", "huevo cocido"], "bought as"),  # shopping buys it as a raw egg
         (["--replaces", "leche de unicornio"], "not a food"),
         (["--replaces", "Salteado campestre"], "not a food"),
     ],
@@ -396,6 +398,21 @@ def test_two_products_cannot_replace_the_same_food(capsys, data_dir, off_returns
         "--replaces", "leche semidesnatada",
     )  # fmt: skip
     assert code != 0 and "already replaces" in out["message"]
+    # an empty --replaces frees the food for the new product
+    add(capsys, data_dir, off_returns, "product_liquid.json", "8400000000031",
+        "--replace", "--replaces", "")  # fmt: skip
+    code, out = add(
+        capsys, data_dir, off_returns, "product_label_ml_sold_ml.json", "8400000000079",
+        "--replaces", "leche semidesnatada",
+    )  # fmt: skip
+    assert code == 0 and out["added"]["replaces"] == "semi-skimmed milk"
+
+
+def test_a_pack_size_in_another_unit_than_per_is_dropped(capsys, data_dir, off_returns):
+    """OFF's 1000 ml pack, but the label read says per 100 g: 1000 is no pack size in grams."""
+    code, out = add(capsys, data_dir, off_returns, "product_liquid.json", "8400000000031",
+                    "--per", "100 g", "--confirm-per")  # fmt: skip
+    assert code == 0 and out["added"]["pack_size"] is None
 
 
 def test_replaces_needs_a_unit_the_product_can_take(capsys, data_dir, off_returns):
@@ -407,3 +424,17 @@ def test_replaces_needs_a_unit_the_product_can_take(capsys, data_dir, off_return
     code, out = add(capsys, data_dir, off_returns, "product_liquid.json", "8400000000031",
                     "--replaces", "garbanzos, cocidos")  # fmt: skip
     assert code != 0 and "no density" in out["message"]
+
+
+@pytest.mark.parametrize("size", ["0", "-1", "nan"])
+def test_a_hand_edited_pack_size_must_be_positive(capsys, data_dir, off_returns, size):
+    add(capsys, data_dir, off_returns, "product_liquid.json", "8400000000031")
+    path = data_dir / "catalogue.csv"
+    rows = list(csv.DictReader(path.open(encoding="utf-8")))
+    rows[0]["pack_size"] = size
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=catalogue.FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
+    with pytest.raises(ValueError, match="pack_size"):
+        catalogue.load(data_dir)

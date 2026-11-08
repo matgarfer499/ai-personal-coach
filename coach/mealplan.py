@@ -478,6 +478,7 @@ def shopping(
             if food.pack_size and unit == food.unit:
                 packs[key] = food.pack_size
     chains = sorted(amounts, key=lambda chain: (chain == ANY_CHAIN, fold(chain)))
+    # convention: amounts shown to 1 decimal (g/ml density conversions leave float noise).
     return {
         "chains": {
             chain: [
@@ -514,7 +515,7 @@ def _bought_as(
 
 def _packs(amount: float, size: float | None) -> dict:
     """`packs` and `pack_size` for a product with a pack size, else nothing."""
-    if size is None:
+    if size is None or not math.isfinite(amount / size):  # a near-zero size overflows
         return {}
     # convention: whole packs, rounded up, 2 decimals first (as for `units`).
     return {"packs": math.ceil(round(amount / size, 2)), "pack_size": size}

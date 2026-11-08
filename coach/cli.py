@@ -1340,6 +1340,8 @@ def _label_product(args: argparse.Namespace) -> dict:
 
 
 def _pack_size(text: str) -> float:
+    if KCAL_THOUSANDS.fullmatch(text.strip()):  # "1.000" on a Spanish pack is 1000, not 1
+        raise ValueError(f"--pack-size {text!r} looks like a thousands number: type it as 1000")
     try:
         size = float(text.replace(",", "."))
     except ValueError:
@@ -1352,12 +1354,16 @@ def _pack_size(text: str) -> float:
 def _replaces(
     name: str, per: str, region: str | None, others: list[catalogue.CatalogueProduct]
 ) -> str:
-    """The generic food's name_en this product is bought for in the shopping list."""
+    """The generic food's name_en this product is bought for in the shopping list ("" clears)."""
+    if not name.strip():
+        return ""
     food = foods.find(name, foods.load_foods(region))
     if food is None:
         raise ValueError(
             f"--replaces {name!r} is not a food in the food tables (`coach foods search`)"
         )
+    if food.buy_as:  # shopping turns it into that food before it looks for a product
+        raise ValueError(f"--replaces {name!r}: it is bought as {food.buy_as!r}, replace that")
     if foods.PER_UNITS[per] != food.unit and not food.g_per_ml:
         raise ValueError(
             f"--replaces {name!r}: that food has no density, so its grams cannot become ml"
@@ -1445,7 +1451,9 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         raise ValueError(f"{name!r} is already a food or product name: choose one with --name")
     pack_size = _pack_size(args.pack_size) if args.pack_size is not None else None
     if pack_size is None:  # a size already stored may be the client's own: it wins over OFF's
-        pack_size = (stored.pack_size if stored else None) or found.get("pack_size")
+        # either size counts only in the unit the values are per (--per may override OFF's)
+        kept = stored.pack_size if stored and stored.per == per else None
+        pack_size = kept or (found.get("pack_size") if found["per"] == per else None)
     replaces = (
         _replaces(args.replaces, per, profile.region, others)
         if args.replaces is not None
@@ -1842,7 +1850,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--pack-size", default=None, help="one pack's g or ml (default: Open Food Facts')"
     )
     off_add.add_argument(
-        "--replaces", default=None, help="a generic food the shopping list buys this product for"
+        "--replaces",
+        default=None,
+        help='a generic food the shopping list buys this product for ("" clears it)',
     )
     products_sub.add_parser("list", parents=[json_flag])
 
