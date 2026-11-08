@@ -1674,9 +1674,14 @@ def test_import_skips_sets_after_today(capsys, data_dir, tmp_path):
 
 
 # Beta p1-lucia-I10, p5-elena-I13: plan.md's header is checked against the CLI.
-def _plan_md(data_dir, kcal, in_deficit="true"):
+# A plan written before a training stop lists training.
+OLD_WEEK = "\n- A: Squat 3x8 60 kg\n"
+
+
+def _plan_md(data_dir, kcal, in_deficit="true", week=""):
     (data_dir / "plan.md").write_text(
-        f"Date: 2026-04-01\ntarget_kcal: {kcal}\nin_deficit: {in_deficit}\n\n## Training week\n",
+        f"Date: 2026-04-01\ntarget_kcal: {kcal}\nin_deficit: {in_deficit}\n\n"
+        f"## Training week\n{week}",
         encoding="utf-8",
     )
 
@@ -1928,7 +1933,7 @@ def test_symptoms_at_checkin_drop_an_old_medical_clearance(capsys, data_dir):
 )
 def test_a_training_stop_makes_the_plan_stale_and_refuses_the_export(capsys, data_dir, stop):
     _, macros = run(capsys, data_dir, "macros")
-    _plan_md(data_dir, macros["kcal"], "false")
+    _plan_md(data_dir, macros["kcal"], "false", OLD_WEEK)
     run(capsys, data_dir, "profile", "set", "screening.regular_exercise", "false")
     run(capsys, data_dir, "profile", "set", "screening.symptoms", "no")
     if stop[0] != "profile":
@@ -2009,7 +2014,7 @@ def test_bp_reason_survives_a_training_stop_as_a_check_to_ask_for(capsys, data_d
 
 def test_the_stale_plan_names_only_the_stop_not_the_bp_check(capsys, data_dir):
     _, macros = run(capsys, data_dir, "macros")
-    _plan_md(data_dir, macros["kcal"], "false")
+    _plan_md(data_dir, macros["kcal"], "false", OLD_WEEK)
     run(capsys, data_dir, "profile", "set", "conditions", "hypertension")
     run(capsys, data_dir, "checkin", "add", "--symptoms", "chest_pain")
     _, out = run(capsys, data_dir, "plan", "check")

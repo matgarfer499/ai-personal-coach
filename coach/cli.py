@@ -1844,11 +1844,14 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
         else None
     )
     muscle_map = strength.muscle_map_for(args.data_dir)
+    text = path.read_text(encoding="utf-8")
+    # A plan written after the stop prescribes no training: only an older one is stale.
+    if stale and not plancheck.prescribes_training(text, muscle_map):
+        stale = None
     if args.plan_cmd == "export":
         if stale:
             raise ValueError(stale)
         out = _in_data_dir(args, args.out)
-        text = path.read_text(encoding="utf-8")
         exercises = export.write_plan(out, text, profile.language, not args.no_qr, muscle_map)
         return {
             "pdf": _shown(args, out),
@@ -1857,7 +1860,6 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
             "unread": export.plan_unread(text, muscle_map),
             "qr": not args.no_qr,
         }
-    text = path.read_text(encoding="utf-8")
     head = text.splitlines()[:3]
     fields = dict(line.split(":", 1) for line in head if ":" in line)
     fields = {k.strip(): v.strip() for k, v in fields.items()}
@@ -1869,7 +1871,8 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
             "or `Name, 3 sets of 8-12`): " + "; ".join(unread)
         )
     week_file = args.data_dir / "plan-week.yaml"
-    if week_file.exists():
+    # During a stop plan.md lists no training (or is stale): plan-week.yaml is the old week.
+    if week_file.exists() and not flags.no_training:
         try:
             week = yaml.safe_load(week_file.read_text(encoding="utf-8")) or {}
         except yaml.YAMLError:
