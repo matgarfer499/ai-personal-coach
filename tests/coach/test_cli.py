@@ -2266,5 +2266,24 @@ def test_runs_plan_holds_a_novice_weekly_km_while_progression_is_on_hold(capsys,
 
 
 def test_race_km_must_be_positive(capsys, data_dir):
-    code, _ = run(capsys, data_dir, "profile", "set", "race_km", "-5")
-    assert code == 2
+    code, out = run(capsys, data_dir, "profile", "set", "race_km", "-5")
+    assert code == 2 and "race_km must be above 0" in out["message"]
+
+
+@pytest.mark.parametrize("value", ["inf", "nan"])
+def test_profile_numbers_must_be_finite(capsys, data_dir, value):
+    code, out = run(capsys, data_dir, "profile", "set", "height_cm", value)
+    assert code == 2 and "height_cm" in out["message"]
+
+
+def test_runs_plan_hold_note_is_dropped_inside_the_taper(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "experience", "novice")
+    run(capsys, data_dir, "profile", "set", "race_date", "2026-04-12")
+    run(capsys, data_dir, "runs", "add", "--km", "8", "--minutes", "48", "--date", "2026-03-30")
+    run(
+        capsys, data_dir, "injury", "add", "rodilla", "--professional", "fisio",
+        "--exercises", "running",
+    )  # fmt: skip
+    _, plan = run(capsys, data_dir, "runs", "plan")
+    assert plan["taper"]["in_window"] is True and plan["weekly_km_max"] is None
+    assert not any("weekly km stay at last_week_km" in n for n in plan["notes"])

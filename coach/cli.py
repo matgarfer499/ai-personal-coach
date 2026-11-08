@@ -501,8 +501,6 @@ def _runs_plan(profile: Profile, args: argparse.Namespace, today: date, logged: 
             f"about {runs.EASY_SHARE_MIN:.0%} or more of the week's running easy",
         ],
     }
-    if hold and week["long_run_cap_km"] is not None:
-        out["notes"].append("progression is on hold (coach safety): weekly km stay at last_week_km")
     if profile.race_date and profile.race_date >= today:
         refusal = _taper_refusal(profile, args)
         out["taper"] = None if refusal else runs.taper(profile.race_date, today, logged)
@@ -511,6 +509,8 @@ def _runs_plan(profile: Profile, args: argparse.Namespace, today: date, logged: 
         elif out["taper"]["in_window"]:
             # Inside the taper the cut decides weekly km; a growth cap beside it would conflict.
             out["weekly_km_max"] = None
+    if hold and out["weekly_km_max"] is not None:
+        out["notes"].append("progression is on hold (coach safety): weekly km stay at last_week_km")
     return out
 
 

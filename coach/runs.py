@@ -306,8 +306,9 @@ def taper(race: date, today: date, runs: list[Run]) -> dict:
         return result
     # The weekly distance the taper cuts from: the mean of the weeks before it starts (or up to
     # today), TAPER_REFERENCE_WEEKS of them.
-    # Weeks before the first logged run are unknown, not zero, so they are left out; the oldest
-    # logged week counts when it has at least 4 of its 7 days (nearest whole week).
+    # Weeks before the first logged run are unknown, so they are left out; the oldest logged week
+    # counts in full when it has at least 4 of its 7 days (nearest whole week), so up to 3 days
+    # before the first run count as zero (convention, docs/conventions.md).
     ref_end = min(today, starts_on - timedelta(days=1))
     first = min((r.date for r in runs), default=ref_end)
     weeks = max(1, min(TAPER_REFERENCE_WEEKS, ((ref_end - first).days + 1 + 3) // 7))

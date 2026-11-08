@@ -10,6 +10,7 @@ the record and ignored by the code.
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import asdict, dataclass, field, fields
 from datetime import date
@@ -245,7 +246,8 @@ def _validate(data: dict) -> None:
         raise ValueError(f"unknown profile keys: {', '.join(unknown)}")
     for name in NUMBERS:
         value = data.get(name)
-        if value is not None and (isinstance(value, bool) or not isinstance(value, int | float)):
+        bad = isinstance(value, bool) or not isinstance(value, int | float)
+        if value is not None and (bad or not math.isfinite(value)):
             raise ValueError(f"{name} must be a number, not {value!r}")
     pal = data.get("pal_override")
     if pal is not None:
