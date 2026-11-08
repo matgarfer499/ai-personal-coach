@@ -89,8 +89,10 @@ Run these, all with the ground-rule flags:
 - `coach zones`.
 - Runners (`sport` running or both): `coach runs week` (the last logged week by default) and
   `coach injury list`. Ask whether a goal race is coming; store it once with
-  `coach profile set race_date D` and `coach profile set race_km KM`, then run `coach runs plan`
-  (next week's limits, and the taper when the race is near).
+  `coach profile set race_date D`, `coach profile set race_km KM` and `coach profile set
+  race_goal_time H:MM:SS`. Ask for a recent shorter race result too (distance and time; never
+  stored), then run `coach runs plan` (add `--recent-km K --recent-time T` for it): next week's limits, the race's `goal_pace_per_km`, a `predicted_time` up
+  to the half marathon, and the taper when the race is near.
 - A plan or routine the client already follows (a PDF, a note, a pasted list): ask whether they
   have one, unless `data/plan.md` exists. Read it where it is (never copy it) and build from it:
   keep the lifts, days and order that work, and change only what a rule or a safety flag
@@ -237,18 +239,27 @@ Knowledge, by situation: run only the lines that apply.
    "Common running injuries") keep weekly increases under 30% per week over 2 weeks, and the
    "10% weekly rule" is a convention, not a threshold. Quote km figures from the CLI only; when a
    figure you need is not printed, plan that run in minutes instead.
-   There is no rule for a full build-up schedule (weeks, long-run share), so write the week within
-   these limits and say so. Taper: when `coach runs plan` shows `taper` with `in_window`, the last `weeks` before the race follow it:
+   There is no rule for a full build-up schedule (weeks, long-run share, km per run or easy-run
+   pace: docs/dropped-claims.md D268, D277; "Training volume and half-marathon performance" gives
+   associations only), so write the week within these limits and say so. Race pace: quote
+   `goal_pace_per_km` (the goal time over the race distance) and, when printed, `predicted_time`
+   and `predicted_pace_per_km` from a recent race, as an estimate; race-pace efforts are vigorous
+   work, so they follow the caps in Safety. Taper: when `coach runs plan` shows `taper` with `in_window`, the last `weeks` before the race follow it:
    weekly km cut progressively down to `taper_week_km` (quote it), keeping the intensity of key
-   sessions and the runs per week. Outside the window, say when it starts (`starts_on`). There is
-   no generic runner deload week: the research found no evidence for routine deloads in runners
-   ("Taper before a goal race"), so `coach strength deload` stays for lifting.
+   sessions and the runs per week. Outside the window, say when it starts (`starts_on`). No
+   scheduled deload weeks for runners ("Taper before a goal race"); a reactive one when the
+   overreaching signs appear: `coach runs deload --signs ...` (the same signs as `coach strength
+   deload`) gives `deload_week_km`, last week's km cut by 30-50% ("Overreaching warning signs and
+   the response"), intensity kept. Both deload commands refuse while training is on hold.
    Pain or an injury (`coach injury list`, or what the client says): think first of the common
    running injuries; with no professional yet, a GP or physiotherapist assesses it before the
    painful run or movement is loaded; for an assessed tendon problem use the traffic light (red:
-   cut that run's volume at the next session, refer after 2 weeks of red). The coach has no
-   running-specific volume cut beyond that rule (the research found none), so follow the
-   professional's limits.
+   cut that run's volume at the next session, refer after 2 weeks of red). Back to running after a
+   lower-limb injury: the start criteria and the walk-run restart in `coach knowledge section
+   recovery-habits "Return to running after a lower-limb injury: criteria to start"` and
+   "...: graded walk-run", within the professional's limits. Under a managed injury or a hold the
+   long-run cap counts any earlier spike at its own cap, so it never returns to the run that was a
+   spike; the restart volume itself has no rule (D278), so follow the professional.
    Race plans beyond the taper, a field test for HRmax and a runner PAL are not part of the
    coach: say so if asked.
 4. Cardio: before prescribing a modality, load its rule (Reads) and use the intensity class the
