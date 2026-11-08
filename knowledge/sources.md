@@ -8,16 +8,16 @@ Fields: type, DOI, canonical URL, opened URL, which files cite it, and what in t
 
 | Type | Count |
 |---|---|
-| Meta-analysis | 300 |
+| Meta-analysis | 304 |
 | Other | 117 |
 | RCT | 97 |
 | Cohort | 89 |
-| Systematic review | 96 |
-| Guideline | 80 |
+| Systematic review | 97 |
+| Guideline | 82 |
 | Narrative review | 50 |
 | Position stand | 39 |
 | Umbrella review | 15 |
-| **Total** | **883** |
+| **Total** | **890** |
 
 ## List
 
@@ -5179,10 +5179,10 @@ Supports: Consensus on 7/10 safety items, 11/11 efficacy. 'while experts reached
 
 ### S746
 Niebauer J et al. Recommendations for participation in competitive sports of athletes with arterial hypertension: a position statement from the sports cardiology section of the EAPC. Eur Heart J 2018;39(40):3664-3671  
-Type: Position stand · DOI: [10.1093/eurheartj/ehy511](https://doi.org/10.1093/eurheartj/ehy511) · Files: recovery-habits  
+Type: Position stand · DOI: [10.1093/eurheartj/ehy511](https://doi.org/10.1093/eurheartj/ehy511) · Files: recovery-habits, cardio-health  
 URL: <https://academic.oup.com/eurheartj/article/39/40/3664/5079290>  
 Opened: <https://www.eshonline.org/esh-content/uploads/2019/07/3.-Recommendations-for-competitive-sports-in-arterial-hypertension.pdf>  
-Supports: Figure 1: 'If blood pressure is <140/90 mmHg (<140/85 mmHg in diabetic), all competitive sports are allowed. Otherwise, no competitive sports until normalization'. Leisure: at least 30 min moderate, preferably aerobic, 5-7 days/week. Grade 3 ≥180/110.
+Supports: Figure 1: 'If blood pressure is <140/90 mmHg (<140/85 mmHg in diabetic), all competitive sports are allowed. Otherwise, no competitive sports until normalization'. Leisure: at least 30 min moderate, preferably aerobic, 5-7 days/week. Grade 3 ≥180/110. 'Angiotensin-converting enzyme inhibitors and angiotensin II receptor blockers are the preferred choice' ... 'calcium channel blockers are a preferred choice in athletes' ... 'Diuretics are banned at all times and in all sports'
 
 ### S747
 Meeusen R et al., 2013, Prevention, diagnosis, and treatment of the overtraining syndrome: joint consensus statement of the ECSS and ACSM, Med Sci Sports Exerc 45(1):186-205  
@@ -6168,3 +6168,52 @@ Type: Other · DOI: [10.1016/j.nut.2026.113424](https://doi.org/10.1016/j.nut.20
 URL: <https://pubmed.ncbi.nlm.nih.gov/42815068/>  
 Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=42815068&rettype=abstract&retmode=text>  
 Supports: Condensed: 'there is no clear consensus on which BW should be used across different clinical conditions.' ... '41 publications met the inclusion criteria.' ... 'Ideal body weight (IBW) was the most frequently reported BW parameter (73.2%), especially for patients with obesity, fluid overload, or limited mobility. CBW was recommended primarily for individuals with normal weight'. Added by research 2026-11-08 (beta fixes running and citations).
+
+### S888
+Pelliccia A, Sharma S, Gati S, et al. 2021. 2020 ESC Guidelines on sports cardiology and exercise in patients with cardiovascular disease. Eur Heart J 42(1):17-96  
+Type: Guideline · DOI: [10.1093/eurheartj/ehaa605](https://doi.org/10.1093/eurheartj/ehaa605) · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/32860412/>  
+Opened: <https://academic.oup.com/eurheartj/article/42/1/17/5898937>  
+Supports: It is important to consider that beta-blockers are prohibited in certain competitive skill sports such as shooting ... can induce bradycardia and/or lower aerobic exercise capacity. Diuretics are prohibited in all competitive sports. Angiotensin-converting enzyme (ACE) inhibitors, angiotensin II receptor blockers, and calcium antagonists are the preferred drugs of choice in exercising individuals. Added by research 2026-11-08 (beta2 screening, running, strength, food).
+
+### S889
+Rosenblat MA, Watt JA, Arnold JI, et al. 2025. Which Training Intensity Distribution Intervention will Produce the Greatest Improvements in Maximal Oxygen Uptake and Time-Trial Performance in Endurance Athletes? A Systematic Review and Network Meta-analysis of Individual Participant Data. Sports Med 55(3):655-673  
+Type: Meta-analysis · DOI: [10.1007/s40279-024-02149-3](https://doi.org/10.1007/s40279-024-02149-3) · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/39888556/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=39888556&rettype=abstract&retmode=text>  
+Supports: '13 studies with 348 (n = 296 male, n = 52 female) recreational (n = 150) and competitive (n = 198) endurance athletes' ... 'no difference in VO2max (SMD = - 0.06, p = 0.68) or TT performance (SMD = - 0.05, p = 0.34) between POL and pyramidal (PYR)' ... '(SMD = - 0.63, p < 0.05)' ... 'recreational athletes may improve more with a PYR TID.' Added by research 2026-11-08 (beta2).
+
+### S890
+Campos Y, Casado A, Vieira JG, et al. 2022. Training-intensity Distribution on Middle- and Long-distance Runners: A Systematic Review. Int J Sports Med 43(4):305-316  
+Type: Systematic review · DOI: [10.1055/a-1559-3623](https://doi.org/10.1055/a-1559-3623) · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/34749417/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=34749417&rettype=abstract&retmode=text>  
+Supports: 'identified 20 articles' ... 'pyramidal and polarized TID approaches, reported greater improvements in endurance performance than those which used a threshold TID. Thus, it seems that the combination of high-volume at low-intensity (≥ 70% of overall training volume) and low-volume at threshold and high-intensity interval training (≤ 30%) is necessary' Added by research 2026-11-08 (beta2).
+
+### S891
+Rosenblat MA, Perrotta AS, Vicenzino B. 2019. Polarized vs. Threshold Training Intensity Distribution on Endurance Sport Performance: A Systematic Review and Meta-Analysis of Randomized Controlled Trials. J Strength Cond Res 33(12):3491-3500  
+Type: Meta-analysis · DOI: [10.1519/JSC.0000000000002618](https://doi.org/10.1519/JSC.0000000000002618) · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/29863593/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=29863593&rettype=abstract&retmode=text>  
+Supports: 'endurance-trained athletes with greater than 2 years of training experience and VO2max/peak >50' ... '3 for the meta-analysis. Two of the 4 studies ... scored a 4/10 on the PEDro Scale and 2 scored a 5/10' ... 'a moderate effect (ES = -0.66; 95% CI: -1.17 to -0.15) favoring the POL group over the THR group.' Added by research 2026-11-08 (beta2).
+
+### S892
+Silva Oliveira P, Boppre G, Fonseca H. 2024. Comparison of Polarized Versus Other Types of Endurance Training Intensity Distribution on Athletes' Endurance Performance: A Systematic Review with Meta-analysis. Sports Med 54(8):2071-2095  
+Type: Meta-analysis · DOI: [10.1007/s40279-024-02034-z](https://doi.org/10.1007/s40279-024-02034-z) · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/38717713/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=38717713&rettype=abstract&retmode=text>  
+Supports: 'Seventeen studies met the inclusion criteria (n = 437 subjects). Pooled effect estimates suggest POL superiority for improving VO2peak (SMD = 0.24 [95% CI 0.01, 0.48]' ... 'only occurred in shorter interventions (< 12 weeks)' ... 'and for highly trained athletes' ... 'The remaining endurance performance surrogates were similarly affected by POL and other TIDs' Added by research 2026-11-08 (beta2).
+
+### S893
+Li H, Yang Q, Wang B. 2026. Effects of Different Training-Intensity Distribution Models on Maximal Oxygen Uptake and Time-Trial Performance in Endurance Athletes: A Bayesian Network Meta-Analysis. J Strength Cond Res 40(7):e755-e764  
+Type: Meta-analysis · DOI: [10.1519/JSC.0000000000005415](https://doi.org/10.1519/JSC.0000000000005415) · Files: cardio-health  
+URL: <https://pubmed.ncbi.nlm.nih.gov/42171506/>  
+Opened: <https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=42171506&rettype=abstract&retmode=text>  
+Supports: 'Compared with polarized training, no other TID model showed a definite advantage for improving VO2 max or TT performance, because all 95% credible intervals crossed zero. However, Bayesian posterior ranking indicated that lactate-threshold training (THR) was most likely to be the optimal model for VO2 max (rank-1 probability = 65.4%' Added by research 2026-11-08 (beta2).
+
+### S894
+Roseland JM, Nguyen QV, Williams JR, Patterson KY, Showell BA, Pehrsson PR. 2014. USDA Table of Cooking Yields for Meat and Poultry, Release 2. USDA ARS Nutrient Data Laboratory, Beltsville Human Nutrition Research Center.  
+Type: Guideline · DOI: none · Files: nutrition  
+URL: <https://ars.usda.gov/ARSUserFiles/80400535/Data/retn/USDA_CookingYields_MeatPoultry02.pdf>  
+Opened: <https://ars.usda.gov/ARSUserFiles/80400535/Data/retn/USDA_CookingYields_MeatPoultry02.xlsx>  
+Supports: Condensed: 'Yield (%) = 100 x (Wch / Wcr)'. Rows: chicken breast, meat and skin, roasted 72, stewed 77; thigh, meat and skin, roasted 69, stewed 74; drumstick, meat and skin, roasted 76; ground beef crumbles pan-fried, low fat (<12%) 69, medium (12%-22%) 67, high (>22%) 62; patty pan-broiled 77, 73, 69. Added by research 2026-11-08 (beta2).

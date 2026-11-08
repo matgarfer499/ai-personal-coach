@@ -707,6 +707,14 @@ Each rule carries an evidence grade. **Strong**: consistent results from systema
 **Individual variation / conflicts:** Error depends on food type and size; errors partly cancel across a day but cannot be relied on. Weighing does not fix omissions.
 **Sources:** [S322], [S323], [S324]
 
+### Raw to cooked weight for meat and poultry: USDA cooking yields
+**Rule:** When a menu gives cooked meat or poultry weights, convert to raw weight with the USDA cooking yield (hot cooked weight as a percent of raw weight): raw weight = cooked weight / (yield / 100). Chicken pieces with skin: breast 72% roasted, 77% poached or stewed; thigh 69% roasted, 74% stewed; drumstick 76% roasted. Ground beef crumbles, pan-fried and drained: 69% low fat (under 12%), 67% medium fat (12 to 22%), 62% high fat (over 22%); patties pan-broiled 77/73/69% (low/medium/high fat). Thigh and drumstick yields were measured on whole bone-in pieces with skin, so they do not turn edible cooked meat into a purchase weight for bone-in cuts. No skinless breast, fish, grain, pasta, legume or egg rows: use another source for those.
+**Evidence:** USDA ARS Nutrient Data Laboratory Table of Cooking Yields for Meat and Poultry, Release 2 (September 2014), read from the official xlsx and PDF. Yield (%) = 100 x (hot cooked weight / raw weight of the same sample). Chicken, meat and skin: breast 72 roasted and 77 poached, simmered or stewed; thigh 69 roasted and 74 stewed; drumstick 76 roasted (1975 data, no n given). Ground beef (2002 to 2003, n=4 each): crumbles pan-fried and drained in a colander, low fat 69, medium fat 67, high fat 62; patties pan-broiled 77/73/69. The table also has rows for brine-enhanced chicken and grilled patties, not used here.
+**Grade:** strong
+**Applies to:** Food-composition reference data (US retail cuts cooked under set laboratory protocols), not a human population; applies to any eater whose menu uses these cuts and methods.
+**Individual variation / conflicts:** Yields shift with cooking method, endpoint temperature (patties 160 F, chicken 165 F), fat level and added brine. USDA weighed the meat hot after a short rest (chicken after 30 min at room temperature), so meat weighed cold at home reads somewhat lower and the yields slightly overstate it. Chicken breast, roasted thigh and drumstick, and stewed thigh rows are 1975 legacy data with no sample size; the 2011 and 2013 chicken rows are single composites (n=1). The 1975 rows do not say whether the breast was bone-in. Bone-in yields do not convert edible cooked meat to purchase weight. No skinless breast or fish rows.
+**Sources:** [S894]
+
 ## Supplements
 
 ### Creatine monohydrate for adults under 50
