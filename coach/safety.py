@@ -92,17 +92,78 @@ SYMPTOM_WORDS = {
     "chest_pain": (
         "dolor en el pecho",
         "dolor de pecho",
+        "dolor toracico",
         "opresion en el pecho",
         "presion en el pecho",
+        "peso en el pecho",
+        "pinchazo en el pecho",
+        "aprieta el pecho",
+        "duele el pecho",
         "chest pain",
         "chest tightness",
         "chest pressure",
         "tight chest",
+        "pain in my chest",
+        "pressure in my chest",
+        "chest hurts",
     ),
-    "breathless": ("falta de aire", "me ahogo", "short of breath", "breathless"),
-    "dizzy": ("mareo", "mareos", "mareada", "mareado", "dizzy", "dizziness", "lightheaded"),
-    "faint": ("desmayo", "desmaye", "desmayada", "desmayado", "fainted", "faint", "passed out"),
-    "palpitations": ("palpitaciones", "palpitations", "heart racing", "corazon acelerado"),
+    # recovery-habits.md: "Cardiac warning symptoms: stop and refer" lists pain or discomfort in
+    # the neck, jaw or arms as well as the chest.
+    "neck_jaw_arm_pain": (
+        "mandibula",
+        "brazo izquierdo",
+        "se me duerme el brazo",
+        "hormigueo en el brazo",
+        "jaw pain",
+        "pain in my jaw",
+        "jaw hurts",
+        "left arm",
+        "arm went numb",
+    ),
+    "breathless": (
+        "falta de aire",
+        "falta el aire",
+        "me ahogo",
+        "me ahogue",
+        "sin aliento",
+        "me cuesta respirar",
+        "no puedo respirar",
+        "dificultad para respirar",
+        "short of breath",
+        "shortness of breath",
+        "breathless",
+    ),
+    "dizzy": (
+        "mareo",
+        "mareos",
+        "mareada",
+        "mareado",
+        "me maree",
+        "dizzy",
+        "dizziness",
+        "lightheaded",
+        "light headed",
+    ),
+    "faint": (
+        "desmayo",
+        "desmaye",
+        "desmayada",
+        "desmayado",
+        "perdi el conocimiento",
+        "fainted",
+        "faint",
+        "passed out",
+        "blacked out",
+    ),
+    "palpitations": (
+        "palpitaciones",
+        "taquicardia",
+        "corazon a mil",
+        "corazon acelerado",
+        "palpitations",
+        "heart racing",
+        "heart pounding",
+    ),
     "ankle_swelling": ("tobillos hinchados", "swollen ankles", "ankle swelling"),
     "calf_pain": ("dolor de gemelo al caminar", "calf pain when walking"),
     "unusual_fatigue": (
@@ -116,6 +177,18 @@ SYMPTOM_WORDS = {
         "agotado sin motivo",
     ),
 }
+# convention: a symptom phrase is negated when one of these words is among the NEGATION_WINDOW
+# words just before it in the same clause with only NEGATION_FILLERS between ("sin mareos hoy",
+# "no me he mareado", "without any chest pain"); a clause ends at , ; . ! ? or "pero"/"but".
+# Anything else still counts ("no aguanto el dolor de pecho"), so a doubtful note is asked about.
+NEGATIONS = ("sin", "no", "ni", "nada", "nunca", "not", "without", "never", "nor")
+NEGATION_FILLERS = ("me", "he", "ha", "has", "tenido", "notado", "sentido", "any", "had", "felt")
+NEGATION_WINDOW = 3
+CLAUSE_END = re.compile(r"[,;.!?\n]|\bpero\b|\bbut\b")
+# convention: the possible red flag that prints the first-aid line at once, before the client
+# confirms: chest pain, the symptom its sentence turns on (EMERGENCY_LINE below). Arm, breathing
+# and "faint" words are common in ordinary training notes, so they wait for the confirmation.
+EMERGENCY_HINTS = ("chest_pain",)
 # convention: other words clients use for a token, accepted by `checkin add --symptoms` (folded,
 # spaces as underscores).
 SYMPTOM_SYNONYMS = {
@@ -318,8 +391,7 @@ def flags(profile: Profile, today: date | None = None) -> SafetyFlags:
     if out.refer_gp:
         out.deferral_line = DEFERRAL_LINE[language]
     if symptomatic(profile):
-        number = out.emergency_number or NO_EMERGENCY_NUMBER[language]
-        out.emergency_line = EMERGENCY_LINE[language].format(number=number)
+        out.emergency_line = emergency_line(profile, out)
     return out
 
 
@@ -343,10 +415,37 @@ def _has_word(folded: str, words) -> bool:
     return any(re.search(rf"\b{re.escape(w)}\b", folded) for w in words)
 
 
+def _negated(folded: str, start: int) -> bool:
+    clause = CLAUSE_END.split(folded[:start])[-1]
+    for word in reversed(re.findall(r"\w+", clause)[-NEGATION_WINDOW:]):
+        if word in NEGATIONS:
+            return True
+        if word not in NEGATION_FILLERS:
+            return False
+    return False
+
+
+def _said(folded: str, words) -> bool:
+    """A word or phrase appears at least once without a negation just before it."""
+    return any(
+        not _negated(folded, hit.start())
+        for w in words
+        for hit in re.finditer(rf"\b{re.escape(w)}\b", folded)
+    )
+
+
 def red_flag_words(text: str) -> list[str]:
-    """Symptom tokens whose words appear in free text (a prompt to ask, never a flag)."""
+    """Symptom tokens whose words appear, not negated, in free text (a prompt to ask, never a
+    flag)."""
     folded = fold(text)
-    return [token for token, words in SYMPTOM_WORDS.items() if _has_word(folded, words)]
+    return [token for token, words in SYMPTOM_WORDS.items() if _said(folded, words)]
+
+
+def emergency_line(profile: Profile, out: SafetyFlags) -> str:
+    """The first-aid sentence in the profile language, with the number to call."""
+    language = profile.language or "en"
+    number = out.emergency_number or NO_EMERGENCY_NUMBER[language]
+    return EMERGENCY_LINE[language].format(number=number)
 
 
 def injury_words(text: str) -> list[str]:

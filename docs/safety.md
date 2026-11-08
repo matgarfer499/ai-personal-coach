@@ -128,9 +128,12 @@ not a symptom awaiting a clinician.
 `neck_jaw_arm_pain`, `breathless`, `dizzy`, `faint`, `palpitations`, `ankle_swelling`, `calf_pain`,
 `unusual_fatigue`, from recovery-habits.md "Cardiac warning symptoms: stop and refer"); any one
 sets `screening.cardiac_symptoms true`. Free-text `--notes` are scanned for symptom words in
-Spanish and English (`safety.SYMPTOM_WORDS`); hits come back as `possible_red_flags`, a prompt
-for the skill to ask, never a flag on their own, with `confirm_with`: the exact `checkin add
---symptoms` command that records a yes. `--symptoms` also takes synonyms
+Spanish and English (`safety.SYMPTOM_WORDS`, verb forms included: "me mareé", "me aprieta el
+pecho", "me falta el aire"); a phrase right after a negation in the same clause ("sin mareos
+hoy", `safety.NEGATIONS`) is skipped. Hits come back as `possible_red_flags`, a prompt for the
+skill to ask, never a flag on their own, with `confirm_with`: the exact `checkin add --symptoms`
+command that records a yes. A possible chest-pain hit also returns `emergency_line` at once,
+before the client confirms. `--symptoms` and `profile set screening.symptoms` also take synonyms
 (`safety.SYMPTOM_SYNONYMS`, e.g. `chest_tightness` is `chest_pain`). Swollen-joint words come back
 as `possible_injury` (recovery-habits.md "Knee injury: signs of ligament or meniscus damage"):
 the skill asks about an injury and records it with `coach injury add`. When symptoms are
