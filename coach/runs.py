@@ -54,7 +54,7 @@ RPE_RANGE = (6, 20)
 KEY_DECIMALS = (2, 1)
 
 HR_METHODS = ("hrr", "hrmax")
-NO_HR = "no_hr"  # zone_minutes key for runs logged without an average HR
+NO_HR = "no_hr"  # zone_minutes key for runs logged with neither RPE nor an average HR
 
 
 @dataclass(frozen=True)
@@ -306,10 +306,11 @@ def taper(race: date, today: date, runs: list[Run]) -> dict:
         return result
     # The weekly distance the taper cuts from: the mean of the weeks before it starts (or up to
     # today), TAPER_REFERENCE_WEEKS of them.
-    # Weeks before the first logged run are unknown, not zero, so they are left out.
+    # Weeks before the first logged run are unknown, not zero, so they are left out; the oldest
+    # logged week counts when it has at least 4 of its 7 days (nearest whole week).
     ref_end = min(today, starts_on - timedelta(days=1))
     first = min((r.date for r in runs), default=ref_end)
-    weeks = max(1, min(TAPER_REFERENCE_WEEKS, (ref_end - first).days // 7 + 1))
+    weeks = max(1, min(TAPER_REFERENCE_WEEKS, ((ref_end - first).days + 1 + 3) // 7))
     ref_start = ref_end - timedelta(weeks=weeks) + timedelta(days=1)
     reference = sum(r.km for r in runs if ref_start <= r.date <= ref_end) / weeks
     result["reference_week"] = {"start": ref_start, "end": ref_end}

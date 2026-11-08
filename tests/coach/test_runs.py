@@ -252,3 +252,11 @@ def test_taper_reference_is_the_mean_of_the_four_weeks_before_it():
     assert out["reference_week_km"] == 30.0  # (40 + 30 + 30 + 20) / 4
     moved = taper(race + timedelta(days=7), race - timedelta(days=9), logged)
     assert moved["reference_week_km"] != 40.0  # never one week alone
+
+
+def test_taper_reference_does_not_count_a_one_day_oldest_week_as_a_whole_week():
+    # first run 7 days before the reference ends: 8 days of data are one week, not two
+    logged = [Run(date(2026, 3, 21), 5.0, 30), Run(date(2026, 3, 24), 15.0, 90),
+              Run(date(2026, 3, 27), 20.0, 120)]  # fmt: skip
+    out = taper(date(2026, 4, 12), TODAY, logged)
+    assert out["reference_week_km"] == 35.0

@@ -187,9 +187,9 @@ def all_zones(
 
 
 def zone_for(zones: list[Zone], hr: float) -> Zone | None:
-    """The bpm zone a heart rate falls in: the highest zone starting at or below it, so the
-    1 bpm gaps rounding leaves between bands, and rates above HRmax, still land in one. The
-    lowest zone has no floor here: an average under resting HR is still very light."""
+    """The bpm zone a heart rate falls in: the highest zone starting at or below it, so rates
+    above HRmax still land in one. The lowest zone has no floor here: an average under resting
+    HR is still very light."""
     bpm = [z for z in zones if z.bpm]
     return next((z for z in reversed(bpm[1:]) if z.bpm[0] <= hr), bpm[0] if bpm else None)
 

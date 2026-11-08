@@ -255,6 +255,8 @@ def _validate(data: dict) -> None:
         if value is not None and (isinstance(value, bool) or not isinstance(value, kind)):
             hint = "a date YYYY-MM-DD, unquoted" if kind is date else kind.__name__
             raise ValueError(f"{name} must be {hint}, not {value!r}")
+    if data.get("race_km") is not None and not data["race_km"] > 0:
+        raise ValueError(f"race_km must be above 0, not {data['race_km']!r}")
     for name, limits in (("hr_max", HR_MAX_RANGE), ("hr_rest", HR_REST_RANGE)):
         value = data.get(name)
         if value is not None and not limits[0] <= value <= limits[1]:

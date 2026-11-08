@@ -419,13 +419,9 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
     today = args.today or date.today()
     logged = [r for r in runs.read_runs(path) if r.date <= today]
     if args.runs_cmd == "taper":
-        flags = safety.flags(profile, args.today)
-        if flags.no_training:
-            stops = safety.stop_reasons(flags)
-            raise ValueError("no taper while training is on hold: " + "; ".join(stops))
-        if safety.running_unassessed(profile):
-            paused = safety.running_paused(profile)
-            raise ValueError("no taper while running is paused: " + "; ".join(paused))
+        refusal = _taper_refusal(profile, args)
+        if refusal:
+            raise ValueError(refusal)
         return runs.taper(_race_date(profile, args), today, logged)
     if args.runs_cmd == "plan":
         return _runs_plan(profile, args, today, logged)
@@ -448,6 +444,12 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
         }
     # Default: the 7 days ending on the last logged run, the latest week with data.
     end = args.week_ending or max((r.date for r in logged), default=today)
+    return _runs_week(profile, args, today, logged, end)
+
+
+def _runs_week(
+    profile: Profile, args: argparse.Namespace, today: date, logged: list, end: date
+) -> dict:
     flags = safety.flags(profile, args.today)
     hr_rest, hr_max = _heart_rates(profile, args)
     shown = zones.hr_zones(profile, flags, hr_rest, hr_max, args.today)
@@ -467,19 +469,29 @@ def _race_date(profile: Profile, args: argparse.Namespace) -> date:
     return race
 
 
+def _taper_refusal(profile: Profile, args: argparse.Namespace) -> str | None:
+    flags = safety.flags(profile, args.today)
+    if flags.no_training:
+        return "no taper while training is on hold: " + "; ".join(safety.stop_reasons(flags))
+    if safety.running_unassessed(profile):
+        return "no taper while running is paused: " + "; ".join(safety.running_paused(profile))
+    return None
+
+
 def _runs_plan(profile: Profile, args: argparse.Namespace, today: date, logged: list) -> dict:
     """Next week's limits from the rules that exist; a full build-up plan has no rule
     (docs/dropped-claims.md D268), so the skill writes the runs within these limits."""
-    args.week_ending = None
-    week = cmd_runs(profile, argparse.Namespace(**{**vars(args), "runs_cmd": "week"}))
+    week = _runs_week(profile, args, today, logged, max((r.date for r in logged), default=today))
+    # Safety hold or a running injury: no added load, so weekly km stay where they are.
+    hold = safety.flags(profile, args.today).hold_progression or bool(week["paused"])
     novice = profile.experience == "novice"
     out = {
         "race": {"date": profile.race_date, "km": profile.race_km} if profile.race_date else None,
         "last_week_km": week["km"],
         "long_run_cap_km": week["long_run_cap_km"],
-        # novices only: the rule gives no weekly cap for experienced runners
-        "weekly_km_max": week["km"] * (1 + runs.NOVICE_WEEKLY_INCREASE)
-        if novice and week["km"] and week["long_run_cap_km"] is not None
+        # novices (the rule gives experienced runners no weekly cap), or anyone on a hold: no rise
+        "weekly_km_max": week["km"] * (1 if hold else 1 + runs.NOVICE_WEEKLY_INCREASE)
+        if (novice or hold) and week["km"] and week["long_run_cap_km"] is not None
         else None,
         "easy_share_min": runs.EASY_SHARE_MIN,
         "paused": week["paused"],
@@ -489,8 +501,16 @@ def _runs_plan(profile: Profile, args: argparse.Namespace, today: date, logged: 
             f"about {runs.EASY_SHARE_MIN:.0%} or more of the week's running easy",
         ],
     }
+    if hold and week["long_run_cap_km"] is not None:
+        out["notes"].append("progression is on hold (coach safety): weekly km stay at last_week_km")
     if profile.race_date and profile.race_date >= today:
-        out["taper"] = runs.taper(profile.race_date, today, logged)
+        refusal = _taper_refusal(profile, args)
+        out["taper"] = None if refusal else runs.taper(profile.race_date, today, logged)
+        if refusal:
+            out["notes"].append(refusal)
+        elif out["taper"]["in_window"]:
+            # Inside the taper the cut decides weekly km; a growth cap beside it would conflict.
+            out["weekly_km_max"] = None
     return out
 
 
