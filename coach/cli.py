@@ -1827,6 +1827,9 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
     if not path.exists():
         raise ValueError(f"no plan at {path}: /plan writes it")
     flags = safety.flags(profile, args.today)
+    muscle_map = strength.muscle_map_for(args.data_dir)
+    text = path.read_text(encoding="utf-8")
+    # A plan written after the stop prescribes no training: only an older one is stale.
     stale = (
         (
             "El plan anterior ya no vale: hay que parar el entrenamiento hasta que te vea un "
@@ -1840,14 +1843,9 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
             if profile.language == "es"
             else "); run /plan again once a clinician clears it (`coach clearance add`)"
         )
-        if flags.no_training
+        if flags.no_training and plancheck.prescribes_training(text, muscle_map)
         else None
     )
-    muscle_map = strength.muscle_map_for(args.data_dir)
-    text = path.read_text(encoding="utf-8")
-    # A plan written after the stop prescribes no training: only an older one is stale.
-    if stale and not plancheck.prescribes_training(text, muscle_map):
-        stale = None
     if args.plan_cmd == "export":
         if stale:
             raise ValueError(stale)

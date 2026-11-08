@@ -39,6 +39,15 @@ _PARTS = re.compile(r";|,(?!\d)")
 # proteina", "141 g protein"); any other number before it ("3 meals with protein", "1650 kcal
 # protein") is not its.
 _BEFORE = re.compile(_NUMBER.pattern + r"\s*g?\s*(?:de|of)?\s*$")
+# A word that is a label ("week 2 calories: 1850") or a per-kg unit ("1,6 g de proteina por kg")
+# does not own the number before it.
+_NOT_BEFORE = re.compile(r"\s*(?::|(?:/|per|por)\s*kg\b)")
+# A number in the next part needs the nutrient's unit: "4 meals" is no protein, "200 g" no kcal.
+_UNIT = {
+    key: re.compile(_NUMBER.pattern + (r"\s*k?cal\b" if key == "kcal" else r"\s*g\b"))
+    for key in NUTRIENTS
+}
+_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 _THOUSANDS = re.compile(r"\d{1,3}(?:[.,]\d{3})+")
 _KG = re.compile(r"(\d+(?:[.,]\d+)?)\s*kg\b", re.I)
 _KM = re.compile(r"(\d+(?:[.,]\d+)?)\s*km\b", re.I)
@@ -72,7 +81,9 @@ def _number(text: str) -> float:
 
 
 def _hit(part: str, words: tuple[str, ...]) -> re.Match | None:
-    return next((m for w in words if (m := re.search(rf"\b{w}\b", part))), None)
+    """The leftmost of `words` in `part`."""
+    hits = (m for w in words if (m := re.search(rf"\b{w}\b", part)))
+    return min(hits, key=lambda m: m.start(), default=None)
 
 
 def nutrition_numbers(text: str) -> dict[str, float]:
@@ -89,11 +100,14 @@ def nutrition_numbers(text: str) -> dict[str, float]:
                     if key in found or not (hit := _hit(part, words)):
                         continue
                     number = (
-                        _BEFORE.search(part[: hit.start()])
+                        (
+                            not _NOT_BEFORE.match(part, hit.end())
+                            and _BEFORE.search(part[: hit.start()])
+                        )
                         or _NUMBER.search(part, hit.end())
                         or (
                             not any(_hit(after, w) for w in NUTRIENTS.values())
-                            and _NUMBER.search(after)
+                            and _UNIT[key].search(after)
                         )
                     )
                     if not number:
@@ -252,8 +266,9 @@ def planned_km(text: str) -> list[float]:
 def prescribes_training(text: str, muscle_map: dict[str, dict]) -> bool:
     """The plan lists sessions of lifts, or a bullet with a number (sets, load, km, minutes,
     hours) in its training week or Cardio: after a training stop it is stale."""
-    # convention: any number in a training bullet counts, so an unread format errs on stale.
+    # convention: any number but a date in a training bullet counts, so an unread format errs on
+    # stale.
     return bool(export.plan_sessions(text, muscle_map)) or any(
-        line.startswith(("- ", "* ")) and re.search(r"\d", line)
+        line.startswith(("- ", "* ")) and re.search(r"\d", _DATE.sub("", line))
         for line in _prescribing_lines(text)
     )

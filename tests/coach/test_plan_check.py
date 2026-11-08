@@ -284,6 +284,22 @@ def test_a_per_kg_figure_then_grams_after_a_comma_reads_the_grams():
     assert nutrition_numbers(text) == {"protein": 120}
 
 
+@pytest.mark.parametrize(
+    "line, expected",
+    [
+        ("Week 2 calories: 1850", {"kcal": 1850}),  # a label's number follows it
+        ("Objetivo diario: 1,6 g de proteína por kg, unos 120 g", {"protein": 120}),
+        ("Protein: 1.6 g/kg, spread over 4 meals", {}),  # a count is not grams
+        ("Carbs: rest of calories, about 200 g", {"carbs": 200}),  # grams are not kcal
+        ("1850 kcal/día (calorías de mantenimiento: 2100)", {"kcal": 1850}),  # leftmost word
+    ],
+)
+def test_a_nutrient_reads_only_its_own_figure(line, expected):
+    from coach.plancheck import nutrition_numbers
+
+    assert nutrition_numbers(f"## Nutrition\n\n- {line}\n") == expected
+
+
 # Beta 4 p3-antonio-F1: a plan written after a training stop prescribes no training.
 def _stopped(capsys, data_dir):
     run(capsys, data_dir, "profile", "set", "screening.symptoms", "chest_pain")
@@ -327,3 +343,11 @@ def test_unlabelled_lift_bullets_are_training():
 
     text = "## Training week\n\n- Squat 3x8 60 kg\n- Bench press 3x8 40 kg\n"
     assert prescribes_training(text, load_muscle_map())
+
+
+def test_a_date_in_a_stop_bullet_is_not_training():
+    from coach.plancheck import prescribes_training
+    from coach.strength import load_muscle_map
+
+    text = "## Training week\n\n- Paused until a doctor clears you (stop since 2026-11-01).\n"
+    assert not prescribes_training(text, load_muscle_map())
