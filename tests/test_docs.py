@@ -66,17 +66,19 @@ def test_every_convention_constant_is_in_conventions_doc():
     assert not missing, missing
 
 
-CITATION = re.compile(r'([\w-]+\.md): "([^"{}]+)"')
+# `file.md: "Heading"` or `file.md "Heading"`; not `docs/file.md "..."`, not f-string templates.
+CITATION = re.compile(r'(?<![\w/.-])([\w-]+\.md):? "([^"{}\n]+)"')
 
 
 def test_every_rule_cited_in_the_code_exists():
-    """Every `file.md: "Heading"` in coach/ names a `### Heading` of that knowledge file."""
+    """Every `file.md: "Heading"` in coach/ and scripts/ names a `### Heading` of that file."""
     headings = {}
     missing = []
-    for path in sorted((ROOT / "coach").glob("**/*.py")):
+    for path in sorted((ROOT / "coach").glob("**/*.py")) + sorted((ROOT / "scripts").glob("*.py")):
         for name, heading in CITATION.findall(path.read_text(encoding="utf-8")):
             if name not in headings:
-                text = (ROOT / "knowledge" / name).read_text(encoding="utf-8")
+                file = ROOT / "knowledge" / name
+                text = file.read_text(encoding="utf-8") if file.exists() else ""
                 headings[name] = set(re.findall(r"^### (.+?)\s*$", text, re.M))
             if heading not in headings[name]:
                 missing.append(f"{path.name}: {name} {heading!r}")
