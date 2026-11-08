@@ -111,7 +111,7 @@ def test_pal_override_reaches_energy_and_macros(capsys, data_dir):
     _stopped_active(data_dir)
     run(capsys, data_dir, "profile", "set", "pal_override", str(energy.DESK_PAL))
     _, out = run(capsys, data_dir, "energy")
-    kcal = round(_rmr(data_dir) * energy.DESK_PAL) - energy.DEFICIT_KCAL
+    kcal = round(_rmr(data_dir) * energy.DESK_PAL)  # no deficit while training is stopped
     assert out["target"]["kcal"] == kcal
     assert any("using stored pal_override" in n for n in out["target"]["notes"])
     _, macros = run(capsys, data_dir, "macros")
@@ -151,10 +151,10 @@ def test_macros_with_the_desk_pal_match_the_energy_rerun(capsys, data_dir):
     pal = str(energy.DESK_PAL)
     _, rerun = run(capsys, data_dir, "energy", "--pal", pal)
     kcal = rerun["target"]["kcal"]
-    assert kcal == round(_rmr(data_dir) * energy.DESK_PAL) - energy.DEFICIT_KCAL
+    assert kcal == round(_rmr(data_dir) * energy.DESK_PAL)  # no deficit while training is stopped
     _, with_kcal = run(capsys, data_dir, "macros", "--pal", pal, "--kcal", str(kcal))
     _, derived = run(capsys, data_dir, "macros", "--pal", pal)
-    assert with_kcal["kcal"] == derived["kcal"] == kcal and derived["in_deficit"] is True
+    assert with_kcal["kcal"] == derived["kcal"] == kcal and derived["in_deficit"] is False
 
 
 def test_goal_typo_is_rejected(capsys, data_dir):
@@ -219,7 +219,28 @@ def test_zones(capsys, data_dir):
     _, out = run(capsys, data_dir, "zones", "--hr-rest", "60")
     assert out["method"] == "hrr"
     assert out["hr_max"] == 187  # Tanaka at 30
-    assert [z["name"] for z in out["zones"]] == ["light", "moderate", "vigorous"]
+    assert [z["name"] for z in out["zones"]] == [
+        "very_light",
+        "light",
+        "moderate",
+        "vigorous",
+        "near_maximal",
+    ]
+
+
+# Beta p6-james-I3: the stored anchors feed `coach zones`; flags still win.
+def test_zones_use_the_stored_heart_rates(capsys, data_dir):
+    assert run(capsys, data_dir, "profile", "set", "hr_max", "191")[0] == 0
+    assert run(capsys, data_dir, "profile", "set", "hr_rest", "48")[0] == 0
+    _, out = run(capsys, data_dir, "zones")
+    assert out["method"] == "hrr"
+    assert (out["hr_max"], out["hr_rest"], out["hr_max_source"]) == (191, 48, "measured")
+    _, out = run(capsys, data_dir, "zones", "--hr-max", "185", "--hr-rest", "55")
+    assert (out["hr_max"], out["hr_rest"]) == (185, 55)
+    code, out = run(capsys, data_dir, "profile", "set", "hr_rest", "200")
+    assert code == 2 and "hr_rest" in out["message"]
+    _, out = run(capsys, data_dir, "profile", "set", "hr_rest", "none")
+    assert out["profile"]["hr_rest"] is None
 
 
 def test_strength_e1rm_and_deload(capsys, data_dir):
@@ -430,6 +451,8 @@ def test_import_hevy_twice(capsys, data_dir):
         "first_day": "2025-07-24",
         "last_day": "2025-07-26",
         "skipped_empty": 0,
+        "conflicts": 0,
+        "skipped_future": 0,
         "warnings": [],
     }
     _, out = run(capsys, data_dir, "import", str(HEVY_EXPORT))
@@ -754,6 +777,15 @@ def test_foods_search(capsys, data_dir):
     _, out = run(capsys, data_dir, "foods", "search", "skyr", "--region", "es")
     assert [p["product_name"] for p in out["products"]] == [SKYR]
     assert out["products"][0]["protein_g"] > 0
+
+
+def test_foods_search_splits_a_quoted_phrase_into_words(capsys, data_dir):
+    _, quoted = run(capsys, data_dir, "foods", "search", "pechuga pollo", "--region", "es")
+    _, words = run(capsys, data_dir, "foods", "search", "pechuga", "pollo", "--region", "es")
+    assert quoted == words and quoted["foods"]
+    # an exact table name, comma included, finds its food
+    _, named = run(capsys, data_dir, "foods", "search", "pechuga de pollo, cruda", "--region", "es")
+    assert "pechuga de pollo, cruda" in [f["name_es"] for f in named["foods"]]
 
 
 LABEL = (
@@ -1416,3 +1448,365 @@ def test_label_energy_warning_does_not_blame_the_source(capsys, data_dir):
     warning = out["warnings"][0]
     assert "source uses" not in warning and "4/4/9" in warning
     assert "read the label again" in warning and "check the pack" not in warning
+
+
+# Beta p3-antonio-I1/I5, p1-lucia-I8.
+def test_cardiac_symptoms_hold_the_target_at_maintenance(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "screening.cardiac_symptoms", "true")
+    _, out = run(capsys, data_dir, "energy")
+    assert out["target"]["deficit"] == 0
+    _, macros = run(capsys, data_dir, "macros")
+    assert macros["in_deficit"] is False
+    _, raised = run(capsys, data_dir, "macros", "--kcal", "1700", "--in-deficit")
+    assert raised["kcal"] == out["target"]["kcal"] and raised["in_deficit"] is False
+
+
+def test_checkin_symptoms_set_the_cardiac_flag(capsys, data_dir):
+    code, out = run(capsys, data_dir, "checkin", "add", "--symptoms", "dizzy, chest_pain")
+    assert code == 0 and out["symptoms"] == ["dizzy", "chest_pain"]
+    assert "dizzy" in out["notes"]
+    assert load_profile(data_dir / "profile.yaml").screening["cardiac_symptoms"] is True
+    _, safety = run(capsys, data_dir, "safety")
+    assert safety["refer_gp"] and safety["no_training"] and safety["deferral_line"]
+
+
+def test_checkin_unknown_symptom_is_refused(capsys, data_dir):
+    code, out = run(capsys, data_dir, "checkin", "add", "--symptoms", "headache")
+    assert code == 2 and "chest_pain" in out["message"]
+    assert "cardiac_symptoms" not in load_profile(data_dir / "profile.yaml").screening
+
+
+def test_checkin_notes_report_possible_red_flags_without_setting_one(capsys, data_dir):
+    code, out = run(capsys, data_dir, "checkin", "add", "--notes", "mareo al subir escaleras")
+    assert code == 0 and out["possible_red_flags"] == ["dizzy"]
+    assert "cardiac_symptoms" not in load_profile(data_dir / "profile.yaml").screening
+
+
+def test_checkin_symptoms_are_kept_when_another_field_is_refused(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "screening.scoff_positive", "true")
+    code, _ = run(capsys, data_dir, "checkin", "add", "--weight", "70", "--symptoms", "faint")
+    assert code == 2
+    assert load_profile(data_dir / "profile.yaml").screening["cardiac_symptoms"] is True
+
+
+def test_checkin_records_neck_jaw_or_arm_pain(capsys, data_dir):
+    code, out = run(capsys, data_dir, "checkin", "add", "--symptoms", "neck_jaw_arm_pain")
+    assert code == 0 and out["symptoms"] == ["neck_jaw_arm_pain"]
+
+
+# Beta p1-lucia-I1, p6-james-I1: no check-ins dated after today.
+def test_checkin_refuses_a_future_date(capsys, data_dir):
+    code, out = run(capsys, data_dir, "checkin", "add", "--date", "2026-04-02", "--weight", "80")
+    assert code == 2 and "after today" in out["message"]
+    assert not (data_dir / "checkins.csv").exists()
+    code, _ = run(capsys, data_dir, "checkin", "add", "--date", TODAY, "--weight", "80")
+    assert code == 0
+
+
+# Beta p1-lucia-I2: the echo is the row as stored, plus the fields just given.
+def test_checkin_echo_shows_the_merged_row(capsys, data_dir):
+    run(capsys, data_dir, "checkin", "add", "--weight", "81", "--intake", "1700", "--sleep", "6.5")
+    _, out = run(capsys, data_dir, "checkin", "add", "--weight", "81.7")
+    assert out["weight_kg"] == 81.7 and out["intake_kcal"] == 1700 and out["sleep_hours"] == 6.5
+    assert out["given"] == ["weight_kg"]
+
+
+# Beta p1-lucia-I4, p4-sara-I5, p5-elena-I12: "none" means an empty list.
+@pytest.mark.parametrize("value", ["none", "None", "no", "ninguno", "ninguna", "nada"])
+def test_profile_none_medications_is_an_empty_list(capsys, data_dir, value):
+    _, out = run(capsys, data_dir, "profile", "set", "medications", value)
+    assert out["profile"]["medications"] == [] and out["unrecognised"]["medications"] == []
+
+
+# Beta p1-lucia-I3, p4-sara-I4: pregnancy is a condition token, not a field.
+def test_profile_set_pregnant_points_to_conditions(capsys, data_dir):
+    code, out = run(capsys, data_dir, "profile", "set", "pregnant", "true")
+    assert code == 2 and "conditions pregnant" in out["message"]
+
+
+# Beta p3-antonio-I7: an unknown medication is recorded, and the output says so plainly.
+def test_unrecognised_items_are_explained(capsys, data_dir):
+    _, out = run(capsys, data_dir, "profile", "set", "medications", "enalapril")
+    assert out["unrecognised"]["medications"] == ["enalapril"]
+    assert "no calculation depends on" in out["unrecognised_note"]
+
+
+# Beta p3-antonio-I6: the region's number counts, so it is not asked for again.
+def test_region_emergency_number_is_not_missing(capsys, data_dir):
+    _, out = run(capsys, data_dir, "profile", "show")
+    assert "emergency_number" in out["missing"]
+    _, out = run(capsys, data_dir, "profile", "set", "region", "es")
+    assert "emergency_number" not in out["missing"]
+
+
+# Beta p6-james-I1: a typo such as 99 for 72 kg is flagged, not silently stored.
+def test_checkin_warns_on_an_implausible_weight_jump(capsys, data_dir):
+    run(capsys, data_dir, "checkin", "add", "--date", "2026-03-30", "--weight", "72")
+    _, out = run(capsys, data_dir, "checkin", "add", "--weight", "99")
+    assert any("27" in w and "2026-03-30" in w for w in out["warnings"])
+    _, calm = run(capsys, data_dir, "checkin", "add", "--date", "2026-03-31", "--weight", "72.4")
+    assert calm["warnings"] == []
+
+
+def test_checkin_weight_jump_after_a_long_gap_is_still_flagged(capsys, data_dir):
+    run(capsys, data_dir, "checkin", "add", "--date", "2026-03-01", "--weight", "72")
+    _, out = run(capsys, data_dir, "checkin", "add", "--weight", "99")
+    assert out["warnings"]
+
+
+def test_future_date_error_says_symptoms_were_recorded(capsys, data_dir):
+    code, out = run(
+        capsys, data_dir, "checkin", "add", "--date", "2026-04-02", "--symptoms", "chest_pain"
+    )
+    assert code == 2 and "symptoms recorded" in out["message"]
+
+
+def test_energy_prints_its_ranges(capsys, data_dir):
+    _, out = run(capsys, data_dir, "energy")
+    low, high = out["rmr_range"]
+    assert low < out["rmr"] < high and out["tdee_range"][0] < out["tdee"] < out["tdee_range"][1]
+
+
+def test_menu_protein_passes_from_the_band_low_end():
+    from coach.cli import menu_check
+
+    targets = {"kcal": 2000, "protein_g": 160, "protein_min_g": 128, "fat_min_g": 50, "fibre_g": 25}
+    totals = {"kcal": 2000, "protein_g": 130, "fat_g": 60, "fibre_g": 30}
+    assert menu_check(totals, targets)["protein_g"] == "ok"
+    assert menu_check(totals | {"protein_g": 120}, targets)["protein_g"] == "under"
+
+
+# Beta p2-marcus-I1: a heavy lifter's log far from the 8-12 default is flagged, so the skill
+# asks for the range instead of judging 5-rep sets against 12.
+def _deadlifts(data_dir, reps=5):
+    sets = [
+        ExerciseSet(
+            "hevy_csv",
+            datetime(2026, 3, d, 18, 0),
+            "Deadlift (Barbell)",
+            0,
+            i,
+            weight_kg=120.0,
+            reps=reps,
+        )
+        for d in (18, 25)
+        for i in range(3)
+    ]
+    append(sets, data_dir / "sessions.csv")
+
+
+def test_progress_flags_a_log_outside_the_default_rep_range(capsys, data_dir):
+    _deadlifts(data_dir)
+    _, out = run(capsys, data_dir, "strength", "progress")
+    assert out["rep_range_source"]["Deadlift (Barbell)"] == "default"
+    assert "median 5" in out["rep_range_notes"]["Deadlift (Barbell)"]
+    _, given = run(capsys, data_dir, "strength", "progress", "--rep-range", "deadlift=3-6")
+    assert given["rep_range_source"]["Deadlift (Barbell)"] == "given"
+    assert given["rep_range_notes"] == {}
+
+
+def test_progress_no_note_when_the_log_fits_the_default(capsys, data_dir):
+    _deadlifts(data_dir, reps=10)
+    _, out = run(capsys, data_dir, "strength", "progress")
+    assert out["rep_range_notes"] == {}
+
+
+# Beta p2-marcus-I6/I7: a planned week is checked before it is prescribed.
+def test_plan_sets_counts_a_planned_week(capsys, data_dir):
+    plan = data_dir / "week.yaml"
+    plan.write_text(
+        "sessions:\n"
+        "  - name: Push\n"
+        "    exercises:\n"
+        "      - {exercise: Bench Press (Barbell), sets: 3}\n"
+        "      - {exercise: Overhead Press (Barbell), sets: 3}\n"
+        "  - name: Pull\n"
+        "    exercises:\n"
+        "      - {exercise: Lat Pulldown (Cable), sets: 4}\n"
+        "      - {exercise: Made Up Lift, sets: 2}\n",
+        encoding="utf-8",
+    )
+    code, out = run(capsys, data_dir, "strength", "plan-sets", str(plan))
+    assert code == 0 and out["sets"]["chest"] == 3
+    assert "chest" in out["below_reference"] and out["reference_sets_per_week"] == 10
+    assert out["unmapped"] == ["Made Up Lift"]
+
+
+def test_plan_sets_rejects_a_malformed_plan(capsys, data_dir):
+    plan = data_dir / "week.yaml"
+    plan.write_text(
+        "sessions:\n  - name: Push\n    exercises:\n      - {exercise: Bench}\n", encoding="utf-8"
+    )
+    code, out = run(capsys, data_dir, "strength", "plan-sets", str(plan))
+    assert code == 2 and "sets" in out["message"]
+
+
+# Beta p2-marcus-I4/I5.
+def test_import_reports_conflicting_reexports(capsys, data_dir, tmp_path):
+    first = tmp_path / "a.csv"
+    first.write_text(
+        "date,exercise,weight_kg,reps\n2025-07-24 11:25,Bench Press,62.5,8\n", encoding="utf-8"
+    )
+    run(capsys, data_dir, "import", str(first))
+    lbs = tmp_path / "b.csv"
+    lbs.write_text(
+        "date,exercise,weight_lbs,reps\n2025-07-24 11:25,Bench Press,140,8\n", encoding="utf-8"
+    )
+    _, out = run(capsys, data_dir, "import", str(lbs))
+    assert out["duplicates"] == 1 and out["conflicts"] == 1
+    assert any("kept the stored" in w for w in out["warnings"])
+
+
+def test_import_skips_sets_after_today(capsys, data_dir, tmp_path):
+    export = tmp_path / "future.csv"
+    export.write_text(
+        "date,exercise,weight_kg,reps\n"
+        "2026-03-30 10:00,Squat,80,5\n"
+        "2026-04-05 10:00,Squat,82.5,5\n",
+        encoding="utf-8",
+    )
+    _, out = run(capsys, data_dir, "import", str(export))
+    assert out["added"] == 1 and out["skipped_future"] == 1
+    assert any("after today" in w for w in out["warnings"])
+
+
+# Beta p1-lucia-I10, p5-elena-I13: plan.md's header is checked against the CLI.
+def _plan_md(data_dir, kcal, in_deficit="true"):
+    (data_dir / "plan.md").write_text(
+        f"Date: 2026-04-01\ntarget_kcal: {kcal}\nin_deficit: {in_deficit}\n\n## Training week\n",
+        encoding="utf-8",
+    )
+
+
+def test_plan_check_matches_the_cli(capsys, data_dir):
+    _, macros = run(capsys, data_dir, "macros")
+    _plan_md(data_dir, macros["kcal"])
+    code, out = run(capsys, data_dir, "plan", "check")
+    assert code == 0 and out["ok"] is True and out["problems"] == []
+    # A target agreed at /review differs from a fresh estimate: a note, not a problem.
+    _plan_md(data_dir, macros["kcal"] + 300)
+    _, out = run(capsys, data_dir, "plan", "check")
+    assert out["ok"] is True and any("fresh estimate" in n for n in out["notes"])
+    # A deficit the safety rules now forbid is a problem.
+    run(capsys, data_dir, "profile", "set", "screening.cardiac_symptoms", "true")
+    _plan_md(data_dir, macros["kcal"])
+    _, out = run(capsys, data_dir, "plan", "check")
+    assert out["ok"] is False and any("safety rules" in p for p in out["problems"])
+
+
+def test_reexport_in_pounds_is_not_a_conflict(capsys, data_dir, tmp_path):
+    kg = tmp_path / "kg.csv"
+    kg.write_text(
+        "date,exercise,weight_kg,reps\n2025-07-24 11:25,Bench Press,100,8\n", encoding="utf-8"
+    )
+    run(capsys, data_dir, "import", str(kg))
+    lbs = tmp_path / "lbs.csv"
+    lbs.write_text(
+        "date,exercise,weight_lbs,reps\n2025-07-24 11:25,Bench Press,220.46,8\n", encoding="utf-8"
+    )
+    _, out = run(capsys, data_dir, "import", str(lbs))
+    assert out["duplicates"] == 1 and out["conflicts"] == 0
+
+
+def test_plan_check_reports_a_missing_header(capsys, data_dir):
+    (data_dir / "plan.md").write_text("# My plan\n", encoding="utf-8")
+    _, out = run(capsys, data_dir, "plan", "check")
+    assert out["ok"] is False and any("Date" in p for p in out["problems"])
+
+
+def test_progress_star_range_counts_as_given(capsys, data_dir):
+    _deadlifts(data_dir)
+    _, out = run(capsys, data_dir, "strength", "progress", "--rep-range", "*=3-6")
+    assert out["rep_range_source"]["Deadlift (Barbell)"] == "given"
+    assert out["rep_range_notes"] == {}
+
+
+def test_plan_sets_lists_untrained_muscles_below_reference(capsys, data_dir):
+    plan = data_dir / "week.yaml"
+    plan.write_text(
+        "sessions:\n  - exercises:\n      - {exercise: Bench Press (Barbell), sets: 12}\n",
+        encoding="utf-8",
+    )
+    _, out = run(capsys, data_dir, "strength", "plan-sets", str(plan))
+    assert "chest" not in out["below_reference"] and "quads" in out["below_reference"]
+
+
+@pytest.mark.parametrize("text", ["sessions: [oops", "- just a list\n", "sessions: [Push]\n"])
+def test_plan_sets_rejects_broken_yaml(capsys, data_dir, text):
+    plan = data_dir / "week.yaml"
+    plan.write_text(text, encoding="utf-8")
+    code, out = run(capsys, data_dir, "strength", "plan-sets", str(plan))
+    assert code == 2 and out["error"] == "invalid"
+
+
+def test_plan_check_accepts_the_kcal_as_macros_kcal_prints_it(capsys, data_dir):
+    _, macros = run(capsys, data_dir, "macros")
+    _plan_md(data_dir, f"{float(macros['kcal'])}")  # `coach macros --kcal` prints 2081.0
+    _, out = run(capsys, data_dir, "plan", "check")
+    assert out["ok"] is True, out["problems"]
+
+
+RUN_FIXTURES = Path(__file__).parent.parent / "fixtures" / "runs"
+
+
+# Beta p6-james-I2, I5: runs are logged and summed per week, with the spike rule.
+def test_runs_add_and_week(capsys, data_dir):
+    code, out = run(
+        capsys, data_dir, "runs", "add", "--date", "2026-03-28", "--km", "8", "--minutes", "48"
+    )
+    assert code == 0 and out["added"] == 1
+    code, out = run(
+        capsys,
+        data_dir,
+        "runs",
+        "add",
+        "--km",
+        "10",
+        "--minutes",
+        "58",
+        "--avg-hr",
+        "150",
+        "--max-hr",
+        "170",
+        "--rpe",
+        "14",
+        "--notes",
+        "long run",
+    )
+    assert code == 0 and out["run"]["date"] == TODAY
+    _, week = run(capsys, data_dir, "runs", "week")
+    assert week["km"] == 18 and week["runs"] == 2 and week["longest_km"] == 10
+    assert [s["date"] for s in week["spikes"]] == [TODAY]
+    assert set(week["zone_minutes"]) >= {"moderate", "vigorous", "no_hr"}
+
+
+def test_runs_add_refuses_a_future_date_and_bad_values(capsys, data_dir):
+    code, out = run(
+        capsys, data_dir, "runs", "add", "--date", "2026-04-02", "--km", "5", "--minutes", "30"
+    )
+    assert code == 2 and "after today" in out["message"]
+    code, out = run(capsys, data_dir, "runs", "add", "--km", "5", "--minutes", "30", "--rpe", "4")
+    assert code == 2 and "rpe" in out["message"]
+    assert not (data_dir / "runs.csv").exists()
+
+
+def test_import_runs_goes_to_runs_csv(capsys, data_dir):
+    code, out = run(capsys, data_dir, "import", str(RUN_FIXTURES / "basic.csv"))
+    assert code == 0 and out["importer"] == "generic_runs_csv"
+    assert (out["added"], out["duplicates"], out["first_day"]) == (3, 0, "2026-03-20")
+    assert (data_dir / "runs.csv").exists() and not (data_dir / "sessions.csv").exists()
+    _, out = run(capsys, data_dir, "import", str(RUN_FIXTURES / "overlap.csv"))
+    assert (out["added"], out["duplicates"]) == (1, 1)
+
+
+def test_runs_taper(capsys, data_dir):
+    _, out = run(capsys, data_dir, "runs", "taper", "--race-date", "2026-04-12")
+    assert out["in_window"] is True and out["distance_cut"] == [0.41, 0.6]
+    _, out = run(capsys, data_dir, "runs", "taper", "--race-date", "2026-06-01")
+    assert out["in_window"] is False and out["starts_on"] == "2026-05-18"
+
+
+def test_runs_taper_refused_while_training_is_on_hold(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "screening.cardiac_symptoms", "true")
+    code, out = run(capsys, data_dir, "runs", "taper", "--race-date", "2026-04-12")
+    assert code == 2 and "Cardiac warning symptoms" in out["message"]

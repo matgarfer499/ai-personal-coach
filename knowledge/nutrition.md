@@ -11,7 +11,7 @@ Each rule carries an evidence grade. **Strong**: consistent results from systema
 - Estimate RMR with Mifflin-St Jeor, treat it as ±10%, and recalibrate from the client's weight trend after 2-4 weeks. (moderate) [S161], [S267], [S287], [S288], [S819]
 - Use activity multipliers of about 1.4-1.5 for desk workers, never 1.2 for ambulatory adults, and not above about 2.0 for recreational lifters. (moderate) [S166], [S281]
 - Weight loss slows as weight falls; never promise linear loss from the 3500 kcal (7700 kcal/kg) rule. (moderate) [S159], [S292], [S293]
-- For fat loss in overweight adults, use a deficit of about 500-750 kcal/day. (strong) [S167]
+- For fat loss in overweight adults, use a deficit of about 500-750 kcal/day. (strong) [S167], [S885]
 - When keeping or building muscle is the goal, keep the deficit at or below about 500 kcal/day. (moderate) [S169]
 - Protein for people who lift: about 1.6 g/kg/day is the estimate where extra protein stops adding measurable fat-free mass; range 1.4-2.2, upper end useful in a deficit. (moderate) [S185], [S186], [S187]
 - At least 0.83 g/kg/day protein for any adult. (strong) [S795], [S183]
@@ -155,11 +155,11 @@ Each rule carries an evidence grade. **Strong**: consistent results from systema
 
 ### Deficit size for weight loss (overweight and obesity)
 **Rule:** For adults with overweight or obesity, set a deficit of about 500-750 kcal/day (up to about 30% below estimated TDEE), individualised from estimated TDEE rather than fixed kcal ranges. Frame the initial goal as 5-10% of body weight over about 6 months, and tell the client that even 3-5% sustained improves health markers. For lean clients, use a smaller deficit or a percent-of-body-weight rate (see "Rate of loss for lean, trained clients").
-**Evidence:** The 2013 AHA/ACC/TOS guideline recommends 1200-1500 kcal/day for women and 1500-1800 kcal/day for men, or a 500 or 750 kcal/day deficit (Grade A); its review also supports a 30% deficit. Sustained loss of 3-5% gives clinically meaningful benefits, with more benefit from more loss (Grade A). Initial goal: 5-10% of baseline weight within 6 months.
+**Evidence:** The 2013 AHA/ACC/TOS guideline recommends 1200-1500 kcal/day for women and 1500-1800 kcal/day for men, or a 500 or 750 kcal/day deficit (Grade A); its review also supports a 30% deficit. Sustained loss of 3-5% gives clinically meaningful benefits, with more benefit from more loss (Grade A). Initial goal: 5-10% of baseline weight within 6 months. The 2015 European (EASO) guideline agrees: the weight-reducing diet usually provides a deficit of 600 kcal/day (grade A, B), which it predicts gives about 0.5 kg of loss a week, and diets of 1,200 kcal/day or more count as balanced deficit diets.
 **Grade:** strong
-**Applies to:** Adults with overweight or obesity in clinical and lifestyle programmes (US). Not designed for lean, trained people trying to keep muscle.
-**Individual variation / conflicts:** The fixed kcal ranges can be too aggressive for small, older or very active people and too generous for large people; the guideline notes they are usually adjusted. This file's minimum-intake rule (never below about 1,200 kcal/day for women or 1,500 kcal/day for men without clinical supervision) takes precedence, and GLP-1 users get no coach-imposed deficit (see "GLP-1 users: protein, training and red flags"). The guideline gives no weekly loss rate in kg; weekly paces elsewhere in this file are conventions or come from other sources. The guideline is from 2013 and predates pharmacotherapy-era guidance.
-**Sources:** [S167]
+**Applies to:** Adults with overweight or obesity in clinical and lifestyle programmes (US and European guidelines). Not designed for lean, trained people trying to keep muscle.
+**Individual variation / conflicts:** The fixed kcal ranges can be too aggressive for small, older or very active people and too generous for large people; the guideline notes they are usually adjusted. This file's minimum-intake rule (never below about 1,200 kcal/day for women or 1,500 kcal/day for men without clinical supervision) takes precedence, and GLP-1 users get no coach-imposed deficit (see "GLP-1 users: protein, training and red flags"). The guideline gives no weekly loss rate in kg; weekly paces elsewhere in this file are conventions or come from other sources. EASO's 0.5 kg/week is static energy arithmetic, which "Expected weight change: the 3500 kcal rule is wrong" treats as an overestimate over time. Both guidelines are old (2013, 2015) and predate pharmacotherapy-era guidance; no newer obesity-management guideline giving a kcal deficit was opened.
+**Sources:** [S167], [S885]
 
 ### Deficit size when keeping or building muscle
 **Rule:** For clients who want to keep or build muscle while losing fat, keep the deficit at or below about 500 kcal/day, with high protein and resistance training throughout. Tell them strength usually keeps rising in a moderate deficit even when muscle gain stalls. Avoid long, aggressive deficits for anyone whose main goal is muscle.
@@ -184,6 +184,14 @@ Each rule carries an evidence grade. **Strong**: consistent results from systema
 **Applies to:** Lean, mostly young male competitors. Generalising to ordinary gym-goers is an extrapolation.
 **Individual variation / conflicts:** A narrative review built on few trials, not a position stand. In people with overweight, rate of loss made no significant FFM difference (see "Prefer gradual over rapid loss").
 **Sources:** [S170]
+
+### Upper limit on rate of loss: about 1.5 kg per week
+**Rule:** Never plan a weekly loss above an average of about 1.5 kg per week, even for clients with obesity. If the weight trend averages faster than this, reduce the deficit. For leaner clients the slower targets in "Rate of loss for lean, trained clients" still apply. How long a faster trend must last before acting is not in the source, so any window the coach uses is a convention.
+**Evidence:** A guideline analysis of prospective studies of gallstone formation in obese persons during active weight loss (nine subject groups from five reports) found an exponential relationship between rate of loss and gallstone incidence (adjusted r2 0.98), with a dramatically increasing risk above 1.5 kg per week, and concluded that loss should not exceed an average of 1.5 kg per week.
+**Grade:** emerging
+**Applies to:** Adults with obesity in weight-loss programmes; one outcome (gallstones). Not tested in lean or normal-weight adults.
+**Individual variation / conflicts:** Based on 1995 data from five reports and a single outcome. A later meta-analysis of RCTs confirms that rapid weight loss raises gallstone risk but gives no rate threshold, so it neither contradicts nor replaces the 1.5 kg figure. No current guideline opened gives a kg/week ceiling: NICE NG246 states only an energy deficit, and the AHA/ACC/TOS 2013 guideline gives no weekly rate (see "Deficit size for weight loss (overweight and obesity)").
+**Sources:** [S886]
 
 ### Adaptive thermogenesis is real but modest
 **Rule:** Tell clients metabolism does adapt, but modestly (typically under about 100 kcal/day at rest) and partly reversibly. When fat loss stalls, look first at intake creep, lower NEAT and step count, and the smaller body size, not "metabolic damage". Use maintenance phases at the new weight to let the adaptation fade.
@@ -248,8 +256,16 @@ Each rule carries an evidence grade. **Strong**: consistent results from systema
 **Evidence:** The ISSN recommends 1.4-2.0 g/kg/day for most exercising people. Morton 2018 (49 RCTs, 1,863 participants, ≥6 weeks of resistance training) found FFM gains stopped rising at 1.62 g/kg/day (95% CI 1.03-2.20) in a subset breakpoint analysis (not significant, p=0.079, unadjusted); the authors suggest ~2.2 g/kg/day to be sure. Nunes 2022 (74 RCTs, healthy non-obese adults) found a lean-mass benefit under 65 with ≥1.6 g/kg/day during resistance exercise.
 **Grade:** moderate
 **Applies to:** Healthy adults doing structured resistance training, including beginners. Morton's sample mean age 35 ± 20; only 10 of 49 studies in trained people; evidence in women and people with obesity is thinner.
-**Individual variation / conflicts:** The breakpoint is imprecise (wide CI, non-significant), which is why this rule is graded moderate, and individual plateaus vary. Tagawa 2021 reports a smaller continued benefit up to 3.5 g/kg/d rather than a hard plateau. Morton's senior author and several Nunes authors declare dairy or nutrition-industry ties.
-**Sources:** [S185], [S186], [S187]
+**Individual variation / conflicts:** The breakpoint is imprecise (wide CI, non-significant), which is why this rule is graded moderate, and individual plateaus vary. Tagawa 2021 reports a smaller continued benefit up to 3.5 g/kg/d rather than a hard plateau. Morton's senior author and several Nunes authors declare dairy or nutrition-industry ties. Which body weight to use for clients with obesity has no clear consensus: a scoping review of 41 publications on nutrition support in hospital adults found ideal body weight was the parameter reported most often (73.2%), especially for patients with obesity, with current body weight recommended mainly for normal weight. That is a hospital population, so the fat-free mass or goal weight choice here stays a practical heuristic.
+**Sources:** [S185], [S186], [S187], [S887]
+
+### Daily protein target for endurance runners
+**Rule:** For recreational endurance runners, default to about 1.6 g/kg/day of protein, within 1.4-2.0 g/kg/day; do not use a lower target just because the training is endurance rather than lifting. Move toward 2.0 g/kg/day in heavy training or when sessions are done low on carbohydrate, and go up to about 2.5 g/kg/day only in very demanding, high-calorie training blocks. Runners who also lift follow "Daily protein target for people who lift".
+**Evidence:** ISSN protein position stand: 1.4-2.0 g/kg/day is sufficient for most exercising individuals to build and maintain muscle mass. ISSN ultra-marathon position stand: about 1.6 g/kg/day maintains lean mass and supports recovery, and up to 2.5 g/kg/day may be warranted during demanding training when calorie requirements are greater. An indicator amino acid oxidation study in 8 endurance-trained men estimated the requirement at 2.1 g/kg/day (upper 95% CI 2.6), above current athlete guidelines. A second small tracer study in endurance athletes found that training with low carbohydrate availability increases protein requirements.
+**Grade:** moderate
+**Applies to:** Healthy exercising adults (ISSN 2017, mostly resistance-training data); ultramarathon runners (ISSN 2019); small samples of endurance-trained men (tracer studies). Evidence in recreational runners and women is indirect.
+**Individual variation / conflicts:** The tracer estimate (2.1 g/kg/day, upper CI 2.6) sits above the 1.4-2.0 range but comes from one small study in 8 trained men. The low-carbohydrate study gives no target number, so 2.0 there is the top of the ISSN range, not a tested dose. The ACSM/AND/DC 2016 abstract gives no protein number, so it is not cited for this rule.
+**Sources:** [S185], [S879], [S880], [S881]
 
 ### Keep the protein effect in proportion
 **Rule:** Present protein as support for training, not the main driver. The biggest return comes from raising low intakes (below 1.2-1.3 g/kg) to target. Past about 1.6 g/kg, adherence, training progression and total energy matter more than extra grams. Do not sell protein powders as the key to results.
@@ -268,12 +284,12 @@ Each rule carries an evidence grade. **Strong**: consistent results from systema
 **Sources:** [S186], [S189]
 
 ### Protein during fat loss
-**Rule:** During fat loss, keep protein at about 1.8-2.2 g/kg/day for ordinary lifters and keep resistance training going. Reserve about 2.3-3.1 g/kg of fat-free mass for lean, trained clients in aggressive deficits. For clients with more body fat, calculate from fat-free mass or goal weight; for overweight beginners on a modest deficit, ~1.6-2.0 g/kg plus training is probably enough. This rule does not apply to GLP-1 or tirzepatide users (see "GLP-1 users: protein, training and red flags": 1.2-1.6 g/kg/day unless the clinician says otherwise) or to anyone with kidney disease (see "Chronic kidney disease").
-**Evidence:** Above-RDA intakes reduced lean-mass loss during energy restriction by 0.36 kg (95% CI 0.06-0.67; Hudson). The ISSN states 2.3-3.1 g/kg/day "may be needed" for trained people in a deficit, a figure from Helms 2014 (6 studies in lean trained adults, expressed per kg FFM). In a 4-week RCT of young men on a ~40% deficit with resistance training plus HIIT 6 days/week, 2.4 g/kg gave more lean-mass gain (+1.2 vs +0.1 kg) and fat loss (-4.8 vs -3.5 kg) than 1.2 g/kg.
+**Rule:** During fat loss, keep resistance training going and keep protein within about 1.6-2.2 g/kg/day for ordinary lifters; the coach's default of about 1.8-2.2 g/kg/day is a convention inside that range, not a tested dose. Lean, resistance-trained clients in a sustained or aggressive deficit may go up to about 1.9-3.2 g/kg/day (an older, smaller review gave 2.3-3.1 g/kg of fat-free mass). For clients with more body fat, calculate from fat-free mass or goal weight; for overweight beginners on a modest deficit, about 1.6-2.0 g/kg plus training is probably enough (a convention: the low end of the lifting range, above the 1.2-1.6 g/kg the ISSN gives for the general population losing weight). This rule does not apply to GLP-1 or tirzepatide users (see "GLP-1 users: protein, training and red flags": 1.2-1.6 g/kg/day unless the clinician says otherwise) or to anyone with kidney disease (see "Chronic kidney disease").
+**Evidence:** The ISSN 2026 position stand on diets for body weight reduction: 1.6-2.2 g/kg/day combined with resistance training may optimise muscle anabolism, while 1.9-3.2 g/kg/day can maximise lean-mass retention in lean, resistance-trained people in a deficit; for the general population, 1.2-1.6 g/kg/day supports weight and fat loss. It cites a newer meta-regression in which 1.9-3.2 g/kg, or 2.5-4.2 g/kg of fat-free mass, was associated with greater fat-free mass retention; Helms 2014 (6 studies in lean trained adults) gave 2.3-3.1 g/kg of fat-free mass. The ACSM/AND/DC 2016 position says intakes as high as 2.0 g/kg/day or higher may help in energy restriction, and a review for athletes puts current recommendations during weight loss at 1.6-2.4 g/kg/day. Above-RDA intakes reduced lean-mass loss during energy restriction by 0.36 kg (95% CI 0.06-0.67; Hudson). In a 4-week RCT of young men on a ~40% deficit with resistance training plus HIIT 6 days/week, 2.4 g/kg gave more lean-mass gain (+1.2 vs +0.1 kg) and fat loss (-4.8 vs -3.5 kg) than 1.2 g/kg.
 **Grade:** moderate
-**Applies to:** Adults in a deliberate deficit. The highest values come from small samples of lean, mostly male athletes; Longland's trial used an extreme deficit and training load.
-**Individual variation / conflicts:** "1 g per lb" or >2.5 g/kg for every dieter outruns the evidence. The 1.8-2.2 g/kg range is an extrapolation between sources, not a tested value; no dose-finding trial in overweight beginners was found.
-**Sources:** [S185], [S190], [S191], [S189]
+**Applies to:** Adults in a deliberate deficit. The highest values come from lean, resistance-trained samples; the athlete review addresses elite athletes; Longland's trial used an extreme deficit and training load.
+**Individual variation / conflicts:** "1 g per lb" or >2.5 g/kg for every dieter outruns the evidence. The 1.8-2.2 g/kg default is a convention, not a tested value; no dose-finding trial in overweight beginners was found. The ISSN 2026 general-population range (1.2-1.6 g/kg) is lower than this rule's 1.6-2.0 g/kg for overweight beginners. The older claim that the ISSN 2017 figure of 2.3-3.1 g/kg/day came from Helms 2014 could not be confirmed and was removed.
+**Sources:** [S883], [S190], [S325], [S884], [S189], [S191]
 
 ### Older adults: protein targets
 **Rule:** For clients over about 65, treat 1.0-1.2 g/kg/day as the minimum; for those who lift, target 1.2-1.6 g/kg/day. Do not push older clients to 2.0-2.2 g/kg/day. Always pair protein with resistance training. Ask about kidney disease before raising protein; with any diagnosed CKD, the nephrologist or renal dietitian sets the target (see "Chronic kidney disease").
@@ -374,11 +390,11 @@ Each rule carries an evidence grade. **Strong**: consistent results from systema
 **Sources:** [S328]
 
 ### Minimum dietary fat
-**Rule:** Keep fat at or above about 20% of energy and not below about 0.5 g/kg/day for any long period, including during a cut; default range 20-35%. If a client wants less fat during a hard deficit, keep it short and make sure essential fatty acids are covered.
-**Evidence:** The 2016 ACSM/AND/DC position says athletes should be discouraged from chronic fat intakes below 20% of energy, which lower intake of fat-soluble vitamins and essential fatty acids, with no performance benefit. EFSA's range is also 20-35%. The ISSN suggests 0.5-1.5 g/kg/day for general fitness and 0.5-1 g/kg/day during fat loss.
+**Rule:** Keep fat at or above about 20% of energy and not below about 0.5 g/kg/day for any long period, including during a cut; default range 20-35%. If a client wants less fat, keep it short-term (the ACSM/AND/DC position discourages chronic intakes below 20%) and make sure essential fatty acids are covered.
+**Evidence:** The 2016 ACSM/AND/DC position says athletes should be discouraged from chronic fat intakes below 20% of energy, which reduce intake of fat-soluble vitamins and essential fatty acids, and that intakes typically range from 20% to 35% of energy. EFSA's range is also 20-35%. The ISSN 2018 review gives 25-35% fat (0.5-1.5 g/kg/day) for general fitness and says 0.5-1 g/kg/day has been recommended when reducing body fat, which may mean as little as 20% of total calories.
 **Grade:** strong
-**Applies to:** Healthy adults of both sexes, including recreational gym-goers.
-**Individual variation / conflicts:** ISSN's 0.5-1 g/kg can fall below 20% of energy at high intakes; use whichever floor is higher. The 20% floor rests on micronutrient and fatty-acid adequacy and expert judgement, not dose-response trials.
+**Applies to:** Athletes (ACSM/AND/DC), people in a general fitness programme (ISSN) and healthy adults (EFSA); applied to recreational gym-goers by extrapolation.
+**Individual variation / conflicts:** ISSN's 0.5-1 g/kg can fall below 20% of energy at high intakes; use whichever floor is higher. The floor rests on nutrient adequacy and expert judgement, not dose-response trials.
 **Sources:** [S325], [S330], [S326]
 
 ### Essential fatty acids
@@ -390,12 +406,12 @@ Each rule carries an evidence grade. **Strong**: consistent results from systema
 **Sources:** [S330], [S331]
 
 ### Dietary fibre
-**Rule:** Set a floor of at least 25 g/day of fibre (ideally 25-35 g) from whole grains, legumes, vegetables and fruit, including during fat loss and high-protein phases, plus at least 400 g/day of vegetables and fruit. Increase gradually, with fluids, to limit GI discomfort.
-**Evidence:** EFSA considers 25 g/day adequate for bowel function; WHO (2023) recommends ≥25 g/day naturally occurring fibre and ≥400 g/day of vegetables and fruit. Reynolds 2019 (185 prospective studies, 58 trials) found 15-30% lower all-cause and cardiovascular mortality and less coronary heart disease, stroke, type 2 diabetes and colorectal cancer at the highest intakes, with the greatest reduction at 25-29 g/day and possible further benefit above.
+**Rule:** For adults, at least 25 g/day of naturally occurring fibre from foods (whole grains, legumes, vegetables, fruit), including during fat loss and high-protein phases, plus at least 400 g/day of vegetables and fruit. The largest benefit was seen at 25-29 g/day, with possible further benefit above 30 g/day on more limited data. Increase gradually, with fluids, to limit GI discomfort.
+**Evidence:** WHO's 2023 carbohydrate guideline recommends at least 400 g/day of vegetables and fruits and at least 25 g/day of naturally occurring dietary fibre for adults (both strong recommendations); the greatest benefit was at 25-29 g/day, and data suggested more benefit above 30 g/day but were more limited. EFSA considers 25 g/day adequate for bowel function. Reynolds 2019 (185 prospective studies, 58 trials) found 15-30% lower mortality and disease incidence at the highest intakes, with the greatest reduction at 25-29 g/day.
 **Grade:** strong
 **Applies to:** Adults without chronic disease. Hard outcomes are observational; weight, blood pressure and cholesterol effects come from RCTs.
-**Individual variation / conflicts:** People with IBS or IBD may need individual adjustment of fibre type and amount.
-**Sources:** [S206], [S205], [S795]
+**Individual variation / conflicts:** WHO rates the fibre evidence as moderate certainty overall. The earlier "ideally 25-35 g" was not in any opened source and was replaced by WHO's 25-29 g and above-30 g wording. People with IBS or IBD may need individual adjustment of fibre type and amount.
+**Sources:** [S882], [S206], [S795]
 
 ### Free sugars: limits
 **Rule:** Present free sugars as something to minimise, not a quota to fill. Use below 10% of energy as the firm upper limit and below 5% (about 25 g/day) as the ideal, calculated from the client's own target (for example, 50 g at 2000 kcal). Count juice, honey, syrups, soft drinks and sweets; do not count whole fruit or plain milk and yoghurt. Priority actions: water instead of sugar-sweetened drinks, whole fruit instead of juice, unsweetened dairy.

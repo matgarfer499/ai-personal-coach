@@ -131,11 +131,11 @@ def test_no_training_from_blood_pressure_uses_the_desk_band():
     assert tdee(p, today=TODAY) == pytest.approx(RMR * energy.DESK_PAL)
 
 
-def test_no_training_desk_band_still_respects_the_floor_and_no_deficit():
+def test_no_training_desk_band_holds_maintenance():
     cardiac = OK | {"cardiac_symptoms": True}
     small = woman(activity_level="desk_training", weight_kg=45, height_cm=150, screening=cardiac)
     t = target(small, tdee_kcal=tdee(small, today=TODAY))
-    assert t.kcal == energy.FLOOR_KCAL["female"] and t.clamped
+    assert t.deficit == 0 and t.kcal == round(t.maintenance) and not t.clamped
     ed = man(activity_level="desk_training", screening=cardiac | {"scoff_positive": True})
     t = target(ed, tdee_kcal=tdee(ed, today=TODAY))
     assert t.kcal == round(RMR * energy.DESK_PAL) and t.deficit == 0
@@ -184,7 +184,7 @@ def test_floor_clamps_men():
 
 def test_maintenance_below_floor_is_clamped_up():
     result = target(woman(goal="maintenance"), tdee_kcal=1150)
-    assert result.kcal == 1200 and result.clamped and result.deficit == -50
+    assert result.kcal == 1200 and result.clamped and result.deficit == 0 and result.surplus == 50
 
 
 def test_unscreened_fat_loss_raises():
@@ -249,7 +249,7 @@ def test_older_adult_gets_no_deficit_without_obesity_and_condition():
 def test_muscle_gain_surplus_starts_at_5_percent():
     result = target(man(goal="muscle_gain"))
     assert result.kcal == round(1780 * 1.45 * 1.05)
-    assert result.deficit == -round(1780 * 1.45 * 0.05)
+    assert result.deficit == 0 and result.surplus == round(1780 * 1.45 * 0.05)
 
 
 @pytest.mark.parametrize("goal", ["maintenance", "recomposition"])
@@ -269,6 +269,12 @@ def test_positive_screen_gets_no_surplus_and_the_referral_note():
     result = target(profile)
     assert result.deficit == 0
     assert any("Eating-disorder screening" in n for n in result.notes)
+
+
+def test_training_stop_gets_no_surplus():
+    # safety.NO_TRAINING_NO_DEFICIT: calories stay at maintenance until training is cleared.
+    result = target(man(goal="muscle_gain", screening=OK | {"cardiac_symptoms": True}))
+    assert result.deficit == 0
 
 
 def test_unknown_goal_is_rejected():
@@ -347,3 +353,23 @@ def test_check_pal_is_the_one_range_check():
             check_pal(bad)
         with pytest.raises(ValueError, match=word):
             tdee(man(), multiplier=bad, today=TODAY)
+
+
+# Beta p2-marcus-I3: a surplus is a surplus, never a negative deficit.
+def test_surplus_is_reported_as_a_surplus():
+    t = target(man(goal="muscle_gain"))
+    assert t.deficit == 0 and t.surplus > 0 and t.kcal == round(t.maintenance) + t.surplus
+
+
+# Elena: show the estimate's uncertainty (MSJ about +/-10%, the PAL band).
+def test_energy_ranges():
+    p = man()
+    low, high = energy.rmr_range(p, TODAY)
+    assert (low, high) == pytest.approx((RMR * 0.9, RMR * 1.1))
+    assert energy.tdee_range(p, TODAY) == pytest.approx((RMR * 0.9 * 1.4, RMR * 1.1 * 1.5))
+
+
+def test_tdee_range_follows_a_chosen_pal():
+    p = man()
+    low, high = energy.tdee_range(p, TODAY, multiplier=1.9)
+    assert low < energy.tdee(p, multiplier=1.9, today=TODAY) < high

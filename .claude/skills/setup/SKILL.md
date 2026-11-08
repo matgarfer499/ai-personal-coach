@@ -25,14 +25,22 @@ the `coach` CLI.
   `coach profile set`, rerun.
 - Speak to the client in the profile's `language` (es or en, from `coach profile show`); before
   it is set, in the language the client writes in. Keep it short and plain.
+- Plain words: the first time the client meets a term listed in `docs/glossary.md` (RIR, RPE,
+  bpm or ppm, talk test, zones, deficit, TDEE and the others), explain it in one plain sentence
+  from the glossary, in the client's language; translate CLI text such as `talk_test` rather
+  than quoting it in English. Rule names in brackets, wherever these steps ask for them, go in one
+  short line at the end of the message, just before the deferral line when there is one
+  (`Fuentes: [...]`, en: `Rules used: [...]`), not inline, unless the client asks for them inline.
+  Still cite every rule you use.
 - Load knowledge only with `coach knowledge section FILE "HEADING"`; cite the rule when you give
   advice the CLI does not print. Never read `knowledge/sources.md` whole.
 - Give each reason from `coach safety` once per conversation, in plain words with the rule name
-  in brackets (one short line is enough for a reason unrelated to the task, such as heart-rate
-  zones in /menu), then any CLI note that adds something new. Name the professional the reason
-  names (prescriber, midwife or obstetrician, eating-disorder professional), else the GP. If
-  `refer_gp` is set, end with the deferral line from `docs/safety.md`, copied exactly, in the
-  profile language.
+  in brackets in the closing rules line (one short line is enough for a reason unrelated to the
+  task, such as heart-rate zones in /menu), then any CLI note that adds something new. Name the
+  professional the reason names (prescriber, midwife or obstetrician, eating-disorder
+  professional), else the GP. If `refer_gp` is set, end with the `deferral_line` that
+  `coach safety` prints, copied exactly. Give its `instruction` first: it is the most urgent reason. Never give the
+  `superseded` lines as advice.
 
 ## When to use
 
@@ -45,7 +53,6 @@ the `coach` CLI.
 
 - `coach profile show` (what is already there and what is missing).
 - `docs/safety.md`: the medication and condition token table, the deferral line.
-- `forms/parq-plus-es.pdf` or `forms/parq-plus.pdf`, when present: the official PAR-Q+ (step 4).
 
 ## Steps
 
@@ -99,33 +106,24 @@ Ask about one step per message. Store each answer as soon as you have it with
    weighing), per `coach knowledge section nutrition "Under-18s"`. After a positive screen (`coach safety` shows `no_weight_targets`), ask whether they are happy to share an approximate
    weight for the estimates; never ask them to weigh themselves. If they decline, leave
    `weight_kg` unset and give no calorie or macro targets (say they are optional).
-4. **PAR-Q+.** The form says "NO changes are permitted", so its questions are never reworded,
-   shortened or translated
-   (`coach knowledge section recovery-habits "PAR-Q+ 2023 as the default entry screen"`).
-   If they have already filled it in, ask the two questions at the end of this step. Otherwise, if `forms/parq-plus-es.pdf` (Spanish clients) or `forms/parq-plus.pdf`
-   exists, read it and ask the questions yourself:
-   - First message: the form's title and introduction, then the 7 GENERAL HEALTH QUESTIONS,
-     copied exactly with their numbers and notes, asking YES or NO to each. If the form is not in
-     the profile language, say once that the official form must be asked as printed; when the
-     client asks what a word means, explain it in their language after the question, without
-     replacing it.
-   - All NO: quote the form's text for that case. Any YES: ask each follow-up condition question
-     (1 to 10) exactly as printed and, for each YES, its lettered questions; follow the form's
-     "If NO go to question N". Then quote the form's text for the result.
-   - Quote the form's "Delay becoming more active if" list once.
-   - With no PDF in `forms/`, send the form: to a Spanish client "PAR-Q+ en español"
-     (https://eparmedx.com/wp-content/uploads/2023/12/Spanish.pdf) and the listing page
-     https://eparmedx.com/print-versions-of-par-q/languages/ in case the file moves; to an
-     English client https://eparmedx.com/print-versions-of-par-q/. Say in one plain line what to
-     do: fill it in, then send it back or answer the two questions below.
-   - If the client sends a filled-in PDF: read it where it is, without copying it. List back only
-     the outcome: any YES on the 7 questions, and any YES on the follow-ups (the answers
-     themselves are not stored). Ask the client to confirm, then store the two values below. A
-     field you cannot read: ask the client that question aloud, using the wording of the
-     standard PAR-Q+ question. If the PDF's questions do not match the 7 standard questions, do
-     not map it; ask the client the 7 standard questions instead. Never store the file in `data/`, and
-     do not copy its contents, the client's name or its path into notes or the profile; only
-     the two screening fields.
+4. **PAR-Q+.** The PAR-Q+ Collaboration's terms forbid putting the form's questions into a
+   chat or app, translating or rewording them without written permission
+   (`coach knowledge section recovery-habits "PAR-Q+ 2023 as the default entry screen"`;
+   docs/safety.md, Screening). So never read, quote, paraphrase or translate its questions.
+   - If they have already filled it in, go to the two questions below.
+   - Otherwise send one link in their language and say in one plain line what it is (a short
+     official health questionnaire, about 5 minutes, on paper or screen) and that you will ask
+     two questions about it afterwards. Spanish: "PAR-Q+ en español"
+     (https://eparmedx.com/wp-content/uploads/2023/12/Spanish.pdf; the listing page
+     https://eparmedx.com/print-versions-of-par-q/languages/ in case the file moves). English:
+     https://eparmedx.com/print-versions-of-par-q/. Then wait.
+   - Then ask the two outcome questions, one per message, in their language and in your own
+     words, never the form's: first whether they answered YES to any of the questions on the
+     first page (the general health questions); only if yes, whether they answered YES to any
+     of the follow-up questions. A filled-in PDF they send: read only those two outcomes, ask
+     them to confirm, never store the file or copy its contents, name or path anywhere.
+   - If they will not open the form, store nothing and say in one line that the coach then
+     keeps to light-to-moderate work and no sprints until they do (the CLI applies it).
    Any YES on the 7 questions? Any YES on the follow-up questions? Store
    `screening.parq_any_yes` and `screening.parq_followup_yes`. With any YES, or over 45, ask
    whether a qualified exercise professional or clinician has reviewed vigorous or maximal
@@ -146,7 +144,11 @@ Ask about one step per message. Store each answer as soon as you have it with
 6. **Medications and conditions.** Ask what they take and any diagnoses. Map to tokens with the
    table in `docs/safety.md` and store them as `medications` and `conditions`, each list in one
    `coach profile set` (it replaces the list, so give every item, comma-separated). Store unknown
-   names as given and say the coach cannot classify them. Women: pregnant or planning? (`pregnant`, `planning_pregnancy`; no token means no). With
+   names as given; `coach profile show` lists them under `unrecognised`: say they are recorded
+   and no calculation depends on them (a blood-pressure medicine such as enalapril also means
+   asking whether they have `hypertension`). No medications or no diagnoses: store `none`
+   (an empty list). Women: pregnant or planning? Add `pregnant` or `planning_pregnancy` to the
+   `conditions` list (they are condition tokens, not fields); neither means no. With
    `hypertension`, or if they know their blood pressure: latest seated reading after 5 min rest,
    stored as `screening.bp_systolic` and `screening.bp_diastolic`. With hypertension and no
    reading (also when they only say it is "controlled"), store nothing: the CLI then applies the
@@ -159,7 +161,18 @@ Ask about one step per message. Store each answer as soon as you have it with
    maintenance, muscle_gain, or recomposition (eat around maintenance while training; for
    beginners, returning lifters and higher body fat, per `coach knowledge section nutrition
    "Body recomposition"`).
-   `experience` (convention, listed in `docs/conventions.md`; no rule defines the levels): ask
+   `sport`: what they train for: `lifting`, `running` or `both` (store it with
+   `coach profile set sport VALUE`; unset behaves as lifting). It picks the protein rule
+   (`coach macros` uses "Daily protein target for endurance runners" for `running`; `both`
+   follows the lifter rule, as that rule says) and what /plan builds.
+   Runners (`running` or `both`): ask their usual weekly km and runs per week, and their longest
+   recent run. These are not profile fields: suggest logging their recent runs (`/import` with a
+   run CSV, or one `coach runs add --date D --km K --minutes M` per run they remember with
+   figures) so `coach runs week` has the baseline the single-run spike rule needs. Their runs per
+   week count as training days for `activity_level` below.
+   `experience` (convention, listed in `docs/conventions.md`; no rule defines the levels): the
+   levels describe lifting only, also for runners; a runner who does not lift is `novice`, and
+   their running experience is the weekly km and runs above, not this field. Ask
    how many months they have trained consistently (about 2 or more sessions a week), then store
    `novice` for under 12 months; `intermediate` for 12 months or more while they still add load
    or reps most months; `advanced` for 12 months or more once progress has slowed to a plateau.
@@ -186,11 +199,16 @@ Ask about one step per message. Store each answer as soon as you have it with
    the lower plausible multiplier when unsure"). Say so in one line: the weight trend corrects
    it after 2-4 weeks.
 9. **Check.** `coach profile show`: `missing` must be empty. Ask as in step 1 only if
-   `emergency_number` is listed; if the client declines, store `none` and do not ask again. Go on
+   `emergency_number` is listed (it is not when the region supplies one); if the client declines, store `none` and do not ask again. Go on
    to step 10 when `missing` is empty. Mention any `unrecognised` items.
-10. **Targets.** Run `coach safety`, then `coach energy`, `coach macros` and `coach zones`.
-    Only when `use_rpe_not_hr` is false, ask for a morning resting pulse (`--hr-rest N`) and an
-    observed all-out peak (`--hr-max N`); skip either if unknown.
+10. **Targets.** Run `coach safety`, then `coach energy` and `coach macros`. Only when
+    `use_rpe_not_hr` is false, ask every client (lifters too) for a resting pulse taken seated
+    in the morning, averaged over a few days, and an observed all-out peak if they have one
+    (a well-fitted chest strap in a hard interval or race), per `coach knowledge section
+    cardio-health "HRmax: formulas and setting the anchor"`; store them with
+    `coach profile set hr_rest N` and `coach profile set hr_max N` (skip either if unknown; the
+    CLI then uses the formula, and says so). With `use_rpe_not_hr`, store neither: zones are RPE
+    only. Then run `coach zones`, which reads the stored values.
     When the `coach energy` `notes` hold the `active` `no_training` note, ask whether the activity
     comes from the job or from exercise. Only when it was exercise that has stopped, run
     `coach profile set pal_override VALUE` with the value the note gives (never one you chose or
@@ -210,9 +228,11 @@ Ask about one step per message. Store each answer as soon as you have it with
 
 One message in the profile language:
 1. What you stored, in one short list (no screening answers repeated back, only outcomes).
-2. Starting targets quoted from the CLI: calorie target (and, unless `no_weight_targets` is set,
+2. Starting targets quoted from the CLI (say the estimate's spread once: `coach energy` prints
+   `tdee_range`): calorie target (and, unless `no_weight_targets` is set,
    that it is a starting estimate to be corrected from their trend after 2-4 weeks), protein, fat, carbohydrate and fibre, and the
-   intensity zones with their talk-test cues.
+   intensity zones `coach zones` printed (up to five, very light to near-maximal) with their
+   talk-test cues; never mention a zone it did not print.
 3. Every reason from `coach safety` and every note from `coach energy` that changes what they
    should do, in plain words, keeping the rule name in brackets.
 4. Next steps: `/checkin` on most days, `/import` for workout exports, `/plan` for the plan.

@@ -24,20 +24,34 @@ Adds an exported workout log to `data/sessions.csv` without duplicates.
   `coach profile set`, rerun.
 - Speak to the client in the profile's `language` (es or en, from `coach profile show`); before
   it is set, in the language the client writes in. Keep it short and plain.
+- Plain words: the first time the client meets a term listed in `docs/glossary.md` (RIR, RPE,
+  bpm or ppm, talk test, zones, deficit, TDEE and the others), explain it in one plain sentence
+  from the glossary, in the client's language; translate CLI text such as `talk_test` rather
+  than quoting it in English. Rule names in brackets, wherever these steps ask for them, go in one
+  short line at the end of the message, just before the deferral line when there is one
+  (`Fuentes: [...]`, en: `Rules used: [...]`), not inline, unless the client asks for them inline.
+  Still cite every rule you use.
 - Load knowledge only with `coach knowledge section FILE "HEADING"`; cite the rule when you give
   advice the CLI does not print. Never read `knowledge/sources.md` whole.
 - Give each reason from `coach safety` once per conversation, in plain words with the rule name
-  in brackets (one short line is enough for a reason unrelated to the task, such as heart-rate
-  zones in /menu), then any CLI note that adds something new. Name the professional the reason
-  names (prescriber, midwife or obstetrician, eating-disorder professional), else the GP. If
-  `refer_gp` is set, end with the deferral line from `docs/safety.md`, copied exactly, in the
-  profile language.
+  in brackets in the closing rules line (one short line is enough for a reason unrelated to the
+  task, such as heart-rate zones in /menu), then any CLI note that adds something new. Name the
+  professional the reason names (prescriber, midwife or obstetrician, eating-disorder
+  professional), else the GP. If `refer_gp` is set, end with the `deferral_line` that
+  `coach safety` prints, copied exactly. Give its `instruction` first: it is the most urgent reason. Never give the
+  `superseded` lines as advice.
 
 ## When to use
 
 - The client has a Hevy CSV export (Hevy: Settings, Export data) or a CSV with the generic
   columns (`date`, `exercise`, optional `weight_kg`, `reps`, `rir`, `rpe`, `set_type`...; see
   `docs/adding-an-importer.md`).
+- The client has a run log as CSV with the columns `date`, `distance_km` or `distance_miles`,
+  `duration_minutes` or `duration_seconds`, and optionally `avg_hr`, `max_hr`, `rpe` (Borg
+  6-20). It goes to `data/runs.csv`, not the workout log. Strava, Garmin and Apple Health exports
+  are not read directly (their formats could not be verified): the client copies the columns
+  above into a CSV. Runs logged as sets in Hevy stay in the workout log and are not counted by
+  `coach runs week`.
 - Re-importing a newer full export is fine: sets already stored are skipped. They are kept as
   first imported, so a set corrected or deleted in the app afterwards is not updated here.
 
@@ -49,10 +63,17 @@ Adds an exported workout log to `data/sessions.csv` without duplicates.
 
 1. Run `coach safety`.
 2. `coach import PATH`. If the importer cannot be detected, ask which app it came from and use
-   `coach import PATH --importer hevy_csv` or `--importer generic_csv`; if neither fits, explain
-   the generic columns and stop.
+   `coach import PATH --importer hevy_csv`, `--importer generic_csv` or
+   `--importer generic_runs_csv`; if none fits, explain the generic columns and stop.
+   When the output says `"store": "runs.csv"` it was a run log: report `read`, `added`,
+   `duplicates`, `skipped_future`, `first_day`, `last_day` and `warnings`, then run
+   `coach runs week --week-ending LAST_DAY` and quote its `km`, `runs`, `longest_km`, `spikes`
+   and `notes`; skip steps 3 to 5.
 3. When `duplicates` is above 0, say once that sets already stored keep their first-imported
    values (a correction made in the app since then is not picked up).
+   When `conflicts` is above 0, some of those sets differ in load or reps from the stored ones
+   (an edit in the app, or an export in other units): say so and that the stored values were
+   kept. `skipped_future`: sets dated after today were not stored.
    Report `read`, `added`, `duplicates`, `skipped_empty`, `first_day` and `last_day`, and every
    line of `warnings` (a session already logged from another source would be counted twice;
    sets with no reps, weight, duration or distance are template leftovers and are not stored).
@@ -67,7 +88,7 @@ Adds an exported workout log to `data/sessions.csv` without duplicates.
 
 ## Writes
 
-- `data/sessions.csv` through `coach import`. Nothing else.
+- `data/sessions.csv` (workouts) or `data/runs.csv` (runs) through `coach import`. Nothing else.
 
 ## Output
 
@@ -81,5 +102,5 @@ say fewer sets suffice.
 
 - An `ImporterError` names the bad line: show it and stop; never edit the client's export.
 - With `no_training`, import as usual but say training waits for a clinician's clearance.
-- If `coach safety` shows `refer_gp`, end with the deferral line from `docs/safety.md`, copied
-  exactly.
+- If `coach safety` shows `refer_gp`, end with the `deferral_line` that `coach safety`
+  prints (the line in `docs/safety.md`), copied exactly.

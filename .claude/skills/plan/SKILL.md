@@ -7,6 +7,8 @@ argument-hint: "[what to change]"
 # /plan
 
 Writes the client's current plan to `data/plan.md`: a training week and daily nutrition targets.
+The profile's `sport` decides the week: `lifting` (or unset) a lifting week, `running` a
+running week, `both` the two together.
 
 ## Ground rules (same in every coach skill)
 
@@ -24,14 +26,22 @@ Writes the client's current plan to `data/plan.md`: a training week and daily nu
   `coach profile set`, rerun.
 - Speak to the client in the profile's `language` (es or en, from `coach profile show`); before
   it is set, in the language the client writes in. Keep it short and plain.
+- Plain words: the first time the client meets a term listed in `docs/glossary.md` (RIR, RPE,
+  bpm or ppm, talk test, zones, deficit, TDEE and the others), explain it in one plain sentence
+  from the glossary, in the client's language; translate CLI text such as `talk_test` rather
+  than quoting it in English. Rule names in brackets, wherever these steps ask for them, go in one
+  short line at the end of the message, just before the deferral line when there is one
+  (`Fuentes: [...]`, en: `Rules used: [...]`), not inline, unless the client asks for them inline.
+  Still cite every rule you use.
 - Load knowledge only with `coach knowledge section FILE "HEADING"`; cite the rule when you give
   advice the CLI does not print. Never read `knowledge/sources.md` whole.
 - Give each reason from `coach safety` once per conversation, in plain words with the rule name
-  in brackets (one short line is enough for a reason unrelated to the task, such as heart-rate
-  zones in /menu), then any CLI note that adds something new. Name the professional the reason
-  names (prescriber, midwife or obstetrician, eating-disorder professional), else the GP. If
-  `refer_gp` is set, end with the deferral line from `docs/safety.md`, copied exactly, in the
-  profile language.
+  in brackets in the closing rules line (one short line is enough for a reason unrelated to the
+  task, such as heart-rate zones in /menu), then any CLI note that adds something new. Name the
+  professional the reason names (prescriber, midwife or obstetrician, eating-disorder
+  professional), else the GP. If `refer_gp` is set, end with the `deferral_line` that
+  `coach safety` prints, copied exactly. Give its `instruction` first: it is the most urgent reason. Never give the
+  `superseded` lines as advice.
 
 ## When to use
 
@@ -59,6 +69,9 @@ Run these, all with the ground-rule flags:
   Then `coach macros --kcal TARGET` (add `--in-deficit` when `in_deficit` is true): the CLI
   raises a stored target that the current flags no longer allow.
 - `coach zones`.
+- Runners (`sport` running or both): `coach runs week` (the last logged week by default) and
+  `coach injury list`. Ask whether a goal race is coming; with a race date D, run
+  `coach runs taper --race-date D`.
 - A plan or routine the client already follows (a PDF, a note, a pasted list): ask whether they
   have one, unless `data/plan.md` exists. Read it where it is (never copy it) and build from it:
   keep the lifts, days and order that work, and change only what a rule or a safety flag
@@ -77,6 +90,9 @@ Run these, all with the ground-rule flags:
   lift it is only when the client says they logged it under another name, then rerun with that
   name. `rep_ranges_outside_lookback` lists names that match a lift logged only before the
   lookback window (absent from `lifts`): ask whether that lift is back in the plan.
+  `rep_range_notes` names lifts whose logged reps sit outside the default 8-12 while no range
+  was given: ask the client's usual range for each, then rerun with `--rep-range`. Never judge a
+  heavy lift against 8-12 because the range was not asked.
 
 Knowledge, by situation: run only the lines that apply.
 - Always:
@@ -120,6 +136,12 @@ Knowledge, by situation: run only the lines that apply.
   - `coach knowledge section nutrition "Resistance training during any diet, especially for older adults"`
 - Goal muscle_gain: `coach knowledge section nutrition "Surplus size for muscle gain"`
 - Goal recomposition: `coach knowledge section nutrition "Body recomposition"`
+- Runners (`sport` running or both):
+  - `coach knowledge section cardio-health "Running load progression: cap single-run spikes, not just weekly totals"`
+  - `coach knowledge section cardio-health "ACSM intensity bands"`
+  - `coach knowledge section recovery-habits "Common running injuries and who is most at risk"`
+  - A goal race: `coach knowledge section cardio-health "Taper before a goal race"`
+  - Tendon pain: `coach knowledge section recovery-habits "Pain-monitoring traffic light for tendon problems"`
 
 ## Steps
 
@@ -153,12 +175,17 @@ Knowledge, by situation: run only the lines that apply.
    - Volume: keep each muscle near its weekly sets in `coach strength sets`. With goal
      muscle_gain and recovery holding, add sets gradually toward `reference_sets_per_week`.
      With no log, 2-3 working sets per exercise (convention).
+     Before writing the plan, write the training week as YAML (`sessions:`, each with `name`
+     and `exercises:` of `{exercise: NAME, sets: N}`, one entry per session in the week) to
+     `data/plan-week.yaml` and run `coach strength plan-sets plan-week.yaml`: say which muscles
+     fall in `below_reference` and either add sets or say why not ("Weekly sets per muscle");
+     ask about any `unmapped` names.
    - Rep range per lift: 8-12 by default ("Double progression", "Starting point for novices");
      main lifts of a client who wants strength move to heavier work in 3-8 reps once technique is
      solid, within Safety below ("Load range for maximal strength"); a hypertrophy client may
      use anything from about 6 to 30 reps ("Load range for hypertrophy"). Keep the range the
      client already uses, from `data/plan.md` or their log, unless they ask for a change. Write
-     the client's usual range once as the `rep_range:` header line (step 5) and each lift with
+     the client's usual range once as the `rep_range:` header line (step 6) and each lift with
      another range as `LIFT: LOW-HIGH reps` in the training week, with the logged name, so
      `/review` can pass them to `coach strength progress --rep-range`; after changing a lift's range, rerun
      that command for it before quoting a load.
@@ -170,7 +197,33 @@ Knowledge, by situation: run only the lines that apply.
      in plain words from its reason, citing the rule it names; `hold` means the same load and reps until a clinician
      reviews); for new lifts, "a weight you could lift 2-3 more times",
      never a number you invent.
-3. Cardio: before prescribing a modality, load its rule (Reads) and use the intensity class the
+3. Running week (`sport` running or both). For `running`, step 2's lifting week shrinks to the
+   2 full-body strength sessions "Weekly baseline dose" asks of every client (the client may
+   decline; say what it covers). Runs per week from the client's
+   availability and what `coach runs week` shows they do now. Write each run as minutes in a
+   zone `coach zones` printed (its name, RPE and talk test, and bpm only if it printed them),
+   most of them in the easier zones; never a zone it did not print (the caps hide vigorous and
+   near-maximal). Distance, per "Running load progression": the long run stays at or below
+   `long_run_cap_km` from `coach runs week` (quote it; with no logged runs, ask their longest run
+   of the last 30 days and log it with `coach runs add` before planning a longer one); weekly km
+   stay near the last logged week's `km`, built gradually; novices (the highest-risk group per
+   "Common running injuries") keep weekly increases under 30% per week over 2 weeks, and the
+   "10% weekly rule" is a convention, not a threshold. Quote km figures from the CLI only; when a
+   figure you need is not printed, plan that run in minutes instead.
+   Taper: when `coach runs taper` says `in_window`, the last `weeks` before the race follow it:
+   weekly km cut progressively down to `taper_week_km` (quote it), keeping the intensity of key
+   sessions and the runs per week. Outside the window, say when it starts (`starts_on`). There is
+   no generic runner deload week: the research found no evidence for routine deloads in runners
+   ("Taper before a goal race"), so `coach strength deload` stays for lifting.
+   Pain or an injury (`coach injury list`, or what the client says): think first of the common
+   running injuries; with no professional yet, a GP or physiotherapist assesses it before the
+   painful run or movement is loaded; for an assessed tendon problem use the traffic light (red:
+   cut that run's volume at the next session, refer after 2 weeks of red). The coach has no
+   running-specific volume cut beyond that rule (the research found none), so follow the
+   professional's limits.
+   Race plans beyond the taper, a field test for HRmax and a runner PAL are not part of the
+   coach: say so if asked.
+4. Cardio: before prescribing a modality, load its rule (Reads) and use the intensity class the
    rule gives it, not a guess: jump rope, HIIT, sprints and plyometric jumps are vigorous work,
    never "moderate cardio". Start at the minimum of "Weekly baseline dose" (or what they already do, if more),
    split evenly over the days they offered (ask which, when it is unclear and the client has not delegated it; with only one
@@ -181,9 +234,9 @@ Knowledge, by situation: run only the lines that apply.
    `/research`. When the vigorous (HIIT) rule applies, its screening gate and safety flags come
    before the activity is written into the plan and win over "start at the minimum of Weekly
    baseline dose" for that activity.
-4. Nutrition: the calorie target, protein, fat, carbohydrate and fibre exactly as `coach macros`
+5. Nutrition: the calorie target, protein, fat, carbohydrate and fibre exactly as `coach macros`
    printed them.
-5. Write `data/plan.md` in the profile language. Its first three lines, with nothing before
+6. Write `data/plan.md` in the profile language. Its first three lines, with nothing before
    them: `Fecha: YYYY-MM-DD` (en: `Date:`), `target_kcal: KCAL` and `in_deficit: true|false`
    (`kcal` and `in_deficit` as `coach macros` printed them; `/menu` reads these lines, so
    they keep the CLI's decimal point). When the client has given their training days,
@@ -196,26 +249,37 @@ Knowledge, by situation: run only the lines that apply.
    An optional line `rep_range: 6-8`, the client's usual rep range (leave it out when they use
    8-12), comes directly after the `training_schedule:` line, or directly after the third
    header line when `training_schedule:` is absent, with no blank line or heading between.
-   Then the sections Semana de entrenamiento, Cardio, Nutrición, Notas de seguridad, Fuentes (en:
-   Training week, Cardio, Nutrition, Safety notes, Rules used). Rule names stay as the knowledge
-   headings, in brackets. Then a line on when to run `/review`, and the deferral line last
-   when `refer_gp` is set.
+   Then the sections Semana de entrenamiento (runners: the running week, with the taper when it
+   applies), Cardio, Nutrición, Notas de seguridad, Fuentes (en: Training week, Cardio,
+   Nutrition, Safety notes, Rules used). In the training week, each session is one bullet:
+   `- A (lunes): Sentadilla 51,0 kg; Press banca 34,0 kg` (label, a colon, then the lifts with
+   their loads separated by `;`); `coach plan export` finds the exercises there. Rule names stay
+   as the knowledge headings, in brackets, listed in Fuentes (Rules used). Then a line on when
+   to run `/review`, and the deferral line last when `refer_gp` is set.
+7. Run `coach plan check` (with the same `--pal`, `--tdee` or `--current-kcal` you gave
+   `coach energy`). If `ok` is false, fix each line in `problems` and run it again. A line in
+   `notes` (the target differs from a fresh estimate) needs no change when the target was agreed
+   at /review or kept from the previous plan; never replace an agreed target because of it.
 
 ## Writes
 
-- `data/plan.md` (replace the previous plan; keep the date at the top).
+- `data/plan.md`, and `data/plan-week.yaml` for `coach strength plan-sets` (replace the previous plan; keep the date at the top).
 
 ## Output
 
 The plan in the profile language, as written to `data/plan.md`, then one line on when to review
-(`/review` weekly).
+(`/review` weekly). Offer a printable copy: `coach plan export` writes `data/plan.pdf` (or
+`--out FILE`), the plan with a video search link and QR code per exercise for checking
+technique (`--no-qr` leaves the codes out). A long plan may run past one page. If it fails
+saying the `pdf` extra is missing, tell the client to run `uv sync --extra pdf`.
 
 ## Safety
 
 - `hold_progression`: no added load, reps, sets or intensity, even if the client asks; say
   a clinician's review comes first.
 - `cap_moderate` or `review_before_vigorous`: no vigorous or maximal work (HIIT, 1RM tests,
-  all-out sprints, jump rope, plyometric jumps, near-maximal lifts). With
+  all-out sprints, jump rope, plyometric jumps, near-maximal lifts, runs in a vigorous or
+  near-maximal zone, race efforts). With
   `review_before_vigorous`, say a qualified exercise professional or clinician reviews it first
   if the client wants it; record that review with `coach profile set
   screening.vigorous_reviewed true` only when the client says it happened.
@@ -229,4 +293,4 @@ The plan in the profile language, as written to `data/plan.md`, then one line on
 - `use_rpe_not_hr`: no heart-rate numbers. `prescriber_owns_weight` or `no_deficit`: no deficit language; the CLI targets already
   reflect it.
 - If `coach safety` shows `refer_gp`, say what the professional should review first and end
-  with the deferral line from `docs/safety.md`, copied exactly.
+  with the `deferral_line` from `coach safety` (the line in `docs/safety.md`), copied exactly.

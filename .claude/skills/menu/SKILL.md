@@ -26,14 +26,22 @@ list. Every number comes from the CLI.
   `coach profile set`, rerun.
 - Speak to the client in the profile's `language` (es or en, from `coach profile show`); before
   it is set, in the language the client writes in. Keep it short and plain.
+- Plain words: the first time the client meets a term listed in `docs/glossary.md` (RIR, RPE,
+  bpm or ppm, talk test, zones, deficit, TDEE and the others), explain it in one plain sentence
+  from the glossary, in the client's language; translate CLI text such as `talk_test` rather
+  than quoting it in English. Rule names in brackets, wherever these steps ask for them, go in one
+  short line at the end of the message, just before the deferral line when there is one
+  (`Fuentes: [...]`, en: `Rules used: [...]`), not inline, unless the client asks for them inline.
+  Still cite every rule you use.
 - Load knowledge only with `coach knowledge section FILE "HEADING"`; cite the rule when you give
   advice the CLI does not print. Never read `knowledge/sources.md` whole.
 - Give each reason from `coach safety` once per conversation, in plain words with the rule name
-  in brackets (one short line is enough for a reason unrelated to the task, such as heart-rate
-  zones in /menu), then any CLI note that adds something new. Name the professional the reason
-  names (prescriber, midwife or obstetrician, eating-disorder professional), else the GP. If
-  `refer_gp` is set, end with the deferral line from `docs/safety.md`, copied exactly, in the
-  profile language.
+  in brackets in the closing rules line (one short line is enough for a reason unrelated to the
+  task, such as heart-rate zones in /menu), then any CLI note that adds something new. Name the
+  professional the reason names (prescriber, midwife or obstetrician, eating-disorder
+  professional), else the GP. If `refer_gp` is set, end with the `deferral_line` that
+  `coach safety` prints, copied exactly. Give its `instruction` first: it is the most urgent reason. Never give the
+  `superseded` lines as advice.
 
 ## When to use
 
@@ -195,7 +203,12 @@ Every lunch and dinner dish, whatever its source:
    anything yourself.
 8. Whole plan. Write the draft to `data/menu-draft.yaml` in the format below and run
    `coach mealplan check menu-draft.yaml` with the same target flags. Every day must be `ok`
-   and `repeats` empty. Each entry has a `kind`: `dish` (the same dish within 7 days) or `base`
+   and `repeats` empty. `warnings` never block saving but each needs a fix or a word to the
+   client: a day under 400 g of vegetables and fruit (`nutrition.md "Dietary fibre"`; the
+   total, `veg_fruit_g`, counts table foods only, so add vegetables or fruit, or say a product
+   may cover it), a dish whose `minutes` pass the client's `cooking_minutes` (offer a quicker
+   dish or say so), and a day dated before today (move the dates). Each entry of `repeats` has
+   a `kind`: `dish` (the same dish within 7 days) or `base`
    (two dishes on the same protein and carb base whose dates differ by 3 days or fewer: day 26
    and day 29 are flagged, 26 and 30 pass; both conventions). For `kind: base`, change the protein or the carb of one of the
    dishes, not the dates. Fix and rerun.
@@ -226,11 +239,19 @@ Every lunch and dinner dish, whatever its source:
    `left_over` servings), a meal's `people` multiplies its items, `eaten_out` names the dishes
    of `eat_out` meals (not bought), and `pantry_skipped` the foods left out because the client
    has them at home. After saving, name the dishes in `eaten_out` as not bought, and when a
-   meal has `people` above 1 say the shopping amounts are multiplied for it (the PDF's day
-   pages show per-serving amounts).
+   meal has `people` above 1 say the shopping amounts are multiplied for it (the PDF's recipe
+   card gives that dish's amounts for its `people`, "para N personas"). A shopping line with
+   `units` adds about how many of `unit_name` (the source's portion size, e.g. 12 large eggs)
+   its grams make, rounded up to whole units: quote it as approximate. "Cualquier tienda" (any
+   store) holds the base foods, which have no chain; a food moves under the client's chain only
+   once they add the product they buy there (step 5).
 10. Feedback. When the client says how a dish went, run
     `coach tastes rate "DISH" RATING --source URL`: `loved` ("me encantó"), `liked` ("estaba
     bien"), `disliked` ("no me gustó"), `never_again` ("no lo repetiría"). Ask when unclear.
+    Write DISH exactly as the saved menu or the library names it; the CLI refuses a dish in
+    neither unless `--source` gives its link (ask for the link, or fix the name). Add
+    `--date YYYY-MM-DD` when the client ate it on an earlier day (never after today). The CLI
+    prints only the new `rating` and `recipe_saved`.
     A loved or liked dish joins the library on its own (`recipe_saved`: its steps and items
     come from the saved menu, or only the link for a dish outside the menus); a `never_again`
     dish drops out of `coach recipes search`. `coach recipes save DISH` saves one rated earlier.
@@ -241,7 +262,9 @@ optional per meal, and `eat_out` never goes with `tupper`; every appearance of a
 same `people`). Give each lunch and dinner dish its
 `base`: the main protein, then the carb base, one plain word each (`[pollo, arroz]`,
 `[merluza, patata]`, or one word such as `[garbanzos]` when the protein is the base).
-Breakfasts and snacks go without it and are not checked:
+Breakfasts and snacks go without it and are not checked. Every dish, breakfasts and snacks
+included, has `steps` (one line is enough for a toast: the PDF prints them on its card) and
+`minutes`, the hands-on time from the recipe or your estimate for a simple dish:
 
 ```yaml
 days:
@@ -255,6 +278,7 @@ days:
             source: https://...
             servings: 4   # optional: cooked once, up to 4 appearances (same items each time)
             base: [pollo, arroz]   # lunches and dinners: main protein, then carb base
+            minutes: 25   # hands-on minutes; checked against tastes cooking_minutes
             steps: ["Dorar el pollo 6 min por lado", "Saltear las verduras 8 min"]
             seasoning: ["limón", "tomillo", "pimienta"]
             items: ["pechuga de pollo, cruda=150", "arroz blanco, cocido=150",
@@ -281,6 +305,13 @@ database, and products added with `--label` as "values from the label". After sa
 path from `coach mealplan export`; the recipes and the shopping list are in the PDF (step 9
 says what to do without the `pdf` extra).
 
+## Protein range
+
+`coach macros` prints `protein_g` (the target to plan towards) and `protein_min_g` to
+`protein_max_g` (the rule's range). `mealplan check` passes a day from `protein_min_g`, so for a
+tight budget plan cheaper dishes near the low end instead of egg whites and cottage cheese to hit
+`protein_g` exactly; say so in one line.
+
 ## Safety
 
 - If `coach safety` shows `no_deficit` or `prescriber_owns_weight`, the targets are already
@@ -292,5 +323,5 @@ says what to do without the `pdf` extra).
   label.
 - The postal code goes into a web search only after the client agrees, and nothing else about
   the client goes into a search or to Open Food Facts.
-- If `coach safety` shows `refer_gp`, end with the deferral line from `docs/safety.md`, copied
-  exactly.
+- If `coach safety` shows `refer_gp`, end with the `deferral_line` that `coach safety`
+  prints (the line in `docs/safety.md`), copied exactly.

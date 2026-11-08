@@ -104,3 +104,76 @@ def test_fat_minimum():
     assert macros(lifter(), 2700).fat_min_g == pytest.approx(2700 * 0.20 / 9)
     heavy = lifter(weight_kg=100, height_cm=200)
     assert macros(heavy, 1500, in_deficit=True).fat_min_g == pytest.approx(50)
+
+
+# Beta p5-elena-I4: no cliff at BMI 30; from BMI 25 protein uses the weight at BMI 25.
+def test_protein_is_continuous_across_bmi_30():
+    woman = dict(sex="female", height_cm=168, experience="intermediate")
+    at_84 = macros(lifter(weight_kg=84, **woman), 1700, in_deficit=True).protein_g
+    at_85 = macros(lifter(weight_kg=85, **woman), 1700, in_deficit=True).protein_g
+    assert abs(at_84 - at_85) < 1
+
+
+def test_overweight_uses_the_reference_weight():
+    result = macros(lifter(weight_kg=90), 2400, in_deficit=True)  # BMI 27.8
+    assert result.protein_g == pytest.approx(2.0 * 25 * 1.8**2)
+
+
+# Beta p5-elena-I5: an overweight beginner in a deficit lands in the rule's 1.6-2.0 g/kg of body
+# weight through the BMI-25 cap, with no extra band (which would add a cliff at BMI 25).
+def test_overweight_novice_lands_in_the_beginner_band():
+    novice = lifter(sex="female", height_cm=168, weight_kg=78, experience="novice")
+    result = macros(novice, 1700, in_deficit=True)
+    assert 1.6 <= result.protein_g_per_kg_body <= 2.0
+    lighter = lifter(sex="female", height_cm=168, weight_kg=70.5, experience="novice")
+    heavier = lifter(sex="female", height_cm=168, weight_kg=70.6, experience="novice")
+    gap = (
+        macros(lighter, 1700, in_deficit=True).protein_g
+        - macros(heavier, 1700, in_deficit=True).protein_g
+    )
+    assert abs(gap) < 1
+
+
+# The lifter rule adjusts only for obesity: an overweight lifter at maintenance keeps body weight.
+def test_overweight_lifter_at_maintenance_uses_body_weight():
+    assert macros(lifter(weight_kg=90), 2900).protein_g == pytest.approx(1.6 * 90)
+
+
+# Beta p5-elena-I6: the output says the dose per kg of body weight too.
+def test_protein_per_kg_of_body_weight_is_reported():
+    big = lifter(height_cm=170, weight_kg=110)
+    result = macros(big, 2400, in_deficit=True)
+    assert result.protein_g_per_kg_body == pytest.approx(result.protein_g / 110)
+    assert any(
+        f"{result.protein_g_per_kg_body:.2f} g per kg of body weight" in n for n in result.notes
+    )
+
+
+# Beta p4-sara-I1: the rule's range is exposed; menus pass from its low end.
+def test_protein_range_follows_the_rule():
+    result = macros(lifter(), 2081, in_deficit=True)
+    assert result.protein_min_g == pytest.approx(1.6 * 80)  # "Protein during fat loss": 1.6-2.2
+    assert result.protein_max_g == pytest.approx(2.2 * 80)
+    maintenance = macros(lifter(), 2600)
+    assert maintenance.protein_min_g == pytest.approx(1.4 * 80)  # "...people who lift": 1.4-2.2
+
+
+# nutrition.md "Daily protein target for endurance runners": about 1.6 within 1.4-2.0; runners
+# who also lift follow the lifter rule.
+def test_runner_protein_follows_the_endurance_rule():
+    result = macros(lifter(sport="running"), 2600)
+    assert result.protein_g_per_kg == pytest.approx(1.6)
+    assert result.protein_min_g == pytest.approx(1.4 * 80)
+    assert result.protein_max_g == pytest.approx(2.0 * 80)
+    assert any("endurance runners" in n for n in result.notes)
+
+
+def test_runner_who_lifts_follows_the_lifter_rule():
+    result = macros(lifter(sport="both"), 2600)
+    assert result.protein_max_g == pytest.approx(2.2 * 80)
+    assert any("people who lift" in n for n in result.notes)
+
+
+def test_runner_in_a_deficit_keeps_the_fat_loss_rule():
+    result = macros(lifter(sport="running"), 2081, in_deficit=True)
+    assert any("Protein during fat loss" in n for n in result.notes)

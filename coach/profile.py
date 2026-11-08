@@ -33,6 +33,9 @@ GOALS = ("fat_loss", "maintenance", "muscle_gain", "recomposition")
 # least 1 year of training, for a lifter who has plateaued). Only `novice` changes what /plan
 # loads ("Starting point for novices"); advanced adds the 12-20 weekly sets rule.
 EXPERIENCE = ("novice", "intermediate", "advanced")
+# nutrition.md: "Daily protein target for endurance runners": runners get their own protein rule,
+# and runners who also lift follow the lifter rule. Unset means lifting (the coach's default).
+SPORTS = ("lifting", "running", "both")
 # nutrition.md: "Activity multipliers (PAL)": desk work with little exercise; desk work with about
 # 1 h of training most days; physically active job or daily exercise plus high daily movement.
 ACTIVITY_LEVELS = ("desk", "desk_training", "active")
@@ -41,6 +44,10 @@ LANGUAGES = ("es", "en")
 # convention: input check, not coaching: emergency numbers are 2 to 6 digits (112, 911, 000).
 EMERGENCY_NUMBER = re.compile(r"^\d{2,6}$")
 NO_NUMBER = "none"  # the client declined or has no number: `coach safety` prints none of its own
+
+# Plausibility limits for typed-in heart rates (convention: input validation, not coaching).
+HR_REST_RANGE = (30, 120)
+HR_MAX_RANGE = (100, 230)
 
 # Tokens the calculators read.
 BETA_BLOCKER = "beta_blocker"  # cardio-health.md: "Beta-blockers: no formula-based HR zones"
@@ -97,6 +104,7 @@ ENUMS = {
     "sex": SEXES,
     "goal": GOALS,
     "experience": EXPERIENCE,
+    "sport": SPORTS,
     "activity_level": ACTIVITY_LEVELS,
     "language": LANGUAGES,
 }
@@ -128,6 +136,8 @@ NUMBERS = ("height_cm", "weight_kg", "pal_override")
 TYPES = {
     "birth_date": date,
     "research_reminder_months": int,
+    "hr_max": int,
+    "hr_rest": int,
     "language": str,
     "region": str,
     "medications": list,
@@ -151,9 +161,14 @@ class Profile:
     weight_kg: float | None = None
     goal: str | None = None
     experience: str | None = None
+    sport: str | None = None  # one of SPORTS; unset behaves as lifting
     activity_level: str | None = None
     # The client's chosen PAL while no_training is set (ignored otherwise); see energy.tdee.
     pal_override: float | None = None
+    # cardio-health.md: "HRmax: formulas and setting the anchor": an observed all-out peak and a
+    # measured morning resting HR, used by `coach zones` instead of the formula.
+    hr_max: int | None = None
+    hr_rest: int | None = None
     language: str | None = None
     region: str | None = None
     emergency_number: str | None = None  # the client's own; else their region's (coach safety)
@@ -206,6 +221,13 @@ def _validate(data: dict) -> None:
         if value is not None and (isinstance(value, bool) or not isinstance(value, kind)):
             hint = "a date YYYY-MM-DD, unquoted" if kind is date else kind.__name__
             raise ValueError(f"{name} must be {hint}, not {value!r}")
+    for name, limits in (("hr_max", HR_MAX_RANGE), ("hr_rest", HR_REST_RANGE)):
+        value = data.get(name)
+        if value is not None and not limits[0] <= value <= limits[1]:
+            raise ValueError(f"{name} {value} bpm is outside {limits[0]}-{limits[1]}")
+    if data.get("hr_rest") is not None and data.get("hr_max") is not None:
+        if data["hr_rest"] >= data["hr_max"]:
+            raise ValueError(f"hr_rest {data['hr_rest']} must be below hr_max {data['hr_max']}")
     for name, allowed in ENUMS.items():
         if data.get(name) is not None and data[name] not in allowed:
             raise ValueError(f"{name} must be one of {', '.join(allowed)}, not {data[name]!r}")
