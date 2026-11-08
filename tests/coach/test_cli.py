@@ -1527,3 +1527,18 @@ def test_future_date_error_says_symptoms_were_recorded(capsys, data_dir):
         capsys, data_dir, "checkin", "add", "--date", "2026-04-02", "--symptoms", "chest_pain"
     )
     assert code == 2 and "symptoms recorded" in out["message"]
+
+
+def test_energy_prints_its_ranges(capsys, data_dir):
+    _, out = run(capsys, data_dir, "energy")
+    low, high = out["rmr_range"]
+    assert low < out["rmr"] < high and out["tdee_range"][0] < out["tdee"] < out["tdee_range"][1]
+
+
+def test_menu_protein_passes_from_the_band_low_end():
+    from coach.cli import menu_check
+
+    targets = {"kcal": 2000, "protein_g": 160, "protein_min_g": 128, "fat_min_g": 50, "fibre_g": 25}
+    totals = {"kcal": 2000, "protein_g": 130, "fat_g": 60, "fibre_g": 30}
+    assert menu_check(totals, targets)["protein_g"] == "ok"
+    assert menu_check(totals | {"protein_g": 120}, targets)["protein_g"] == "under"

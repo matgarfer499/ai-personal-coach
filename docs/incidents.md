@@ -18,3 +18,5 @@ One line per bug that reached main: what broke, and which review layer should ha
   and /setup read as if `pregnant` were a profile field. Layer: skill dry run (docs/examples/setup.md).
 - 2026-11-08 (beta p3-antonio-I6): `emergency_number` was listed as missing although the region
   supplies it. Layer: tests (PR #27 added the field without a region case).
+- 2026-11-08 (beta p5-elena-I4): protein dropped 27 g between 84 and 85 kg because the basis
+  switched at BMI 30. Layer: tests (no case either side of a boundary).

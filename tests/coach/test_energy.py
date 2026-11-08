@@ -184,7 +184,7 @@ def test_floor_clamps_men():
 
 def test_maintenance_below_floor_is_clamped_up():
     result = target(woman(goal="maintenance"), tdee_kcal=1150)
-    assert result.kcal == 1200 and result.clamped and result.deficit == -50
+    assert result.kcal == 1200 and result.clamped and result.deficit == 0 and result.surplus == 50
 
 
 def test_unscreened_fat_loss_raises():
@@ -249,7 +249,7 @@ def test_older_adult_gets_no_deficit_without_obesity_and_condition():
 def test_muscle_gain_surplus_starts_at_5_percent():
     result = target(man(goal="muscle_gain"))
     assert result.kcal == round(1780 * 1.45 * 1.05)
-    assert result.deficit == -round(1780 * 1.45 * 0.05)
+    assert result.deficit == 0 and result.surplus == round(1780 * 1.45 * 0.05)
 
 
 @pytest.mark.parametrize("goal", ["maintenance", "recomposition"])
@@ -353,3 +353,17 @@ def test_check_pal_is_the_one_range_check():
             check_pal(bad)
         with pytest.raises(ValueError, match=word):
             tdee(man(), multiplier=bad, today=TODAY)
+
+
+# Beta p2-marcus-I3: a surplus is a surplus, never a negative deficit.
+def test_surplus_is_reported_as_a_surplus():
+    t = target(man(goal="muscle_gain"))
+    assert t.deficit == 0 and t.surplus > 0 and t.kcal == round(t.maintenance) + t.surplus
+
+
+# Elena: show the estimate's uncertainty (MSJ about +/-10%, the PAL band).
+def test_energy_ranges():
+    p = man()
+    low, high = energy.rmr_range(p, TODAY)
+    assert (low, high) == pytest.approx((RMR * 0.9, RMR * 1.1))
+    assert energy.tdee_range(p, TODAY) == pytest.approx((RMR * 0.9 * 1.4, RMR * 1.1 * 1.5))

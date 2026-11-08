@@ -37,6 +37,9 @@ WEEK = 7
 # food, a smaller deficit); when gaining, it lowers it (a smaller surplus, which the surplus rule
 # warns tends to drift upward). Callers may pass a lower value.
 ENERGY_DENSITY_KCAL_PER_KG = 7700
+# nutrition.md: "Upper limit on rate of loss: about 1.5 kg per week".
+MAX_LOSS_KG_WEEK = 1.5
+MAX_LOSS_RULE = 'nutrition.md: "Upper limit on rate of loss: about 1.5 kg per week"'
 
 
 @dataclass
@@ -96,7 +99,14 @@ def weight_trend(points: list[tuple[date, float]], flags: SafetyFlags | None = N
     ) / WEEK
     current = fmean(kg for _, kg in last_week)
     rate = (current - fmean(kg for _, kg in first_week)) / weeks_apart
+    notes = []
+    if rate < -MAX_LOSS_KG_WEEK:
+        notes.append(
+            f"{MAX_LOSS_RULE}: losing {-rate:.2f} kg a week, faster than about "
+            f"{MAX_LOSS_KG_WEEK:g} kg: reduce the deficit"
+        )
     return Trend(
+        notes=notes,
         status="ok",
         rate_kg_week=rate,
         rate_pct_week=rate / current * 100,

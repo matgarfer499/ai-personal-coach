@@ -64,6 +64,26 @@ def rmr_mifflin(profile: Profile, today: date | None = None) -> float:
     )
 
 
+# nutrition.md: "Default RMR equation: Mifflin-St Jeor": a starting guess with about ±10% error.
+MSJ_ERROR = 0.10
+
+
+def rmr_range(profile: Profile, today: date | None = None) -> tuple[float, float]:
+    rmr = rmr_mifflin(profile, today)
+    return rmr * (1 - MSJ_ERROR), rmr * (1 + MSJ_ERROR)
+
+
+def tdee_range(
+    profile: Profile, today: date | None = None, no_training: bool = False
+) -> tuple[float, float]:
+    """The RMR range times the client's PAL band (nutrition.md "Activity multipliers (PAL)")."""
+    level = profile.require("activity_level")
+    if no_training and level == "desk_training":
+        level = "desk"
+    low, high = rmr_range(profile, today)
+    return low * PAL_BANDS[level][0], high * PAL_BANDS[level][1]
+
+
 def band_midpoint(level: str) -> float:
     """Convention: the band midpoint as the point estimate."""
     low, high = PAL_BANDS[level]
@@ -114,8 +134,9 @@ def tdee(
 class Target:
     kcal: int
     maintenance: float
-    deficit: int  # kcal below maintenance; negative for a surplus
+    deficit: int  # kcal below maintenance (0 for a surplus)
     clamped: bool = False
+    surplus: int = 0  # kcal above maintenance
     notes: list[str] = field(default_factory=list)
 
 
@@ -233,7 +254,8 @@ def calorie_target(
     return Target(
         kcal=kcal,
         maintenance=maintenance,
-        deficit=round(maintenance) - kcal,
+        deficit=max(0, round(maintenance) - kcal),
+        surplus=max(0, kcal - round(maintenance)),
         clamped=clamped,
         notes=notes,
     )

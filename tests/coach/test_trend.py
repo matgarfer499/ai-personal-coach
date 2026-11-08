@@ -104,3 +104,11 @@ def test_recalibrate_needs_four_weeks():
         recalibrate_tdee(weight_trend(daily(20)), 2000)
     with pytest.raises(ValueError, match="insufficient_data"):
         recalibrate_tdee(weight_trend(daily(5)), 2000)
+
+
+# nutrition.md "Upper limit on rate of loss: about 1.5 kg per week"
+def test_fast_loss_gets_a_note():
+    fast = weight_trend(daily(28, start_kg=100, kg_per_day=-0.3))
+    assert fast.rate_kg_week < -1.5
+    assert any("Upper limit on rate of loss" in n for n in fast.notes)
+    assert not weight_trend(daily(28)).notes

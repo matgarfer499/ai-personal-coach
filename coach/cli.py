@@ -95,7 +95,13 @@ def cmd_energy(profile: Profile, args: argparse.Namespace) -> dict:
         recalibrated=args.tdee is not None,
         estimate_chosen=args.pal is not None or args.tdee is not None,
     )
-    return {"rmr": rmr, "tdee": estimated, "target": target}
+    return {
+        "rmr": rmr,
+        "rmr_range": energy.rmr_range(profile, args.today),
+        "tdee": estimated,
+        "tdee_range": energy.tdee_range(profile, args.today, flags.no_training),
+        "target": target,
+    }
 
 
 def cmd_macros(profile: Profile, args: argparse.Namespace) -> dict:
@@ -261,7 +267,9 @@ def menu_check(totals: dict, targets: dict, share: float = 1.0) -> dict:
         kcal_status = "over"
     else:
         kcal_status = "ok"
-    floors = {"protein_g": "protein_g", "fat_g": "fat_min_g", "fibre_g": "fibre_g"}
+    # Protein passes from the low end of the rule's range (macros `protein_min_g`).
+    protein = "protein_min_g" if "protein_min_g" in targets else "protein_g"
+    floors = {"protein_g": protein, "fat_g": "fat_min_g", "fibre_g": "fibre_g"}
     return {"kcal": kcal_status} | {
         key: "ok"
         if totals[key] >= targets[target] * share
