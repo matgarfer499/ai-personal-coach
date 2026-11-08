@@ -297,6 +297,13 @@ How the original evidence base was built, and its limits:
   `desk_training` (desk band); for `active` it adds a note and the client stores `pal_override` if
   the activity comes from exercise (a job-plus-exercise mix cannot be modelled yet).
 
+## Roadmap
+
+What the coach knowingly does not do yet, and why each item waits (most lack a rule in
+`knowledge/`), is in [docs/roadmap.md](docs/roadmap.md): run-by-run running schedules, dry forms
+for chickpeas and canned legumes, portions per eater, a few grades and wordings for the next
+research pass, and the rest of the CLI in Spanish.
+
 ## What is inside
 
 | Folder | What |
