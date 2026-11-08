@@ -106,41 +106,49 @@ Ask about one step per message. Store each answer as soon as you have it with
    weighing), per `coach knowledge section nutrition "Under-18s"`. After a positive screen (`coach safety` shows `no_weight_targets`), ask whether they are happy to share an approximate
    weight for the estimates; never ask them to weigh themselves. If they decline, leave
    `weight_kg` unset and give no calorie or macro targets (say they are optional).
-4. **PAR-Q+.** The PAR-Q+ Collaboration's terms forbid putting the form's questions into a
-   chat or app, translating or rewording them without written permission
-   (`coach knowledge section recovery-habits "PAR-Q+ 2023 as the default entry screen"`;
-   docs/safety.md, Screening). So never read, quote, paraphrase or translate its questions.
-   - If they have already filled it in, go to the two questions below.
-   - Otherwise send one link in their language and say in one plain line what it is (a short
-     official health questionnaire, about 5 minutes, on paper or screen) and that you will ask
-     two questions about it afterwards. Spanish: "PAR-Q+ en español"
+4. **Entry screen (ACSM 2015).** The default screen
+   (`coach knowledge section recovery-habits "ACSM 2015 screening algorithm"`). Three questions, one per message, in the client's language
+   and your own words; it is a published method, not a form, so asking it is fine:
+   - Regular exercise: in the last 3 months, have they done planned exercise of at least 30
+     minutes at moderate effort, at least 3 days a week? Store `screening.regular_exercise
+     true|false`.
+   - Known disease: has a doctor diagnosed a heart or blood-vessel disease, diabetes (type 1 or
+     2) or kidney disease? Store `screening.known_disease` as the matching tokens,
+     comma-separated (`cardiovascular`, `metabolic`, `renal`), or `no`. High blood pressure alone
+     is not one of them (it is asked in step 6).
+   - Warning symptoms: chest, neck, jaw or arm pain or pressure, breathlessness at rest or with
+     mild effort, dizziness or fainting, palpitations, ankle swelling, calf pain on walking,
+     unusual tiredness with normal activities
+     (`coach knowledge section recovery-habits "Cardiac warning symptoms: stop and refer"`). Store `screening.symptoms` as the tokens from
+     `coach checkin add --help`, comma-separated, or `no`. For "not sure", describe it once
+     more; if still unsure, store `no` and tell them to stop and see a doctor if it appears. If
+     any are happening now or at rest, stop the setup and tell them to seek care (the
+     `emergency_number` from `coach safety` for chest pain at rest, fainting, or chest pain with
+     breathlessness and sweating; with none stored, the local emergency number for their
+     country, 112 across the EU, 911 in the US, Canada and Mexico, 999 in the UK, 000 in
+     Australia).
+   - With a known disease, ask whether a doctor has cleared them for exercise; only a clear yes
+     is stored as `screening.medically_cleared true`. `coach safety` then gives the cell; quote
+     its `instruction`, never work the cell out yourself.
+5. **PAR-Q+ (optional).** Offer it in one line, never require it. Its terms forbid putting the
+   form's questions into a chat or app, translating or rewording them without written
+   permission (forms/README.md;
+   `coach knowledge section recovery-habits "PAR-Q+ 2023 as an optional extra screen"`). So never read, quote, paraphrase or translate its questions.
+   - If they want it: send one link in their language. Spanish: "PAR-Q+ en español"
      (https://eparmedx.com/wp-content/uploads/2023/12/Spanish.pdf; the listing page
      https://eparmedx.com/print-versions-of-par-q/languages/ in case the file moves). English:
-     https://eparmedx.com/print-versions-of-par-q/. Then wait.
-   - Then ask the two outcome questions, one per message, in their language and in your own
-     words, never the form's: first whether they answered YES to any of the questions on the
-     first page (the general health questions); only if yes, whether they answered YES to any
-     of the follow-up questions. A filled-in PDF they send: read only those two outcomes, ask
+     https://eparmedx.com/print-versions-of-par-q/. Then ask the two outcomes, one per message, in
+     your own words: any YES on the first page (the general health questions); only if yes, any
+     YES on the follow-up questions. Store `screening.parq_any_yes` and
+     `screening.parq_followup_yes`. A filled-in PDF they send: read only those two outcomes, ask
      them to confirm, never store the file or copy its contents, name or path anywhere.
-   - If they will not open the form, store nothing and say in one line that the coach then
-     keeps to light-to-moderate work and no sprints until they do (the CLI applies it).
-   Any YES on the 7 questions? Any YES on the follow-up questions? Store
-   `screening.parq_any_yes` and `screening.parq_followup_yes`. With any YES, or aged 45 or more, ask
-   whether a qualified exercise professional or clinician has reviewed vigorous or maximal
-   work for them (`coach knowledge section recovery-habits "PAR-Q+ specific thresholds"`); only
-   a clear yes is stored as `screening.vigorous_reviewed true`. At a redo, store the PAR-Q+
-   answers first: when one changes, the CLI drops the old review, so ask again.
-5. **Warning symptoms.** Ask about chest, neck, jaw or arm pain or pressure, breathlessness at
-   rest or with mild effort, dizziness or fainting, palpitations, ankle swelling, calf pain on
-   walking (`coach knowledge section recovery-habits "Cardiac warning symptoms: stop and refer"`).
-   Store `screening.cardiac_symptoms true` for a symptom they report; a "none" to the whole list
-   is `false`. For "not sure",
-   describe it once more; if still unsure, store `false` and tell them to stop and see a doctor
-   if it appears. If any are happening now or at rest, stop the setup and
-   tell them to seek care (the `emergency_number` from `coach safety` for chest pain at rest,
-   fainting, or chest pain with breathlessness and sweating; with none stored, the local
-   emergency number for their country, 112 across the EU, 911 in the US, Canada and Mexico, 999 in
-   the UK, 000 in Australia).
+   - If they skip it, store nothing: with the ACSM screen complete, the only effect is that
+     all-out sprints (SIT, REHIT) stay off, since they need every PAR-Q+ answer NO.
+   - With any PAR-Q+ YES, or aged 45 or more, ask whether a qualified exercise professional or
+     clinician has reviewed vigorous or maximal work for them
+     (`coach knowledge section recovery-habits "PAR-Q+ specific thresholds"`); only a clear yes is stored as
+     `screening.vigorous_reviewed true`. At a redo, store the PAR-Q+ answers first: when one
+     changes, the CLI drops the old review, so ask again.
 6. **Medications and conditions.** Ask what they take and any diagnoses. Map to tokens with the
    table in `docs/safety.md` and store them as `medications` and `conditions`, each list in one
    `coach profile set` (it replaces the list, so give every item, comma-separated). Store unknown

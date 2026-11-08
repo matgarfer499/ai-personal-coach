@@ -227,7 +227,7 @@ def test_aliases_are_unique_and_do_not_shadow_names():
             seen.add(alias)
 
 
-# recovery-habits.md "PAR-Q+ 2023 as the default entry screen": pause any progression of
+# recovery-habits.md "PAR-Q+ 2023 as an optional extra screen": pause any progression of
 # intensity; "Resting BP thresholds to defer or refer": GP review before progressing.
 def test_progression_holds_when_safety_says_so():
     held = SafetyFlags(hold_progression=True, reasons=["PAR-Q+ follow-up YES"])

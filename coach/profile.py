@@ -79,12 +79,37 @@ SCREENING_KEYS = {
     # clinician has reviewed vigorous or maximal work for this client.
     "vigorous_reviewed": bool,
     "cardiac_symptoms": bool,  # any symptom from "Cardiac warning symptoms: stop and refer"
+    # recovery-habits.md: "ACSM 2015 screening algorithm" (the default entry screen): planned,
+    # structured exercise of 30+ min at moderate intensity, 3+ days a week, for the last 3 months.
+    "regular_exercise": bool,
+    "known_disease": list,  # DISEASE_TOKENS diagnosed by a doctor; an empty list is none
+    "symptoms": list,  # SYMPTOM_TOKENS reported at screening; an empty list is none
+    "medically_cleared": bool,  # a clinician cleared exercise for the known disease
     "menstrual": str,  # one of MENSTRUAL_STATES
     "bp_systolic": int,  # latest seated resting reading, mmHg
     "bp_diastolic": int,
 }
 # The PAR-Q+ answers a vigorous-work review covers; changing one drops `vigorous_reviewed`.
 PARQ_ANSWERS = ("parq_any_yes", "parq_followup_yes")
+# The disease answer a medical clearance covers; changing it drops `medically_cleared`.
+CLEARANCE_ANSWERS = ("known_disease",)
+# recovery-habits.md: "ACSM 2015 screening algorithm": the diseases that change the cell.
+# Hypertension is not one of them (ACSM 2015 dropped risk-factor counting).
+DISEASE_TOKENS = ("cardiovascular", "metabolic", "renal")
+# recovery-habits.md: "Cardiac warning symptoms: stop and refer": the symptom tokens /setup and
+# /checkin record, from the rule's list.
+SYMPTOM_TOKENS = (
+    "chest_pain",
+    "neck_jaw_arm_pain",
+    "breathless",
+    "dizzy",
+    "faint",
+    "palpitations",
+    "ankle_swelling",
+    "calf_pain",
+    "unusual_fatigue",
+)
+SCREENING_TOKENS = {"known_disease": DISEASE_TOKENS, "symptoms": SYMPTOM_TOKENS}
 MENSTRUAL_STATES = ("normal", "irregular_new", "absent", "not_applicable")
 # nutrition.md: "Eating-disorder screening: brief questions as a prompt": the five SCOFF questions.
 SCOFF_ITEMS = 5
@@ -239,6 +264,12 @@ def _validate(data: dict) -> None:
         expected = SCREENING_KEYS[key]
         if not isinstance(value, expected) or (expected is int and isinstance(value, bool)):
             raise ValueError(f"screening.{key} must be {expected.__name__}")
+        bad = [v for v in value if v not in SCREENING_TOKENS[key]] if expected is list else []
+        if bad:
+            raise ValueError(
+                f"screening.{key}: unknown {', '.join(map(str, bad))}; use "
+                f"{', '.join(SCREENING_TOKENS[key])} (no for none)"
+            )
     if not 0 <= screening.get("scoff_yes_count", 0) <= SCOFF_ITEMS:
         raise ValueError(f"screening.scoff_yes_count must be 0 to {SCOFF_ITEMS}")
     if screening.get("menstrual", "normal") not in MENSTRUAL_STATES:

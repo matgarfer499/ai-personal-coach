@@ -47,7 +47,7 @@ None.
 
 ## Dropped claims
 
-11, recorded as D264 to D274 in docs/dropped-claims.md: GETP 11/12 screening changes (no
+12, recorded as D264 to D275 in docs/dropped-claims.md (EFSA energy values twice, D274 and D275): GETP 11/12 screening changes (no
 source states a change); ESC 2020 screening class and level (table is an image); activity and
 diet while waiting for clearance (no guideline opened); class-specific post-exercise
 hypotension and heat (not in the opened text); half-marathon build-up parameters (no review

@@ -46,8 +46,10 @@ from coach import (
 )
 from coach.checkins import Checkin, append_checkin, read_checkins, weigh_ins, weight_jump
 from coach.profile import (
+    CLEARANCE_ANSWERS,
     CONDITION_TOKENS,
     GOALS,
+    HEART_DISEASE,
     MEDICATION_TOKENS,
     NO_NUMBER,
     PARQ_ANSWERS,
@@ -699,6 +701,10 @@ def _parse_profile_value(field: str, raw: str) -> Any:
             if raw.lower() not in ("true", "false"):
                 raise ValueError(f"{field} must be true or false, not {raw!r}")
             return raw.lower() == "true"
+        if kind is list:
+            items = [item.strip() for item in raw.split(",") if item.strip()]
+            # "none" clears the answer (above); "no" and the other none-words are the answer none.
+            return [] if len(items) == 1 and fold(items[0]) in NONE_WORDS else items
         if kind is int:
             if not raw.isdigit():
                 raise ValueError(f"{field} must be a whole number, not {raw!r}")
@@ -760,6 +766,9 @@ def cmd_profile(profile: Profile, args: argparse.Namespace) -> dict:
             if key in PARQ_ANSWERS and value != old:
                 # A vigorous-work review covered the old answers, not the new ones.
                 profile.screening.pop("vigorous_reviewed", None)
+            if key in CLEARANCE_ANSWERS and value != old:
+                # A medical clearance covered the old diagnoses, not the new ones.
+                profile.screening.pop("medically_cleared", None)
         else:
             setattr(profile, args.field, value)
         save_profile(profile, args.data_dir / "profile.yaml")  # validates enums and screening
@@ -768,6 +777,16 @@ def cmd_profile(profile: Profile, args: argparse.Namespace) -> dict:
         if getattr(args, "field", None) == "pal_override"
         else []
     )
+    disease = profile.screening.get("known_disease")
+    if (
+        profile.has_condition(HEART_DISEASE)
+        and disease is not None
+        and "cardiovascular" not in disease
+    ):
+        warnings.append(
+            "conditions lists heart_disease but screening.known_disease has no cardiovascular: "
+            "if a doctor diagnosed it, add cardiovascular"
+        )
     return ({"warnings": warnings} if warnings else {}) | {
         "data_dir": str(args.data_dir.resolve()),  # skills read and write files here by path
         "profile": profile,

@@ -322,7 +322,7 @@ Evidence checked on 2026-10-24, 138 rules.
 | 597 | Weight tracking and maintenance | Self-weighing and digital tracking | moderate | S636, S264 |
 | 605 | Weight tracking and maintenance | Plan the maintenance phase | moderate | S637, S638, S639, S560 |
 | 613 | Weight tracking and maintenance | Honest expectations about regain | moderate | S561, S640, S560 |
-| 623 | Pre-participation screening and cardiac safety | PAR-Q+ 2023 as the default entry screen | moderate | S641, S642 |
+| 623 | Pre-participation screening and cardiac safety | PAR-Q+ 2023 as an optional extra screen | moderate | S641, S642 |
 | 631 | Pre-participation screening and cardiac safety | PAR-Q+ specific thresholds | moderate | S641 |
 | 639 | Pre-participation screening and cardiac safety | ACSM 2015 screening algorithm | moderate | S119, S120 |
 | 647 | Pre-participation screening and cardiac safety | Cardiac warning symptoms: stop and refer | moderate | S120, S119 |

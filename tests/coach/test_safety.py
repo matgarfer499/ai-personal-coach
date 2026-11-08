@@ -113,7 +113,7 @@ def test_absent_periods_stop_the_deficit():
 @pytest.mark.parametrize(
     "answer,rule",
     [
-        ("parq_followup_yes", 'recovery-habits.md: "PAR-Q+ 2023 as the default entry screen"'),
+        ("parq_followup_yes", 'recovery-habits.md: "PAR-Q+ 2023 as an optional extra screen"'),
         ("cardiac_symptoms", 'recovery-habits.md: "Cardiac warning symptoms: stop and refer"'),
     ],
 )
@@ -400,3 +400,101 @@ def test_a_bp_training_stop_comes_before_referrals():
         screening=SCREENED_OK | {"scoff_positive": True, "bp_systolic": 205, "bp_diastolic": 115},
     )
     assert flags(profile).instruction.startswith('recovery-habits.md: "Resting BP')
+
+
+# recovery-habits.md "ACSM 2015 screening algorithm" (the default entry screen): current regular
+# exercise, known cardiovascular, metabolic or renal disease, and warning symptoms give six cells.
+ACSM = 'recovery-habits.md: "ACSM 2015 screening algorithm"'
+CARDIAC = 'recovery-habits.md: "Cardiac warning symptoms: stop and refer"'
+
+
+def _acsm(active, disease, symptoms, **extra):
+    screening = {
+        "scoff_positive": False,
+        "regular_exercise": active,
+        "known_disease": disease,
+        "symptoms": symptoms,
+    }
+    return Profile(birth_date=date(1990, 1, 1), screening=screening | extra)
+
+
+def _training_flags(result):
+    return {
+        name
+        for name in (
+            "no_training",
+            "clearance_before_exercise",
+            "review_before_vigorous",
+            "refer_gp",
+            "no_deficit",
+        )
+        if getattr(result, name)
+    }
+
+
+def test_acsm_inactive_no_disease_no_symptoms_needs_no_clearance():
+    result = flags(_acsm(False, [], []), today=date(2026, 1, 1))
+    assert _training_flags(result) == set()
+    assert result.reasons == [] or all("PAR-Q+" in r for r in result.reasons)
+
+
+def test_acsm_inactive_with_known_disease_needs_clearance_before_any_exercise():
+    result = flags(_acsm(False, ["metabolic"], []), today=date(2026, 1, 1))
+    assert _training_flags(result) == {"no_training", "clearance_before_exercise", "refer_gp"}
+    assert ACSM in _rules(result)
+    assert not result.no_deficit  # the training stop does not hold the deficit here
+
+
+def test_acsm_inactive_with_symptoms_needs_clearance_before_any_exercise():
+    result = flags(_acsm(False, [], ["dizzy"]), today=date(2026, 1, 1))
+    assert {"no_training", "refer_gp"} <= _training_flags(result)
+    assert CARDIAC in _rules(result) and result.emergency_line
+
+
+def test_acsm_active_no_disease_no_symptoms_continues():
+    result = flags(_acsm(True, [], []), today=date(2026, 1, 1))
+    assert _training_flags(result) == set()
+
+
+def test_acsm_active_with_known_disease_needs_clearance_before_vigorous():
+    result = flags(_acsm(True, ["cardiovascular"], []), today=date(2026, 1, 1))
+    assert _training_flags(result) == {"review_before_vigorous", "refer_gp"}
+    assert ACSM in _rules(result)
+
+
+def test_acsm_active_with_symptoms_stops():
+    result = flags(_acsm(True, ["renal"], ["chest_pain"]), today=date(2026, 1, 1))
+    assert {"no_training", "refer_gp", "no_deficit"} <= _training_flags(result)
+    assert result.instruction.startswith(CARDIAC)
+
+
+def test_medical_clearance_turns_the_any_exercise_cell_into_a_light_to_moderate_start():
+    result = flags(_acsm(False, ["metabolic"], [], medically_cleared=True), today=date(2026, 1, 1))
+    assert _training_flags(result) == {"review_before_vigorous"}
+    cleared_active = flags(
+        _acsm(True, ["metabolic"], [], medically_cleared=True), today=date(2026, 1, 1)
+    )
+    assert _training_flags(cleared_active) == set()
+
+
+def test_a_complete_acsm_screen_lifts_the_unanswered_parq_cap_but_not_the_sprint_rule():
+    result = flags(_acsm(True, [], []), today=date(2026, 1, 1))
+    assert not result.review_before_vigorous
+    assert not any("light-to-moderate work only" in r for r in result.reasons)
+    assert result.no_all_out_sprints  # sprints still need every PAR-Q+ answer NO
+
+
+def test_an_incomplete_acsm_screen_keeps_the_unanswered_parq_cap():
+    profile = _acsm(True, [], [])
+    del profile.screening["symptoms"]
+    assert flags(profile, today=date(2026, 1, 1)).review_before_vigorous
+
+
+def test_a_stricter_parq_answer_still_wins_over_a_clear_acsm_cell():
+    result = flags(_acsm(True, [], [], parq_followup_yes=True), today=date(2026, 1, 1))
+    assert result.refer_gp and result.hold_progression and result.review_before_vigorous
+
+
+def test_parq_all_no_and_a_clear_acsm_screen_allow_sprints():
+    result = flags(_acsm(True, [], [], parq_any_yes=False), today=date(2026, 1, 1))
+    assert not (result.review_before_vigorous or result.no_all_out_sprints)

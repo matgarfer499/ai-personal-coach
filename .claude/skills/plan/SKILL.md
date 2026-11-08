@@ -46,7 +46,10 @@ running week, `both` the two together.
 ## When to use
 
 - After `/setup`, when a block ends, or when `/review` recommends a change.
-- Not when `coach safety` shows `no_training`: say a doctor must review first and stop.
+- Not when `coach safety` shows `no_training`: say a doctor must review first and stop. With
+  `clearance_before_exercise` (ACSM: inactive with a known disease) the stop covers training
+  only: quote its `instruction`, give no exercise, and nutrition targets still follow
+  `coach macros`.
 
 ## Reads
 
@@ -113,7 +116,9 @@ Knowledge, by situation: run only the lines that apply.
   - `coach knowledge section recovery-habits "Resting BP thresholds to defer or refer"`
   - `coach knowledge section strength-hypertrophy "Effort limits for older adults and cardiovascular risk"`
 - Beta-blocker: `coach knowledge section cardio-health "RPE as the anchor under beta-blockade"`
-- PAR-Q+ follow-up YES: `coach knowledge section recovery-habits "PAR-Q+ 2023 as the default entry screen"`
+- An ACSM cell in `reasons` (`clearance_before_exercise`, or clearance before vigorous work):
+  `coach knowledge section recovery-habits "ACSM 2015 screening algorithm"`
+- PAR-Q+ follow-up YES: `coach knowledge section recovery-habits "PAR-Q+ 2023 as an optional extra screen"`
 - `review_before_vigorous` or `no_all_out_sprints`: `coach knowledge section recovery-habits "PAR-Q+ specific thresholds"`
 - An injury in `coach injury list`, or pain the client mentions:
   - `coach knowledge section recovery-habits "Some pain during exercise is acceptable in chronic, assessed pain"`

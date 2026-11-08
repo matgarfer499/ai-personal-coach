@@ -41,7 +41,8 @@ rule in `knowledge/` with its sources.
 - **Every rule graded and sourced.** Each rule in `knowledge/` is graded strong, moderate or
   emerging and cites the studies or guidelines it rests on; what could not be confirmed is listed in
   [`docs/dropped-claims.md`](docs/dropped-claims.md).
-- **Safety flags in code.** The screening (PAR-Q+, warning symptoms, blood pressure, an
+- **Safety flags in code.** The screening (the ACSM preparticipation questions, warning
+  symptoms, blood pressure, an
   eating-disorder prompt, injuries) sets flags that every command obeys: no deficit after a
   positive screen, no calorie target below the floors, no progression on a lift an injury has
   paused.
@@ -106,8 +107,10 @@ uv sync              # or: uv sync --extra pdf, to export menus and the plan as 
 claude
 ```
 
-Then type `/setup`. It asks about you, runs the screening (PAR-Q+, a short eating-disorder prompt,
-warning symptoms, medication, blood pressure) and gives your starting targets.
+Then type `/setup`. It asks about you, runs the screening (three health questions from the
+ACSM preparticipation method: regular exercise, a diagnosed heart, metabolic or kidney disease,
+warning symptoms; a short eating-disorder prompt, medication, blood pressure; the PAR-Q+
+questionnaire is offered by link as an optional extra, see [forms/README.md](forms/README.md)) and gives your starting targets.
 
 > [!TIP]
 > Make your copy private first (on GitHub: "Use this template" and choose Private), so nothing
