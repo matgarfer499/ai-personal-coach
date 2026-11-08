@@ -30,8 +30,9 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
   in brackets (one short line is enough for a reason unrelated to the task, such as heart-rate
   zones in /menu), then any CLI note that adds something new. Name the professional the reason
   names (prescriber, midwife or obstetrician, eating-disorder professional), else the GP. If
-  `refer_gp` is set, end with the deferral line from `docs/safety.md`, copied exactly, in the
-  profile language.
+  `refer_gp` is set, end with the `deferral_line` that `coach safety` prints, copied
+  exactly. Give its `instruction` first: it is the most urgent reason. Never give the
+  `superseded` lines as advice.
 
 ## When to use
 
@@ -55,13 +56,18 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
 3. Red flags, every check-in. When an answer to one of these is "not sure", describe the sign
    once more in plain words; if still unsure, treat it as absent and tell them to act as below
    if it appears.
-   - Chest, neck, jaw or arm pain or pressure, breathlessness at rest, dizziness or fainting,
-     palpitations, during exercise or at rest:
-     `coach profile set screening.cardiac_symptoms true`, tell them to stop training and see a
-     doctor (the `emergency_number` from `coach safety`, now, for chest pain at rest, fainting,
-     or chest pain with breathlessness and sweating; with none stored, or `none`, the local emergency
-     number for their country: 112 across the EU, 911 in the US, Canada and Mexico, 999 in the
-     UK, 000 in Australia; say it on a separate line before the deferral line). `coach knowledge section recovery-habits "Cardiac warning symptoms: stop and refer"`.
+   - Chest, neck, jaw or arm pain or pressure, breathlessness at rest or with mild effort,
+     dizziness or fainting, palpitations, ankle swelling, calf pain on walking, unusual fatigue,
+     during exercise or at rest: record them with `coach checkin add --symptoms TOKENS` (tokens
+     in `coach checkin add --help`; this sets `screening.cardiac_symptoms`), rerun
+     `coach safety`, tell them to stop training and see a doctor, and quote its
+     `emergency_line` on its own line before the `deferral_line`. With no `emergency_number`, it
+     names the local emergency number: say theirs (112 across the EU, 911 in the US, Canada and
+     Mexico, 999 in the UK, 000 in Australia). `coach knowledge section recovery-habits
+     "Cardiac warning symptoms: stop and refer"`.
+   - `possible_red_flags` in the `checkin add` output: the notes contain words for those
+     symptoms. Ask about each once in plain words; record it with `--symptoms` only if they
+     confirm it.
    - Fever, aches all over, or feeling unwell below the neck: no training until better
      (`coach knowledge section recovery-habits "Fever and systemic illness: do not train"`).
      A head cold only: light training is optional (`coach knowledge section recovery-habits
@@ -101,7 +107,8 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
    leaving out what they did not give. One row per day: weight is this morning's, intake is
    yesterday's, sleep is last night's (convention). A second check-in the same day only fills in
    or replaces the fields it gives. Notes, separated by `; `: symptoms, how training went, and
-   the weekly-question notes from step 4. For another day, add `--date YYYY-MM-DD`. The CLI refuses weight, waist and calories when weigh-ins are off; then record the rest.
+   the weekly-question notes from step 4. For another day, add `--date YYYY-MM-DD`. The CLI refuses weight, waist and calories when weigh-ins are off; then record the rest. If the
+   output lists `possible_red_flags`, ask about them as step 3 says before you answer.
 6. If they gave a weight, run `coach trend` and report only its `status`, and with status `ok`
    its `rate_kg_week`. With `insufficient_data`, say how many more weigh-ins it needs (from its
    note) and nothing about the direction.
@@ -121,5 +128,5 @@ In the profile language, in this order:
 ## Safety
 
 - Rerun `coach safety` after any screening update; if `refer_gp` is now set, say why (its new
-  reason) and end with the deferral line from `docs/safety.md`, copied exactly.
+  reason) and end with the `deferral_line` from `coach safety` (the line in `docs/safety.md`), copied exactly.
 - Never suggest training when `no_training` is set or a red flag from step 3 fired.

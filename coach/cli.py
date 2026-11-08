@@ -650,7 +650,16 @@ def cmd_recipes(profile: Profile, args: argparse.Namespace) -> dict:
     }
 
 
-def cmd_checkin(profile: Profile, args: argparse.Namespace) -> Checkin:
+def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
+    symptoms = [s.strip() for s in (args.symptoms or "").split(",") if s.strip()]
+    unknown = [s for s in symptoms if s not in safety.SYMPTOMS]
+    if unknown:
+        raise ValueError(f"unknown symptom {', '.join(unknown)}; use {', '.join(safety.SYMPTOMS)}")
+    if symptoms:
+        # recovery-habits.md: "Cardiac warning symptoms: stop and refer": any one of them. Saved
+        # first, so a refused or invalid field cannot drop the stop.
+        profile.screening["cardiac_symptoms"] = True
+        save_profile(profile, args.data_dir / "profile.yaml")
     flags = safety.flags(profile, args.today)
     refused = ["weight"] if flags.no_weight_targets and args.weight is not None else []
     if safety.eating_disorder_positive(profile) or flags.no_calorie_targets:
@@ -666,10 +675,15 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> Checkin:
         waist_cm=args.waist,
         intake_kcal=args.intake,
         sleep_hours=args.sleep,
-        notes=args.notes,
+        notes="; ".join(
+            filter(None, [args.notes, symptoms and "symptoms: " + ", ".join(symptoms)])
+        ),
     )
     append_checkin(checkin, args.data_dir / "checkins.csv")
-    return checkin
+    return dataclasses.asdict(checkin) | {
+        "symptoms": symptoms,
+        "possible_red_flags": [w for w in safety.red_flag_words(args.notes) if w not in symptoms],
+    }
 
 
 def cmd_foods(profile: Profile, args: argparse.Namespace) -> dict:
@@ -1222,6 +1236,9 @@ def build_parser() -> argparse.ArgumentParser:
     add_cmd.add_argument("--intake", type=float, default=None, help="logged kcal for the day")
     add_cmd.add_argument("--sleep", type=float, default=None, help="hours")
     add_cmd.add_argument("--notes", default="")
+    add_cmd.add_argument(
+        "--symptoms", default="", help=f"comma-separated: {', '.join(safety.SYMPTOMS)}"
+    )
 
     knowledge_cmd = add("knowledge", cmd_knowledge, "knowledge staleness and sections")
     knowledge_sub = knowledge_cmd.add_subparsers(dest="knowledge_cmd", required=True)

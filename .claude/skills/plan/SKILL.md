@@ -30,8 +30,9 @@ Writes the client's current plan to `data/plan.md`: a training week and daily nu
   in brackets (one short line is enough for a reason unrelated to the task, such as heart-rate
   zones in /menu), then any CLI note that adds something new. Name the professional the reason
   names (prescriber, midwife or obstetrician, eating-disorder professional), else the GP. If
-  `refer_gp` is set, end with the deferral line from `docs/safety.md`, copied exactly, in the
-  profile language.
+  `refer_gp` is set, end with the `deferral_line` that `coach safety` prints, copied
+  exactly. Give its `instruction` first: it is the most urgent reason. Never give the
+  `superseded` lines as advice.
 
 ## When to use
 
@@ -229,4 +230,4 @@ The plan in the profile language, as written to `data/plan.md`, then one line on
 - `use_rpe_not_hr`: no heart-rate numbers. `prescriber_owns_weight` or `no_deficit`: no deficit language; the CLI targets already
   reflect it.
 - If `coach safety` shows `refer_gp`, say what the professional should review first and end
-  with the deferral line from `docs/safety.md`, copied exactly.
+  with the `deferral_line` from `coach safety` (the line in `docs/safety.md`), copied exactly.

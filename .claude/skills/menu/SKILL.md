@@ -32,8 +32,9 @@ list. Every number comes from the CLI.
   in brackets (one short line is enough for a reason unrelated to the task, such as heart-rate
   zones in /menu), then any CLI note that adds something new. Name the professional the reason
   names (prescriber, midwife or obstetrician, eating-disorder professional), else the GP. If
-  `refer_gp` is set, end with the deferral line from `docs/safety.md`, copied exactly, in the
-  profile language.
+  `refer_gp` is set, end with the `deferral_line` that `coach safety` prints, copied
+  exactly. Give its `instruction` first: it is the most urgent reason. Never give the
+  `superseded` lines as advice.
 
 ## When to use
 
@@ -292,5 +293,5 @@ says what to do without the `pdf` extra).
   label.
 - The postal code goes into a web search only after the client agrees, and nothing else about
   the client goes into a search or to Open Food Facts.
-- If `coach safety` shows `refer_gp`, end with the deferral line from `docs/safety.md`, copied
-  exactly.
+- If `coach safety` shows `refer_gp`, end with the `deferral_line` that `coach safety`
+  prints (the line in `docs/safety.md`), copied exactly.
