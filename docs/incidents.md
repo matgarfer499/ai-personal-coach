@@ -24,3 +24,7 @@ One line per bug that reached main: what broke, and which review layer should ha
   and `coach import` ignored `--today`. Layer: tests.
 - 2026-11-08 (beta p2-marcus-I1): `strength progress` judged a 5-rep lifter against 8-12
   without asking. Layer: skill dry run (docs/examples/plan.md uses only 8-12 lifters).
+- 2026-11-08 (beta p5-elena-I1/I2/I3/I7): "Minimum dietary fat", "Dietary fibre" and "Protein
+  during fat loss" cited sources whose stored quotes did not state their numbers, and
+  check_knowledge.py could not tell. Layer: check_knowledge.py (now `--claims`) and research
+  verification.

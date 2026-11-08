@@ -1192,6 +1192,8 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
 def cmd_knowledge(profile: Profile, args: argparse.Namespace) -> dict | str:
     if args.knowledge_cmd == "section":
         return knowledge.section(args.file, args.heading)
+    if args.knowledge_cmd == "audit":
+        return knowledge.audit(args.file, args.heading)
     months = args.months or profile.research_reminder_months
     stale = knowledge.stale_files(months, args.today or date.today())
     return {"months": months, "stale": [{"file": f, "checked": d} for f, d in stale]}
@@ -1442,6 +1444,11 @@ def build_parser() -> argparse.ArgumentParser:
     section_cmd = knowledge_sub.add_parser("section", parents=[json_flag])
     section_cmd.add_argument("file")
     section_cmd.add_argument("heading")
+    audit_cmd = knowledge_sub.add_parser(
+        "audit", parents=[json_flag], help="FILE HEADING: rule, grade, each source's Supports"
+    )
+    audit_cmd.add_argument("file")
+    audit_cmd.add_argument("heading")
     return parser
 
 
