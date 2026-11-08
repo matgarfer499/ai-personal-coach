@@ -46,7 +46,10 @@ running week, `both` the two together.
 ## When to use
 
 - After `/setup`, when a block ends, or when `/review` recommends a change.
-- Not when `coach safety` shows `no_training`: say a doctor must review first and stop.
+- Not when `coach safety` shows `no_training`: say a doctor must review first and stop. With
+  `clearance_before_exercise` (ACSM: inactive with a known disease) the stop covers training
+  only: quote its `instruction`, give no exercise, and nutrition targets still follow
+  `coach macros`.
 
 ## Reads
 
@@ -113,7 +116,9 @@ Knowledge, by situation: run only the lines that apply.
   - `coach knowledge section recovery-habits "Resting BP thresholds to defer or refer"`
   - `coach knowledge section strength-hypertrophy "Effort limits for older adults and cardiovascular risk"`
 - Beta-blocker: `coach knowledge section cardio-health "RPE as the anchor under beta-blockade"`
-- PAR-Q+ follow-up YES: `coach knowledge section recovery-habits "PAR-Q+ 2023 as the default entry screen"`
+- An ACSM cell in `reasons` (`clearance_before_exercise`, or clearance before vigorous work):
+  `coach knowledge section recovery-habits "ACSM 2015 screening algorithm"`
+- PAR-Q+ follow-up YES: `coach knowledge section recovery-habits "PAR-Q+ 2023 as an optional extra screen"`
 - `review_before_vigorous` or `no_all_out_sprints`: `coach knowledge section recovery-habits "PAR-Q+ specific thresholds"`
 - An injury in `coach injury list`, or pain the client mentions:
   - `coach knowledge section recovery-habits "Some pain during exercise is acceptable in chronic, assessed pain"`
@@ -286,6 +291,9 @@ saying the `pdf` extra is missing, tell the client to run `uv sync --extra pdf`.
   `no_all_out_sprints`: no SIT or REHIT at all. Even without it, SIT or REHIT only for a client
   with every PAR-Q+ answer NO and 4+ weeks of regular moderate cardio without symptoms, never
   for a sedentary beginner ("PAR-Q+ specific thresholds").
+- `screening.regular_exercise` not `true` and no ACSM reason in `coach safety`: start at
+  light-to-moderate intensity and build up over the block
+  (`coach knowledge section recovery-habits "ACSM 2015 screening algorithm"`).
 - `paused` in `coach strength progress`: the lift does not progress. With no `load_kg`, it is not
   loaded until a GP or physiotherapist has assessed the injury; otherwise `load_kg` is a ceiling:
   reduce or swap the lift within the professional's limits. Clear it with `coach injury clear

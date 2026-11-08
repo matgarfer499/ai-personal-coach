@@ -11,7 +11,7 @@ The setup steps (import, `profile set screening.parq_followup_yes true`) had alr
 
 ```
 $ coach safety
-{"screened": true, "no_deficit": false, "no_weight_targets": false, "hold_deficit": false, "use_rpe_not_hr": true, "prescriber_owns_weight": false, "refer_gp": true, "no_training": false, "cap_moderate": false, "no_calorie_targets": false, "hold_progression": true, "review_before_vigorous": true, "no_all_out_sprints": true, "emergency_number": "112", "paused_exercises": {}, "reasons": ["cardio-health.md: \"Beta-blockers: no formula-based HR zones\": prescribe by RPE and the talk test", "recovery-habits.md: \"PAR-Q+ 2023 as the default entry screen\": follow-up YES, pause intensity progression and refer", "recovery-habits.md: \"PAR-Q+ specific thresholds\": a PAR-Q+ YES, so no all-out sprint formats (SIT, REHIT); they need every answer NO", "recovery-habits.md: \"PAR-Q+ specific thresholds\": a PAR-Q+ YES, so a qualified exercise professional or clinician reviews vigorous or maximal work (HIIT, 1RM tests, all-out sprints) before it starts; light-to-moderate work until then"]}
+{"screened": true, "no_deficit": false, "no_weight_targets": false, "hold_deficit": false, "use_rpe_not_hr": true, "prescriber_owns_weight": false, "refer_gp": true, "no_training": false, "cap_moderate": false, "no_calorie_targets": false, "hold_progression": true, "review_before_vigorous": true, "no_all_out_sprints": true, "emergency_number": "112", "paused_exercises": {}, "reasons": ["cardio-health.md: \"Beta-blockers: no formula-based HR zones\": prescribe by RPE and the talk test", "recovery-habits.md: \"PAR-Q+ 2023 as an optional extra screen\": follow-up YES, pause intensity progression and refer", "recovery-habits.md: \"PAR-Q+ specific thresholds\": a PAR-Q+ YES, so no all-out sprint formats (SIT, REHIT); they need every answer NO", "recovery-habits.md: \"PAR-Q+ specific thresholds\": a PAR-Q+ YES, so a qualified exercise professional or clinician reviews vigorous or maximal work (HIIT, 1RM tests, all-out sprints) before it starts; light-to-moderate work until then"]}
 
 $ coach profile show
 {"data_dir": "DATA", "profile": {"sex": "female", "birth_date": "1992-03-14", "height_cm": 168.0, "weight_kg": 66.0, "goal": "fat_loss", "experience": "intermediate", "activity_level": "desk", "pal_override": null, "language": "es", "region": "es", "emergency_number": null, "medications": ["beta_blocker"], "conditions": ["hypertension"], "screening": {"scoff_positive": false, "parq_any_yes": true, "cardiac_symptoms": false, "menstrual": "normal", "bp_systolic": 132, "bp_diastolic": 84, "parq_followup_yes": true}, "injuries": [], "research_reminder_months": 6}, "missing": ["emergency_number"], "unrecognised": {"medications": [], "conditions": []}}
@@ -30,7 +30,7 @@ ls: cannot access 'DATA/reviews': No such file or directory
 (DATA/plan.md did not exist either: the DATA listing held only profile.yaml, checkins.csv, sessions.csv)
 
 $ coach energy
-{"rmr": 1379.0, "tdee": 1999.55, "target": {"kcal": 1500, "maintenance": 1999.55, "deficit": 500, "clamped": false, "notes": ["nutrition.md: \"Recalibrate TDEE from the weight trend\": starting estimate, recalibrate after 2-4 weeks of weigh-ins", "cardio-health.md: \"Beta-blockers: no formula-based HR zones\": prescribe by RPE and the talk test", "recovery-habits.md: \"PAR-Q+ 2023 as the default entry screen\": follow-up YES, pause intensity progression and refer", "recovery-habits.md: \"PAR-Q+ specific thresholds\": a PAR-Q+ YES, so no all-out sprint formats (SIT, REHIT); they need every answer NO", "recovery-habits.md: \"PAR-Q+ specific thresholds\": a PAR-Q+ YES, so a qualified exercise professional or clinician reviews vigorous or maximal work (HIIT, 1RM tests, all-out sprints) before it starts; light-to-moderate work until then"]}}
+{"rmr": 1379.0, "tdee": 1999.55, "target": {"kcal": 1500, "maintenance": 1999.55, "deficit": 500, "clamped": false, "notes": ["nutrition.md: \"Recalibrate TDEE from the weight trend\": starting estimate, recalibrate after 2-4 weeks of weigh-ins", "cardio-health.md: \"Beta-blockers: no formula-based HR zones\": prescribe by RPE and the talk test", "recovery-habits.md: \"PAR-Q+ 2023 as an optional extra screen\": follow-up YES, pause intensity progression and refer", "recovery-habits.md: \"PAR-Q+ specific thresholds\": a PAR-Q+ YES, so no all-out sprint formats (SIT, REHIT); they need every answer NO", "recovery-habits.md: \"PAR-Q+ specific thresholds\": a PAR-Q+ YES, so a qualified exercise professional or clinician reviews vigorous or maximal work (HIIT, 1RM tests, all-out sprints) before it starts; light-to-moderate work until then"]}}
 
 $ coach macros --kcal 1500 --in-deficit
 {"in_deficit": true, "kcal": 1500.0, "protein_g": 132.0, "fat_g": 41.67, "fat_min_g": 33.33, "carbs_g": 149.25, "fibre_g": 25, "protein_g_per_kg": 2.0, "notes": ["nutrition.md: \"Protein during fat loss\": 2 g/kg/day"]}
@@ -119,8 +119,8 @@ $ coach knowledge section cardio-health "RPE as the anchor under beta-blockade"
 ...
 **Grade:** emerging
 
-$ coach knowledge section recovery-habits "PAR-Q+ 2023 as the default entry screen"
-### PAR-Q+ 2023 as the default entry screen
+$ coach knowledge section recovery-habits "PAR-Q+ 2023 as an optional extra screen"
+### PAR-Q+ 2023 as an optional extra screen
 **Rule:** ...
 ...
 
@@ -189,7 +189,7 @@ actuales [Weekly sets per muscle (dose-response)] [Frequency for hypertrophy].
 
 Me pedías subir pesos. Por ahora no: tu respuesta en el cuestionario PAR-Q+ pide que te vea tu
 médico, y mientras tanto no se sube ni la carga, ni las series, ni el esfuerzo
-[PAR-Q+ 2023 as the default entry screen]. Este plan es de mantenimiento, no de progresión.
+[PAR-Q+ 2023 as an optional extra screen]. Este plan es de mantenimiento, no de progresión.
 
 Todas las series de trabajo: 3 series de 8-12 repeticiones, dejando 2-3 repeticiones en reserva
 (RIR). Nunca al fallo, para la serie si la técnica se rompe y no aguantes la respiración
@@ -248,7 +248,7 @@ any diet, especially for older adults]. Proteína: 2 g/kg/día [Protein during f
 - Cuestionario PAR-Q+ con respuesta SÍ en las preguntas de seguimiento y sin revisión médica
   todavía: hasta que te vea tu médico, el plan no sube cargas, series ni esfuerzo. Que el médico
   revise primero si puedes entrenar fuerza y caminar a ritmo moderado, teniendo en cuenta tu
-  hipertensión y tu betabloqueante [PAR-Q+ 2023 as the default entry screen].
+  hipertensión y tu betabloqueante [PAR-Q+ 2023 as an optional extra screen].
 - Sin trabajo intenso ni máximo (HIIT, esprints a tope, comba, saltos, pruebas de una repetición
   máxima) hasta que una persona cualificada en ejercicio o un médico lo revise [PAR-Q+ specific
   thresholds].
@@ -264,7 +264,7 @@ any diet, especially for older adults]. Proteína: 2 g/kg/día [Protein during f
 [Frequency for hypertrophy], [Target reps in reserve], [Effort limits for older adults and
 cardiovascular risk], [Double progression], [Short breaks cost little], [How long habits take],
 [RPE as the anchor under beta-blockade], [Beta-blockers: no formula-based HR zones], [Resting BP
-thresholds to defer or refer], [PAR-Q+ 2023 as the default entry screen], [PAR-Q+ specific
+thresholds to defer or refer], [PAR-Q+ 2023 as an optional extra screen], [PAR-Q+ specific
 thresholds], [Deficit size when keeping or building muscle], [Recalibrate TDEE from the weight
 trend], [Resistance training during any diet, especially for older adults], [Protein during fat
 loss].

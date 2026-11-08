@@ -46,8 +46,10 @@ from coach import (
 )
 from coach.checkins import Checkin, append_checkin, read_checkins, weigh_ins, weight_jump
 from coach.profile import (
+    CLEARANCE_ANSWERS,
     CONDITION_TOKENS,
     GOALS,
+    HEART_DISEASE,
     MEDICATION_TOKENS,
     NO_NUMBER,
     PARQ_ANSWERS,
@@ -376,7 +378,7 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
     if args.runs_cmd == "taper":
         flags = safety.flags(profile, args.today)
         if flags.no_training:
-            stops = [r for r in flags.reasons if r.startswith((safety.CARDIAC, safety.BP))]
+            stops = [r for r in flags.reasons if r.startswith(safety.TRAINING_STOPS)]
             raise ValueError("no taper while training is on hold: " + "; ".join(stops))
         return runs.taper(args.race_date, today, logged)
     if args.runs_cmd == "add":
@@ -687,6 +689,11 @@ def _missing(profile: Profile, name: str) -> bool:
     return getattr(profile, name) is None
 
 
+def _list_answer(raw: str) -> list[str]:
+    items = [item.strip() for item in raw.split(",") if item.strip()]
+    return [] if len(items) == 1 and fold(items[0]) in NONE_WORDS else items
+
+
 def _parse_profile_value(field: str, raw: str) -> Any:
     if field.startswith("screening."):
         key = field.removeprefix("screening.")
@@ -699,6 +706,9 @@ def _parse_profile_value(field: str, raw: str) -> Any:
             if raw.lower() not in ("true", "false"):
                 raise ValueError(f"{field} must be true or false, not {raw!r}")
             return raw.lower() == "true"
+        if kind is list:
+            # "none" clears the answer (above); "no" and the other none-words are the answer none.
+            return _list_answer(raw)
         if kind is int:
             if not raw.isdigit():
                 raise ValueError(f"{field} must be a whole number, not {raw!r}")
@@ -724,8 +734,7 @@ def _parse_profile_value(field: str, raw: str) -> Any:
                 "says"
             )
     if field in ("medications", "conditions"):
-        items = [item.strip() for item in raw.split(",") if item.strip()]
-        return [] if len(items) == 1 and fold(items[0]) in NONE_WORDS else items
+        return _list_answer(raw)
     if field in CONDITION_TOKENS:
         raise ValueError(
             f"{field!r} is not a profile field: store it as a condition, e.g. "
@@ -760,6 +769,9 @@ def cmd_profile(profile: Profile, args: argparse.Namespace) -> dict:
             if key in PARQ_ANSWERS and value != old:
                 # A vigorous-work review covered the old answers, not the new ones.
                 profile.screening.pop("vigorous_reviewed", None)
+            if key in CLEARANCE_ANSWERS and value != old:
+                # A medical clearance covered the old diagnoses and symptoms, not the new ones.
+                profile.screening.pop("medically_cleared", None)
         else:
             setattr(profile, args.field, value)
         save_profile(profile, args.data_dir / "profile.yaml")  # validates enums and screening
@@ -768,6 +780,16 @@ def cmd_profile(profile: Profile, args: argparse.Namespace) -> dict:
         if getattr(args, "field", None) == "pal_override"
         else []
     )
+    disease = profile.screening.get("known_disease")
+    if (
+        profile.has_condition(HEART_DISEASE)
+        and disease is not None
+        and "cardiovascular" not in disease
+    ):
+        warnings.append(
+            "conditions lists heart_disease but screening.known_disease has no cardiovascular: "
+            "if a doctor diagnosed it, add cardiovascular"
+        )
     return ({"warnings": warnings} if warnings else {}) | {
         "data_dir": str(args.data_dir.resolve()),  # skills read and write files here by path
         "profile": profile,
@@ -902,6 +924,7 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
         # recovery-habits.md: "Cardiac warning symptoms: stop and refer": any one of them. Saved
         # first, so a refused or invalid field cannot drop the stop.
         profile.screening["cardiac_symptoms"] = True
+        profile.screening.pop("medically_cleared", None)  # it predates these symptoms
         save_profile(profile, args.data_dir / "profile.yaml")
     flags = safety.flags(profile, args.today)
     refused = ["weight"] if flags.no_weight_targets and args.weight is not None else []

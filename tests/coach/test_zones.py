@@ -209,3 +209,20 @@ def test_very_light_has_no_zero_floor_without_resting_hr():
     assert very_light.bpm[0] is None and very_light.bpm[1] > 0
     with_rest = hr_zones(p, flags(p), hr_rest=48, hr_max=191)
     assert next(z for z in with_rest.zones if z.name == "very_light").bpm[0] == 48
+
+
+# recovery-habits.md "ACSM 2015 screening algorithm": its stop and its vigorous cap say why.
+ACSM_SCREEN = {"regular_exercise": False, "known_disease": ["metabolic"], "symptoms": []}
+
+
+def test_acsm_clearance_stop_says_why_there_are_no_zones():
+    result = zones(person(screening=ACSM_SCREEN), hr_rest=60)
+    assert result.method == "no_training" and result.zones == []
+    assert any("ACSM 2015" in n for n in result.notes)
+
+
+def test_acsm_vigorous_cap_says_why_in_the_zones_note():
+    screening = ACSM_SCREEN | {"regular_exercise": True, "parq_any_yes": False}
+    result = zones(person(screening=screening), hr_rest=60)
+    assert "vigorous" not in [z.name for z in result.zones]
+    assert any("ACSM 2015" in n for n in result.notes)

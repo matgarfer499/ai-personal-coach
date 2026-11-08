@@ -1,5 +1,10 @@
 # /setup dry run
 
+> [!NOTE]
+> Recorded before the ACSM 2015 screen became the default (beta-2 fixes, 2026-11-08). /setup now
+> asks three ACSM questions (regular exercise, known disease, warning symptoms) and offers the
+> PAR-Q+ only as an optional link; the PAR-Q+ steps below show that optional path.
+
 > **What is not verbatim:** CLI outputs are as the CLI printed them, except where shortened with `...` (long `knowledge section` and `profile set` outputs, cut to the part that matters) and where the scratch data folder path is shown as `DATA`. Commands are normalised for reading: `--json` is left out and quoting is added where a shell needs it. The dialogue is a simulation of a model following the skill, not a recording of a real conversation.
 
 The client is synthetic (`tests/skills/setup/client.md`); dry run on 2026-11-02 with the current skill. DATA below stands for an empty scratch directory (`COACH_DATA_DIR`, as the skill says: no `--data-dir`). The client has no `forms/` PDF to hand, so the PAR-Q+ goes by the "already filled in" path.

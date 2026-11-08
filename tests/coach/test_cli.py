@@ -1856,3 +1856,58 @@ def test_tastes_set_help_names_every_settable_field(capsys):
         main(["tastes", "set", "--help"])
     help_text = capsys.readouterr().out
     assert "pantry" in help_text and "untried" in help_text
+
+
+def test_acsm_screening_answers_are_stored_as_lists(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "screening.regular_exercise", "false")
+    run(capsys, data_dir, "profile", "set", "screening.known_disease", "metabolic, renal")
+    run(capsys, data_dir, "profile", "set", "screening.symptoms", "no")
+    screening = run(capsys, data_dir, "profile", "show")[1]["profile"]["screening"]
+    assert screening["known_disease"] == ["metabolic", "renal"] and screening["symptoms"] == []
+    flags = run(capsys, data_dir, "safety")[1]
+    assert flags["clearance_before_exercise"] and flags["no_training"] and not flags["no_deficit"]
+
+
+def test_unknown_acsm_tokens_are_refused(capsys, data_dir):
+    code, out = run(capsys, data_dir, "profile", "set", "screening.known_disease", "hypertension")
+    assert code == 2 and "cardiovascular" in out["message"]
+    code, out = run(capsys, data_dir, "profile", "set", "screening.symptoms", "headache")
+    assert code == 2 and "chest_pain" in out["message"]
+
+
+def test_changing_known_disease_drops_an_old_medical_clearance(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "screening.known_disease", "metabolic")
+    run(capsys, data_dir, "profile", "set", "screening.medically_cleared", "true")
+    run(capsys, data_dir, "profile", "set", "screening.known_disease", "metabolic, renal")
+    screening = run(capsys, data_dir, "profile", "show")[1]["profile"]["screening"]
+    assert "medically_cleared" not in screening
+
+
+def test_heart_disease_condition_without_cardiovascular_answer_warns(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "conditions", "heart_disease")
+    _, out = run(capsys, data_dir, "profile", "set", "screening.known_disease", "no")
+    assert any("heart_disease" in w for w in out["warnings"])
+
+
+def test_taper_refusal_names_the_acsm_clearance_stop(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "screening.regular_exercise", "false")
+    run(capsys, data_dir, "profile", "set", "screening.known_disease", "metabolic")
+    run(capsys, data_dir, "profile", "set", "screening.symptoms", "no")
+    code, out = run(capsys, data_dir, "runs", "taper", "--race-date", "2030-01-01")
+    assert code == 2 and "ACSM 2015" in out["message"]
+
+
+def test_changing_symptoms_drops_an_old_medical_clearance(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "screening.known_disease", "metabolic")
+    run(capsys, data_dir, "profile", "set", "screening.medically_cleared", "true")
+    run(capsys, data_dir, "profile", "set", "screening.symptoms", "dizzy")
+    screening = run(capsys, data_dir, "profile", "show")[1]["profile"]["screening"]
+    assert "medically_cleared" not in screening
+
+
+def test_symptoms_at_checkin_drop_an_old_medical_clearance(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "screening.known_disease", "metabolic")
+    run(capsys, data_dir, "profile", "set", "screening.medically_cleared", "true")
+    run(capsys, data_dir, "checkin", "add", "--symptoms", "dizzy")
+    screening = run(capsys, data_dir, "profile", "show")[1]["profile"]["screening"]
+    assert "medically_cleared" not in screening

@@ -214,7 +214,7 @@ def week(
         hidden = {z.name for z in every} - {z.name for z in shown.zones}
         held = sum(zone_minutes[name] for name in hidden)
         if held:
-            caps = [n for n in shown.notes if n.startswith((safety.BP, safety.PARQ_THRESHOLDS))]
+            caps = [n for n in shown.notes if n.startswith((safety.BP, *safety.VIGOROUS_CAPS))]
             notes.append(
                 f"{held:g} min in zones held back ({', '.join(sorted(hidden))}): " + "; ".join(caps)
             )
