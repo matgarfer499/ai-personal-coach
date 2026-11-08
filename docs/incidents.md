@@ -94,6 +94,9 @@ One line per bug that reached main: what broke, and which review layer should ha
   check` compared session counts and kcal only, so content errors passed. Layer: code review
   (a check named for the plan that read only its header).
 - 2026-11-08 (beta3 p6-james-N13): Push-up unmapped. Layer: tests.
+- 2026-11-08 (beta3 p4-sara-N2): a dry product replaced a cooked food gram for gram. Layer:
+  tests (replaces fixtures used the same form).
+- 2026-11-08 (beta3 p4-sara-N6): the first rating kept the typed case. Layer: tests.
 - 2026-11-08 (beta3 p6-james-N8): after a running injury the long-run cap returned to the spike
   run that preceded it. Layer: tests (no fixture with a spike before an injury).
 - 2026-11-08 (beta3 p6-james-N9): `strength deload` answered under no_training. Layer: tests.

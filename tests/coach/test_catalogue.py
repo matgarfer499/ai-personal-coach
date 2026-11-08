@@ -419,8 +419,8 @@ def test_replaces_needs_a_unit_the_product_can_take(capsys, data_dir, off_return
     """A per-100 g product can stand for any generic food (all are per 100 g); a per-100 ml
     product only for one with a density to turn its grams into ml."""
     code, out = add(capsys, data_dir, off_returns, "product_found.json", "8400000000017",
-                    "--replaces", "lentejas, cocidas")  # fmt: skip
-    assert code == 0 and out["added"]["replaces"] == "lentils, cooked"
+                    "--replaces", "garbanzos, cocidos")  # fmt: skip
+    assert code == 0 and out["added"]["replaces"] == "chickpeas, cooked"
     code, out = add(capsys, data_dir, off_returns, "product_liquid.json", "8400000000031",
                     "--replaces", "garbanzos, cocidos")  # fmt: skip
     assert code != 0 and "no density" in out["message"]
@@ -438,3 +438,34 @@ def test_a_hand_edited_pack_size_must_be_positive(capsys, data_dir, off_returns,
         writer.writerows(rows)
     with pytest.raises(ValueError, match="pack_size"):
         catalogue.load(data_dir)
+
+
+# Beta 3 p4-sara-N2: a dry product never stands in for a cooked food gram for gram.
+def test_a_dry_product_cannot_replace_a_cooked_food(capsys, data_dir):
+    code, out = run(
+        capsys, data_dir, "products", "add", "--label", "--name", "Garbanzo seco prueba",
+        "--chain", "Mercadona", "--per", "100 g", "--kcal", "360", "--protein", "20",
+        "--carbs", "50", "--fat", "6", "--allergens", "ninguno",
+        "--replaces", "garbanzos, cocidos",
+    )  # fmt: skip
+    assert code != 0 and "dry" in out["message"]
+
+
+def test_a_cooked_product_can_replace_its_cooked_food(capsys, data_dir):
+    code, out = run(
+        capsys, data_dir, "products", "add", "--label", "--name", "Arroz cocido vasito prueba",
+        "--chain", "Mercadona", "--per", "100 g", "--kcal", "150", "--protein", "3",
+        "--carbs", "32", "--fat", "1", "--allergens", "ninguno",
+        "--replaces", "arroz blanco, cocido",
+    )  # fmt: skip
+    assert code == 0 and out["added"]["replaces"] == "white rice, cooked"
+
+
+def test_a_dry_rice_product_is_pointed_to_the_dry_food(capsys, data_dir):
+    code, out = run(
+        capsys, data_dir, "products", "add", "--label", "--name", "Arroz redondo prueba",
+        "--chain", "Mercadona", "--per", "100 g", "--kcal", "350", "--protein", "7",
+        "--carbs", "78", "--fat", "1", "--allergens", "ninguno",
+        "--replaces", "arroz blanco, cocido",
+    )  # fmt: skip
+    assert code != 0 and "white rice, raw" in out["message"]
