@@ -55,7 +55,8 @@ as question text. `coach profile set screening.KEY none` clears an answer (an ol
 
 Until `scoff_yes_count` or `scoff_positive` is answered, the calculators refuse to compute a deficit. A stored
 calorie target passed with `--kcal` is clamped both ways: raised when the flags block a deficit,
-lowered to maintenance when they block a surplus (positive screen, GLP-1, pregnancy).
+lowered to maintenance when they block a surplus (positive screen, GLP-1, pregnancy,
+training stopped).
 
 ## Medication and condition tokens
 

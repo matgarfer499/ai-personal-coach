@@ -164,6 +164,12 @@ def deficit_blockers(profile: Profile, flags: SafetyFlags, today: date | None) -
     return []
 
 
+def surplus_blocked(flags: SafetyFlags) -> bool:
+    """A surplus aims at weight gain, a weight target: blocked by the same flags; a training stop
+    holds maintenance too (safety.NO_TRAINING_NO_DEFICIT)."""
+    return flags.prescriber_owns_weight or flags.no_weight_targets or flags.no_training
+
+
 def calorie_target(
     profile: Profile,
     flags: SafetyFlags,
@@ -216,9 +222,7 @@ def calorie_target(
         else:
             adjustment = -DEFICIT_KCAL
     elif goal == "muscle_gain":
-        # A surplus aims at weight gain, which is a weight target: blocked by the same flags.
-        # A training stop holds maintenance too (safety.NO_TRAINING_NO_DEFICIT).
-        if not (flags.prescriber_owns_weight or flags.no_weight_targets or flags.no_training):
+        if not surplus_blocked(flags):
             adjustment = maintenance * SURPLUS_FRACTION
     stored = pal_override_applies(profile, flags.no_training) and not estimate_chosen
     if stored:

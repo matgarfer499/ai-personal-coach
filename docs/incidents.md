@@ -35,3 +35,13 @@ One line per bug that reached main: what broke, and which review layer should ha
   during fat loss" cited sources whose stored quotes did not state their numbers, and
   check_knowledge.py could not tell. Layer: check_knowledge.py (now `--claims`) and research
   verification.
+- 2026-11-08 (audit, #46): `coach macros --kcal` kept a stored surplus while `no_training` held
+  calories at maintenance. Layer: tests of the flags table (the surplus clamp had no
+  `no_training` case).
+- 2026-11-08 (audit, #46): `strength plan-sets` crashed with a traceback on `exercises: 5`.
+  Layer: tests (input validation of the plan YAML).
+- 2026-11-08 (audit, #28 and #46): `plan check` read `target_kcal: 2,100` as 2.1 kcal and took
+  any `in_deficit` other than `true` as false. Layer: tests (no malformed header case).
+- 2026-11-08 (audit, #46): a run log with a `notes` column matched no importer. Layer: tests
+  (the fixtures had only the required and numeric columns).
+- 2026-11-08 (audit, #46): re-sending the same check-in notes stored them twice. Layer: tests.

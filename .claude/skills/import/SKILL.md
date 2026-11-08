@@ -48,8 +48,8 @@ Adds an exported workout log to `data/sessions.csv` without duplicates.
   `docs/adding-an-importer.md`).
 - The client has a run log as CSV with the columns `date`, `distance_km` or `distance_miles`,
   `duration_minutes` or `duration_seconds`, and optionally `avg_hr`, `max_hr`, `rpe` (Borg
-  6-20). It goes to `data/runs.csv`, not the workout log. Strava, Garmin and Apple Health exports
-  are not read directly (their formats could not be verified): the client copies the columns
+  6-20) and `notes`. It goes to `data/runs.csv`, not the workout log. Strava, Garmin and Apple
+  Health exports are not read directly (their formats could not be verified): the client copies the columns
   above into a CSV. Runs logged as sets in Hevy stay in the workout log and are not counted by
   `coach runs week`.
 - Re-importing a newer full export is fine: sets already stored are skipped. They are kept as
