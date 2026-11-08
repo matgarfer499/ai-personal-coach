@@ -116,3 +116,12 @@ def test_invalid_checked_date_is_none_and_stale(tmp_path):
     (tmp_path / "x.md").write_text("# X\n\n> Evidence checked on 2026-13-45.\n", encoding="utf-8")
     assert knowledge.checked_date((tmp_path / "x.md").read_text(encoding="utf-8")) is None
     assert knowledge.stale_files(6, date(2026, 1, 1), knowledge_dir=tmp_path) == [("x.md", None)]
+
+
+def test_audit_lists_each_source_with_its_supports_line():
+    from coach.knowledge import audit
+
+    out = audit("nutrition.md", "Minimum dietary fat")
+    assert out["grade"] == "strong" and out["rule"].startswith("Keep fat")
+    ids = [s["id"] for s in out["sources"]]
+    assert "S330" in ids and all(s["supports"] for s in out["sources"])

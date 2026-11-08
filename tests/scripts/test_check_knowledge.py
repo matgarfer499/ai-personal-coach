@@ -340,3 +340,34 @@ def test_wrapped_references_and_heading_boundaries(tmp_path):
         ("12", "Protein tragets"),
         ("13", "Protein for athletes"),
     ]
+
+
+# Beta p5-elena-I7: a strong rule's numbers must appear in a cited Supports line.
+def test_rule_numbers_on_the_good_fixture():
+    assert ck.check_rule_numbers(GOOD) == []
+
+
+def _copy_good(tmp_path, old, new):
+    for path in GOOD.glob("*.md"):
+        (tmp_path / path.name).write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
+    rules = tmp_path / "widgets.md"
+    rules.write_text(rules.read_text(encoding="utf-8").replace(old, new), encoding="utf-8")
+    return tmp_path
+
+
+def test_rule_numbers_flags_a_number_no_source_states(tmp_path):
+    kdir = _copy_good(tmp_path, "below 60% humidity.", "below 70% humidity.")
+    assert ck.check_rule_numbers(kdir) == [
+        'widgets.md: "Store widgets dry" (strong): 70 is in no cited Supports line'
+    ]
+
+
+def test_rule_numbers_skips_a_labelled_convention(tmp_path):
+    kdir = _copy_good(tmp_path, "below 60% humidity.", "below 70% humidity (a convention).")
+    assert ck.check_rule_numbers(kdir) == []
+
+
+def test_main_claims_flag_prints_the_report(capsys, tmp_path):
+    kdir = _copy_good(tmp_path, "below 60% humidity.", "below 70% humidity.")
+    ck.main(["--knowledge-dir", str(kdir), "--claims"])
+    assert "70 is in no cited Supports line" in capsys.readouterr().out

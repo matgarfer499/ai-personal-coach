@@ -285,6 +285,48 @@ def parse_sources(path: Path) -> dict[str, Source]:
     return sources
 
 
+# A sentence that labels its number as one of these is not expected to be quoted from a source.
+LABELLED_RE = re.compile(
+    r"convention|heuristic|inference|extrapolat|judg(e)?ment|coaching choice|product policy", re.I
+)
+NUMBER_RE = re.compile(r"(?<![\w.,])\d+(?:[.,]\d+)?(?![\w])")
+# convention: tooling, not coaching: whole numbers under 10 (counts such as "2 sessions") are
+# too common to trace, so only decimals and numbers of 10 or more are checked.
+TRACED_FROM = 10
+
+
+def _numbers(text: str) -> set[str]:
+    return {n.replace(",", ".") for n in NUMBER_RE.findall(text.replace(",000", "000"))}
+
+
+def check_rule_numbers(knowledge_dir: Path, grade: str = "strong") -> list[str]:
+    """Numbers in a rule's **Rule:** line that no cited source's Supports line contains, unless
+    their sentence labels them (convention, heuristic, inference...). A report, not an error:
+    a Supports line is a short excerpt, so a miss means "check the source", not "wrong"."""
+    sources = parse_sources(Path(knowledge_dir) / "sources.md")
+    found = []
+    for path in rule_files(knowledge_dir):
+        for rule in iter_rules(read(path)):
+            if grade not in rule.grades:
+                continue
+            line = next((x for x in rule.body if x.startswith("**Rule:**")), "")
+            cited = next((x for x in rule.body if x.startswith("**Sources:**")), "")
+            supported = set().union(
+                *(_numbers(sources[i].supports) for i in CITE_RE.findall(cited) if i in sources)
+            )
+            for sentence in re.split(r"(?<=[.;])\s+", line.removeprefix("**Rule:**")):
+                if LABELLED_RE.search(sentence):
+                    continue
+                for number in sorted(_numbers(sentence), key=float):
+                    traced = "." in number or float(number) >= TRACED_FROM
+                    if traced and number not in supported:
+                        found.append(
+                            f'{path.name}: "{rule.heading}" ({grade}): {number} is in no cited '
+                            "Supports line"
+                        )
+    return found
+
+
 def check_quote_length(knowledge_dir: Path) -> list[str]:
     sources = parse_sources(Path(knowledge_dir) / "sources.md")
     return [
@@ -364,6 +406,11 @@ def main(argv: list[str] | None = None, fetch: Callable[[str], str] = fetch_url)
     parser.add_argument("--knowledge-dir", type=Path, default=KNOWLEDGE_DIR)
     parser.add_argument("--online", action="store_true", help="check PubMed titles and decimals")
     parser.add_argument("--ids", default="", help="comma-separated source IDs for --online")
+    parser.add_argument(
+        "--claims",
+        action="store_true",
+        help="report numbers in strong rules that no cited Supports line contains",
+    )
     args = parser.parse_args(argv)
     kdir = args.knowledge_dir
 
@@ -382,6 +429,8 @@ def main(argv: list[str] | None = None, fetch: Callable[[str], str] = fetch_url)
             parser.error("--online needs --ids")
         online_errors, warnings = check_online(kdir, ids, fetch=fetch)
         errors += online_errors
+    if args.claims:
+        warnings += check_rule_numbers(kdir)
 
     for line in errors:
         print(f"ERROR {line}")
