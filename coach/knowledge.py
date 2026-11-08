@@ -135,6 +135,9 @@ def audit(file: str, heading: str, knowledge_dir: Path = KNOWLEDGE_DIR) -> dict:
     """One rule's text and grade, and each cited source's citation and Supports line, so a
     reviewer can trace a number to its rule, grade and sources without reading code."""
     text = section(file, heading, knowledge_dir)
+    if not text.startswith("### "):
+        # a `## ` section holds several rules; their fields would overwrite each other
+        raise SectionNotFound(f"{file}: {heading.strip()!r} is a section, not a '### ' rule")
     field_of = {
         m.group(1): m.group(2) for m in re.finditer(r"^\*\*([^*]+):\*\*\s*(.*)$", text, re.M)
     }

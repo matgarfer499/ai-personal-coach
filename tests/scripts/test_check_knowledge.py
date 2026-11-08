@@ -371,3 +371,17 @@ def test_main_claims_flag_prints_the_report(capsys, tmp_path):
     kdir = _copy_good(tmp_path, "below 60% humidity.", "below 70% humidity.")
     ck.main(["--knowledge-dir", str(kdir), "--claims"])
     assert "70 is in no cited Supports line" in capsys.readouterr().out
+
+
+def test_numbers_keep_unit_suffixed_decimals_and_thousands():
+    assert ck._numbers("1.6g/kg, 12.5kg, 1,500 kcal") == {"1.6", "12.5", "1500"}
+
+
+def test_rule_numbers_reports_a_number_once_per_rule(tmp_path):
+    kdir = _copy_good(tmp_path, "below 60% humidity.", "below 70% humidity. Never 70% or more.")
+    assert len(ck.check_rule_numbers(kdir)) == 1
+
+
+def test_rule_numbers_does_not_skip_conventional(tmp_path):
+    kdir = _copy_good(tmp_path, "below 60% humidity.", "below 70% humidity, conventional.")
+    assert len(ck.check_rule_numbers(kdir)) == 1

@@ -9,7 +9,11 @@ Online (`--online --ids S801,S802`): for sources with a PubMed URL, check that P
 the cited paper (DOI match, or a title match when either side has no DOI), and warn about decimals
 in the `Supports:` note that are not in the abstract.
 
+Claims (`--claims`): warn about decimals and numbers of 10 or more in a strong rule's
+`**Rule:**` line that no cited `Supports:` line contains, unless their sentence labels them.
+
 Usage: uv run python scripts/check_knowledge.py [--knowledge-dir DIR] [--online --ids S1,S2]
+       [--claims]
 """
 
 from __future__ import annotations
@@ -287,16 +291,20 @@ def parse_sources(path: Path) -> dict[str, Source]:
 
 # A sentence that labels its number as one of these is not expected to be quoted from a source.
 LABELLED_RE = re.compile(
-    r"convention|heuristic|inference|extrapolat|judg(e)?ment|coaching choice|product policy", re.I
+    r"convention(?!al)|heuristic|inference|extrapolat|judge?ment|coaching choice|product policy",
+    re.I,
 )
-NUMBER_RE = re.compile(r"(?<![\w.,])\d+(?:[.,]\d+)?(?![\w])")
+# a unit may follow (1.6g, 12.5kg); a partial match of a longer number may not
+NUMBER_RE = re.compile(r"(?<![\w.,])\d+(?:[.,]\d+)?(?![.,]?\d)")
+THOUSANDS_RE = re.compile(r"\b[1-9]\d{0,2}(?:,\d{3})+\b")
 # convention: tooling, not coaching: whole numbers under 10 (counts such as "2 sessions") are
 # too common to trace, so only decimals and numbers of 10 or more are checked.
 TRACED_FROM = 10
 
 
 def _numbers(text: str) -> set[str]:
-    return {n.replace(",", ".") for n in NUMBER_RE.findall(text.replace(",000", "000"))}
+    text = THOUSANDS_RE.sub(lambda m: m.group().replace(",", ""), text)
+    return {n.replace(",", ".") for n in NUMBER_RE.findall(text)}
 
 
 def check_rule_numbers(knowledge_dir: Path, grade: str = "strong") -> list[str]:
@@ -314,16 +322,15 @@ def check_rule_numbers(knowledge_dir: Path, grade: str = "strong") -> list[str]:
             supported = set().union(
                 *(_numbers(sources[i].supports) for i in CITE_RE.findall(cited) if i in sources)
             )
-            for sentence in re.split(r"(?<=[.;])\s+", line.removeprefix("**Rule:**")):
-                if LABELLED_RE.search(sentence):
-                    continue
-                for number in sorted(_numbers(sentence), key=float):
-                    traced = "." in number or float(number) >= TRACED_FROM
-                    if traced and number not in supported:
-                        found.append(
-                            f'{path.name}: "{rule.heading}" ({grade}): {number} is in no cited '
-                            "Supports line"
-                        )
+            sentences = re.split(r"(?<=[.;])\s+", line.removeprefix("**Rule:**"))
+            numbers = set().union(*(_numbers(x) for x in sentences if not LABELLED_RE.search(x)))
+            for number in sorted(numbers, key=float):
+                traced = "." in number or float(number) >= TRACED_FROM
+                if traced and number not in supported:
+                    found.append(
+                        f'{path.name}: "{rule.heading}" ({grade}): {number} is in no cited '
+                        "Supports line"
+                    )
     return found
 
 

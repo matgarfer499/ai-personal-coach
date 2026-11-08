@@ -125,3 +125,8 @@ def test_audit_lists_each_source_with_its_supports_line():
     assert out["grade"] == "strong" and out["rule"].startswith("Keep fat")
     ids = [s["id"] for s in out["sources"]]
     assert "S330" in ids and all(s["supports"] for s in out["sources"])
+
+
+def test_audit_rejects_a_section_heading():
+    with pytest.raises(knowledge.SectionNotFound):
+        knowledge.audit("widgets.md", "Handling widgets", knowledge_dir=GOOD)
