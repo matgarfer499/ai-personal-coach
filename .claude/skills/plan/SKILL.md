@@ -210,7 +210,9 @@ Knowledge, by situation: run only the lines that apply.
    headings, in brackets. Then a line on when to run `/review`, and the deferral line last
    when `refer_gp` is set.
 6. Run `coach plan check` (with the same `--pal`, `--tdee` or `--current-kcal` you gave
-   `coach macros`). If `ok` is false, fix each line in `problems` and run it again.
+   `coach energy`). If `ok` is false, fix each line in `problems` and run it again. A line in
+   `notes` (the target differs from a fresh estimate) needs no change when the target was agreed
+   at /review or kept from the previous plan; never replace an agreed target because of it.
 
 ## Writes
 

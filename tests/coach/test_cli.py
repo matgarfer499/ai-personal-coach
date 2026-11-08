@@ -1638,12 +1638,64 @@ def test_plan_check_matches_the_cli(capsys, data_dir):
     _plan_md(data_dir, macros["kcal"])
     code, out = run(capsys, data_dir, "plan", "check")
     assert code == 0 and out["ok"] is True and out["problems"] == []
+    # A target agreed at /review differs from a fresh estimate: a note, not a problem.
     _plan_md(data_dir, macros["kcal"] + 300)
     _, out = run(capsys, data_dir, "plan", "check")
-    assert out["ok"] is False and any("target_kcal" in p for p in out["problems"])
+    assert out["ok"] is True and any("fresh estimate" in n for n in out["notes"])
+    # A deficit the safety rules now forbid is a problem.
+    run(capsys, data_dir, "profile", "set", "screening.cardiac_symptoms", "true")
+    _plan_md(data_dir, macros["kcal"])
+    _, out = run(capsys, data_dir, "plan", "check")
+    assert out["ok"] is False and any("safety rules" in p for p in out["problems"])
+
+
+def test_reexport_in_pounds_is_not_a_conflict(capsys, data_dir, tmp_path):
+    kg = tmp_path / "kg.csv"
+    kg.write_text(
+        "date,exercise,weight_kg,reps\n2025-07-24 11:25,Bench Press,100,8\n", encoding="utf-8"
+    )
+    run(capsys, data_dir, "import", str(kg))
+    lbs = tmp_path / "lbs.csv"
+    lbs.write_text(
+        "date,exercise,weight_lbs,reps\n2025-07-24 11:25,Bench Press,220.46,8\n", encoding="utf-8"
+    )
+    _, out = run(capsys, data_dir, "import", str(lbs))
+    assert out["duplicates"] == 1 and out["conflicts"] == 0
 
 
 def test_plan_check_reports_a_missing_header(capsys, data_dir):
     (data_dir / "plan.md").write_text("# My plan\n", encoding="utf-8")
     _, out = run(capsys, data_dir, "plan", "check")
     assert out["ok"] is False and any("Date" in p for p in out["problems"])
+
+
+def test_progress_star_range_counts_as_given(capsys, data_dir):
+    _deadlifts(data_dir)
+    _, out = run(capsys, data_dir, "strength", "progress", "--rep-range", "*=3-6")
+    assert out["rep_range_source"]["Deadlift (Barbell)"] == "given"
+    assert out["rep_range_notes"] == {}
+
+
+def test_plan_sets_lists_untrained_muscles_below_reference(capsys, data_dir):
+    plan = data_dir / "week.yaml"
+    plan.write_text(
+        "sessions:\n  - exercises:\n      - {exercise: Bench Press (Barbell), sets: 12}\n",
+        encoding="utf-8",
+    )
+    _, out = run(capsys, data_dir, "strength", "plan-sets", str(plan))
+    assert "chest" not in out["below_reference"] and "quads" in out["below_reference"]
+
+
+@pytest.mark.parametrize("text", ["sessions: [oops", "- just a list\n", "sessions: [Push]\n"])
+def test_plan_sets_rejects_broken_yaml(capsys, data_dir, text):
+    plan = data_dir / "week.yaml"
+    plan.write_text(text, encoding="utf-8")
+    code, out = run(capsys, data_dir, "strength", "plan-sets", str(plan))
+    assert code == 2 and out["error"] == "invalid"
+
+
+def test_plan_check_accepts_the_kcal_as_macros_kcal_prints_it(capsys, data_dir):
+    _, macros = run(capsys, data_dir, "macros")
+    _plan_md(data_dir, f"{float(macros['kcal'])}")  # `coach macros --kcal` prints 2081.0
+    _, out = run(capsys, data_dir, "plan", "check")
+    assert out["ok"] is True, out["problems"]

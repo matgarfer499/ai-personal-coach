@@ -15,13 +15,12 @@ import hashlib
 import json
 import os
 import re
-import statistics
 import sys
 import types
 from collections import Counter
 from datetime import date, timedelta
 from pathlib import Path
-from statistics import fmean
+from statistics import fmean, median
 from typing import Any, NoReturn
 
 import yaml
@@ -191,19 +190,26 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
         )
         for name in names
     }
+    # `*` gives a range to every lift, so none of them is on the default.
+    star = any(n == strength.STAR for n, _ in ranges)
+    recent_cutoff = today - timedelta(days=PROGRESS_LOOKBACK_DAYS)
     given = {
-        name: any(strength.rep_range_matches(name, n, muscle_map) for n, _ in ranges)
+        name: star or any(strength.rep_range_matches(name, n, muscle_map) for n, _ in ranges)
         for name in names
     }
     notes = {}
     for name in names:
-        reps = [s.reps for s in logged if s.exercise == name and strength.hard_set(s)]
+        reps = [
+            s.reps
+            for s in logged
+            if s.exercise == name and strength.hard_set(s) and s.date > recent_cutoff
+        ]
         if not given[name] and reps:
-            median = statistics.median(reps)
+            mid = median(reps)
             low, high = strength.REP_RANGE
-            if not low <= median <= high:
+            if not low <= mid <= high:
                 notes[name] = (
-                    f"logged reps (median {median:g}) are outside the default {low}-{high}: ask "
+                    f"logged reps (median {mid:g}) are outside the default {low}-{high}: ask "
                     "the client's usual range and pass it with --rep-range"
                 )
     # Every logged lift, not just the ones shown: --exercise and the lookback only filter output.
@@ -223,10 +229,16 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
 
 def _plan_sets(path: Path) -> dict:
     """Weekly hard sets per muscle for a planned week (each listed session happens once)."""
-    plan = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    try:
+        plan = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError as err:
+        raise ValueError(f"{path} is not valid YAML: {err}") from err
+    sessions = plan.get("sessions") if isinstance(plan, dict) else None
+    if not isinstance(sessions, list) or not all(isinstance(x, dict) for x in sessions):
+        raise ValueError("the plan needs `sessions:`, a list of {name, exercises}")
     planned = []
-    for session in plan.get("sessions") or []:
-        for item in (session or {}).get("exercises") or []:
+    for session in sessions:
+        for item in session.get("exercises") or []:
             sets = item.get("sets") if isinstance(item, dict) else None
             if (
                 not isinstance(sets, int)
@@ -248,8 +260,11 @@ def _plan_sets(path: Path) -> dict:
     totals = strength.weekly_hard_sets(planned, muscle_map)
     return {
         "sets": totals,
+        # Every muscle the map credits, so one the plan never trains is listed too.
         "below_reference": sorted(
-            m for m, n in totals.items() if n < strength.WEEKLY_SETS_REFERENCE
+            m
+            for m in {m for entry in muscle_map.values() for m in entry["muscles"]}
+            if totals.get(m, 0) < strength.WEEKLY_SETS_REFERENCE
         ),
         "unmapped": strength.unmapped_exercises(planned, muscle_map),
         "reference_sets_per_week": strength.WEEKLY_SETS_REFERENCE,
@@ -1109,6 +1124,13 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
 PLAN_DATE_KEYS = ("Date", "Fecha")
 
 
+def _same_number(text: str, value: float) -> bool:
+    try:
+        return float(text) == value
+    except ValueError:
+        return False
+
+
 def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
     path = args.data_dir / "plan.md"
     if not path.exists():
@@ -1119,22 +1141,42 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
     problems = []
     if not any(k in fields for k in PLAN_DATE_KEYS):
         problems.append("line 1 must be `Date: YYYY-MM-DD` (es: `Fecha:`)")
+    problems += [
+        f"missing header line `{key}:` in the first three lines"
+        for key in ("target_kcal", "in_deficit")
+        if key not in fields
+    ]
+    notes = []
     args.kcal, args.in_deficit = None, False
-    expected = cmd_macros(profile, args)
-    for key, want in (("target_kcal", f"{expected['kcal']:g}"), ("in_deficit", None)):
-        if key not in fields:
-            problems.append(f"missing header line `{key}:` in the first three lines")
-            continue
-        if key == "in_deficit":
-            want = "true" if expected["in_deficit"] else "false"
-            if fields[key].lower() != want:
-                problems.append(f"in_deficit is {fields[key]}, `coach macros` says {want}")
-        elif fields[key] != want:
-            problems.append(f"target_kcal is {fields[key]}, `coach macros` now says {want}")
+    fresh = cmd_macros(profile, args)
+    if "target_kcal" in fields and "in_deficit" in fields:
+        try:
+            kcal = float(fields["target_kcal"].replace(",", "."))
+        except ValueError:
+            kcal = None
+            problems.append(f"target_kcal must be a number, not {fields['target_kcal']!r}")
+        if kcal is not None:
+            # The stored target as /menu will use it: the safety rules raise or lower it here.
+            args.kcal, args.in_deficit = kcal, fields["in_deficit"].lower() == "true"
+            used = cmd_macros(profile, args)
+            if not _same_number(fields["target_kcal"], used["kcal"]) or (
+                used["in_deficit"] != args.in_deficit
+            ):
+                problems.append(
+                    f"the safety rules change this target: `coach macros --kcal` gives "
+                    f"{used['kcal']:g} kcal, in_deficit {str(used['in_deficit']).lower()}"
+                )
+            elif not _same_number(fields["target_kcal"], fresh["kcal"]):
+                # A target agreed at /review (--tdee, --current-kcal) or kept from the last plan.
+                notes.append(
+                    f"target_kcal differs from a fresh estimate ({fresh['kcal']:g} kcal): fine "
+                    "when it was agreed at /review or kept from the previous plan"
+                )
     return {
         "ok": not problems,
         "problems": problems,
-        "expected": {"target_kcal": expected["kcal"], "in_deficit": expected["in_deficit"]},
+        "notes": notes,
+        "fresh_estimate": {"target_kcal": fresh["kcal"], "in_deficit": fresh["in_deficit"]},
     }
 
 

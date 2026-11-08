@@ -83,6 +83,19 @@ def read_sets(path: Path) -> list[ExerciseSet]:
         return sets
 
 
+# convention: tooling, not coaching: loads within 0.1 kg are the same set, since an export in
+# pounds converts back to kilograms with rounding (100 kg exported as 220.46 lb).
+SAME_LOAD_KG = 0.1
+
+
+def _differs(stored: ExerciseSet, incoming: ExerciseSet) -> bool:
+    if stored.reps != incoming.reps or (stored.weight_kg is None) != (incoming.weight_kg is None):
+        return True
+    return (
+        stored.weight_kg is not None and abs(stored.weight_kg - incoming.weight_kg) > SAME_LOAD_KG
+    )
+
+
 def append(sets: list[ExerciseSet], path: Path) -> AppendResult:
     path = Path(path)
     stored = read_sets(path)
@@ -92,7 +105,7 @@ def append(sets: list[ExerciseSet], path: Path) -> AppendResult:
         if s.key not in seen:
             seen[s.key] = s
             added.append(s)
-        elif (seen[s.key].weight_kg, seen[s.key].reps) != (s.weight_kg, s.reps):
+        elif _differs(seen[s.key], s):
             conflicts += 1
     rows = sorted(stored + added, key=sort_key)
     path.parent.mkdir(parents=True, exist_ok=True)
