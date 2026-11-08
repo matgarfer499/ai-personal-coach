@@ -57,3 +57,6 @@ One line per bug that reached main: what broke, and which review layer should ha
 - 2026-11-08 (beta2 p1-lucia-I1, p2-marcus-I1, p6-james-I3): `coach plan export` silently dropped
   exercises with 5+ word names, a "(Barbell)" part or no load, and `plan check` stayed ok.
   Layer: tests (fixtures used only short, loaded Spanish names).
+- 2026-11-08 (beta2 p5-elena-I3, p4-sara-I5): the protein note rounded 70.56 kg to "71 kg", so
+  its figures did not reproduce, and the veg-and-fruit warning said "400 g of the 400 g". Layer:
+  code review (note text was never checked against the numbers next to it).

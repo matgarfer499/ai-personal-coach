@@ -101,16 +101,27 @@ def macro_targets(
         in_deficit = False
         notes += flags.reasons
     per_kg, band, rule = protein_band(profile, in_deficit, today)
-    notes.append(f'nutrition.md: "{rule}": {per_kg:g} g/kg/day')
+    notes.append(
+        f'nutrition.md: "{rule}": range {band[0]:g}-{band[1]:g} g/kg/day; '
+        f"the coach uses {per_kg:g} g/kg/day"
+    )
     cap_bmi = REFERENCE_BMI if in_deficit else OBESITY_BMI
     protein_weight = min(weight, cap_bmi * (profile.require("height_cm") / 100) ** 2)
     protein_g = per_kg * protein_weight
     if protein_weight < weight:
-        notes.append(
-            f"convention: protein from {protein_weight:.0f} kg, the weight at BMI "
-            f"{cap_bmi:g} for this height, instead of body weight: "
-            f"{protein_g / weight:.2f} g per kg of body weight"
-        )
+        # Two decimals, so the weight times the dose gives protein_g exactly.
+        if profile.language == "es":
+            notes.append(
+                f"convención: proteína calculada con {protein_weight:.2f} kg, el peso con IMC "
+                f"{cap_bmi:g} para tu estatura, en lugar de tu peso actual: "
+                f"{protein_g / weight:.2f} g por kg de tu peso"
+            )
+        else:
+            notes.append(
+                f"convention: protein from {protein_weight:.2f} kg, the weight at BMI "
+                f"{cap_bmi:g} for this height, instead of body weight: "
+                f"{protein_g / weight:.2f} g per kg of body weight"
+            )
     fat_min_g = max(kcal * FAT_MIN_FRACTION / KCAL_PER_G["fat"], FAT_MIN_G_PER_KG * weight)
     fat_g = max(kcal * FAT_FRACTION / KCAL_PER_G["fat"], fat_min_g)
     carbs_kcal = kcal - protein_g * KCAL_PER_G["protein"] - fat_g * KCAL_PER_G["fat"]

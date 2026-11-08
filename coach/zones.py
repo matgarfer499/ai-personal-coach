@@ -53,6 +53,13 @@ TALK_TEST = {
     "vigorous": "only a few words without pausing for breath",
     "near_maximal": "cannot speak",
 }
+TALK_TEST_ES = {
+    "very_light": "puedes hablar y cantar sin esfuerzo",
+    "light": "puedes hablar y cantar",
+    "moderate": "puedes hablar, pero no cantar",
+    "vigorous": "solo unas palabras sin parar a respirar",
+    "near_maximal": "no puedes hablar",
+}
 # recovery-habits.md: "Gauge intensity by talk test and RPE, not a heart-rate cap": moderate is
 # RPE 13-14 in pregnancy (the source's number). "Vigorous work: avoid near-maximal efforts":
 # never RPE 18 or more. convention: light runs up to that moderate band (9-12) and vigorous
@@ -182,7 +189,16 @@ def zone_for(zones: list[Zone], hr: float) -> Zone | None:
     return next((z for z in reversed(bpm[1:]) if z.bpm[0] <= hr), bpm[0] if bpm else None)
 
 
-def hr_zones(
+def hr_zones(profile: Profile, *args, **kwargs) -> Zones:
+    """The zones (`_hr_zones`), with the talk test in the profile language."""
+    shown = _hr_zones(profile, *args, **kwargs)
+    if profile.language == "es":
+        for zone in shown.zones:
+            zone.talk_test = TALK_TEST_ES[zone.name]
+    return shown
+
+
+def _hr_zones(
     profile: Profile,
     flags: SafetyFlags,
     hr_rest: int | None = None,

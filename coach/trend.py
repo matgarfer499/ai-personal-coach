@@ -91,7 +91,11 @@ def weight_trend(points: list[tuple[date, float]], flags: SafetyFlags | None = N
             days=days,
             start=window[0][0],
             end=last,
-            notes=[f"need at least {MIN_POINTS} weigh-ins covering {MIN_DAYS} days"],
+            notes=[
+                f"need at least {MIN_POINTS} weigh-ins covering {MIN_DAYS} days: "
+                f"{max(0, MIN_POINTS - len(window))} more weigh-ins and "
+                f"{max(0, MIN_DAYS - days)} more days"
+            ],
         )
     first_day = window[0][0]
     first_week = [(d, kg) for d, kg in window if d < first_day + timedelta(WEEK)]

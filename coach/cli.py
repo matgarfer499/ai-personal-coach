@@ -506,10 +506,12 @@ def _menu_day(totals: foods.MenuTotals, targets: dict, share: float = 1.0) -> di
     warnings = []
     floor = VEG_FRUIT_MIN_G * share  # a free meal carries its share, as in menu_check
     if totals.veg_fruit_g < floor:
+        # With a free meal the planned meals carry their share of the day's 400 g.
+        of_day = f" of the {VEG_FRUIT_MIN_G} g a day" if share < 1 else " a day"
         warnings.append(
             f"{round(totals.veg_fruit_g, OUTPUT_DECIMALS):g} g of vegetables and fruit, under the "
-            f"{round(floor, OUTPUT_DECIMALS):g} g of the {VEG_FRUIT_MIN_G} g "
-            'a day of nutrition.md "Dietary fibre" for the planned meals'
+            f'{round(floor, OUTPUT_DECIMALS):g} g{of_day} of nutrition.md "Dietary fibre" for '
+            "the planned meals"
         )
     return {
         "totals": totals,

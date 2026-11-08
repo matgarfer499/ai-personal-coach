@@ -1,5 +1,6 @@
 import dataclasses
 import json
+import re
 import subprocess
 import sys
 from datetime import date, datetime, timedelta
@@ -2125,3 +2126,47 @@ def test_plan_check_reports_a_broken_plan_week(capsys, data_dir):
     code, out = run(capsys, data_dir, "plan", "check")
     assert code == 0 and out["ok"] is False
     assert any("plan-week.yaml" in p for p in out["problems"])
+
+
+# PR 5 (beta 2): notes a reader can reproduce, in the client's language.
+
+
+def _heavy(capsys, data_dir, language="en"):
+    run(capsys, data_dir, "profile", "set", "weight_kg", "95")
+    run(capsys, data_dir, "profile", "set", "language", language)
+    return run(capsys, data_dir, "macros", "--kcal", "2000", "--in-deficit")[1]
+
+
+def test_protein_basis_note_reproduces_the_grams(capsys, data_dir):
+    out = _heavy(capsys, data_dir)
+    note = next(n for n in out["notes"] if "BMI 25" in n)
+    weight = float(re.search(r"from ([\d.]+) kg", note).group(1))
+    assert round(weight * out["protein_g_per_kg"], 2) == round(out["protein_g"], 2)
+
+
+def test_protein_rule_note_shows_the_rules_range_not_only_the_midpoint(capsys, data_dir):
+    out = _heavy(capsys, data_dir)
+    assert any('"Protein during fat loss": range 1.6-2.2 g/kg/day' in n for n in out["notes"])
+
+
+def test_client_facing_notes_follow_the_profile_language(capsys, data_dir):
+    out = _heavy(capsys, data_dir, "es")
+    assert any("peso con IMC 25" in n for n in out["notes"])
+    zones = run(capsys, data_dir, "zones")[1]["zones"]
+    assert zones[0]["talk_test"].startswith("puedes")
+
+
+def test_trend_note_says_how_many_more_weigh_ins_and_days(capsys, data_dir):
+    for day in ("2026-03-28", "2026-03-30", "2026-04-01"):
+        run(capsys, data_dir, "checkin", "add", "--weight", "80", "--date", day)
+    out = run(capsys, data_dir, "trend")[1]
+    assert any("4 more weigh-ins" in n and "9 more days" in n for n in out["notes"])
+
+
+def test_veg_fruit_warning_names_400_g_once_for_a_full_day():
+    from coach.cli import _menu_day
+    from coach.foods import MenuTotals
+
+    totals = MenuTotals(veg_fruit_g=100.0)
+    day = _menu_day(totals, {"kcal": 0, "protein_g": 0, "fat_min_g": 0, "fibre_g": 0})
+    assert day["warnings"][0].count("400 g") == 1
