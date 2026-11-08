@@ -1391,11 +1391,36 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
         out = _in_data_dir(args, args.out)
         text = path.read_text(encoding="utf-8")
         exercises = export.write_plan(out, text, profile.language, qr=not args.no_qr)
-        return {"pdf": _shown(args, out), "exercises": exercises, "qr": not args.no_qr}
-    head = path.read_text(encoding="utf-8").splitlines()[:3]
+        return {
+            "pdf": _shown(args, out),
+            "exercises": exercises,
+            # Session parts that name no lift: they are in the PDF's text but get no video link.
+            "unread": export.plan_unread(text),
+            "qr": not args.no_qr,
+        }
+    text = path.read_text(encoding="utf-8")
+    head = text.splitlines()[:3]
     fields = dict(line.split(":", 1) for line in head if ":" in line)
     fields = {k.strip(): v.strip() for k, v in fields.items()}
     problems = [stale] if stale else []
+    unread = export.plan_unread(text)
+    if unread:
+        problems.append(
+            "training bullets the export cannot read as lifts (write `Name load`, `Name 3x8` "
+            "or `Name, 3 sets of 8-12`): " + "; ".join(unread)
+        )
+    week_file = args.data_dir / "plan-week.yaml"
+    if week_file.exists():
+        planned = (yaml.safe_load(week_file.read_text(encoding="utf-8")) or {}).get(
+            "sessions"
+        ) or []
+        sessions = export.plan_sessions(text)
+        if sessions != len(planned):
+            problems.append(
+                f"plan.md lists {sessions} sessions with lifts but plan-week.yaml has "
+                f"{len(planned)}: write the same week in both, then rerun "
+                "`coach strength plan-sets`"
+            )
     if not any(k in fields for k in PLAN_DATE_KEYS):
         problems.append("line 1 must be `Date: YYYY-MM-DD` (es: `Fecha:`)")
     problems += [
@@ -1436,6 +1461,7 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
     return {
         "ok": not problems,
         "problems": problems,
+        "unread": unread,
         "notes": notes,
         "fresh_estimate": {"target_kcal": fresh["kcal"], "in_deficit": fresh["in_deficit"]},
     }

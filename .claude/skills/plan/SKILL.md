@@ -259,12 +259,17 @@ Knowledge, by situation: run only the lines that apply.
    Then the sections Semana de entrenamiento (runners: the running week, with the taper when it
    applies), Cardio, Nutrición, Notas de seguridad, Fuentes (en: Training week, Cardio,
    Nutrition, Safety notes, Rules used). In the training week, each session is one bullet:
-   `- A (lunes): Sentadilla 51,0 kg; Press banca 34,0 kg` (label, a colon, then the lifts with
-   their loads separated by `;`); `coach plan export` finds the exercises there. Rule names stay
+   `- A (lunes): Sentadilla 3x8 51,0 kg; Press banca 3x10 34,0 kg` (label, a colon, then the
+   lifts separated by `;`, each with its sets x reps and, when there is one, its load, so the
+   printout shows the sets); one bullet per session in the week, the same sessions as
+   `plan-week.yaml`; `coach plan export` finds the exercises there. Rule names stay
    as the knowledge headings, in brackets, listed in Fuentes (Rules used). Then a line on when
    to run `/review`, and the deferral line last when `refer_gp` is set.
 7. Run `coach plan check` (with the same `--pal`, `--tdee` or `--current-kcal` you gave
-   `coach energy`). If `ok` is false, fix each line in `problems` and run it again. A line in
+   `coach energy`). If `ok` is false, fix each line in `problems` and run it again: `unread`
+   lists session parts the export cannot read as lifts (rewrite them as `Name 3x8 40 kg`), and
+   a session count that differs from `plan-week.yaml` means the two files describe different
+   weeks. A line in
    `notes` (the target differs from a fresh estimate) needs no change when the target was agreed
    at /review or kept from the previous plan; never replace an agreed target because of it.
 

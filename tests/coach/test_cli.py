@@ -2093,3 +2093,26 @@ def test_a_broken_alias_file_never_blocks_recording_an_injury(capsys, data_dir):
     code, out = run(capsys, data_dir, "injury", "add", "rodilla", "--exercises", "squat")
     assert code == 0 and out["warnings"]
     assert load_profile(data_dir / "profile.yaml").injuries[0]["area"] == "rodilla"
+
+
+def test_plan_check_lists_unread_bullets(capsys, data_dir):
+    _, macros = run(capsys, data_dir, "macros")
+    _plan_md(data_dir, macros["kcal"])
+    with (data_dir / "plan.md").open("a", encoding="utf-8") as f:
+        f.write("- A: Squat 40 kg; whatever feels right\n")
+    _, out = run(capsys, data_dir, "plan", "check")
+    assert out["ok"] is False and out["unread"] == ["whatever feels right"]
+
+
+def test_plan_check_compares_sessions_with_plan_week(capsys, data_dir):
+    _, macros = run(capsys, data_dir, "macros")
+    _plan_md(data_dir, macros["kcal"])
+    with (data_dir / "plan.md").open("a", encoding="utf-8") as f:
+        f.write("- A: Squat 40 kg\n- B: Bench Press 30 kg\n- A: Squat 40 kg\n")
+    (data_dir / "plan-week.yaml").write_text(
+        "sessions:\n  - name: A\n    exercises: [{exercise: Squat, sets: 3}]\n"
+        "  - name: B\n    exercises: [{exercise: Bench Press, sets: 3}]\n",
+        encoding="utf-8",
+    )
+    _, out = run(capsys, data_dir, "plan", "check")
+    assert out["ok"] is False and any("plan-week.yaml" in p for p in out["problems"])

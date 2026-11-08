@@ -7,7 +7,7 @@ from datetime import date
 import pytest
 
 from coach.cli import main
-from coach.export import plan_exercises
+from coach.export import plan_exercises, plan_unread
 from coach.profile import Profile, save_profile
 
 PLAN = """Fecha: 2026-11-02
@@ -153,3 +153,36 @@ def test_prose_bullets_are_not_exercises():
         "- Descanso martes y jueves\n"
     )
     assert plan_exercises(text) == ["Sentadilla", "Press banca"]
+
+
+# PR 4 (beta 2): the three bullet shapes the panel lost, and the parts the parser cannot read.
+@pytest.mark.parametrize(
+    "bullet,names",
+    [
+        (
+            "- A (lunes): Sentadilla; Press de pecho en máquina; Plancha",
+            ["Sentadilla", "Press de pecho en máquina", "Plancha"],
+        ),
+        (
+            "- Push: Bench Press (Barbell) 106.59 kg; Pull Up; Squat (Barbell) 137.5 kg",
+            ["Bench Press (Barbell)", "Pull Up", "Squat (Barbell)"],
+        ),
+        (
+            "- Day 1: Romanian Deadlift, 3 sets of 8-12; Leg Curl 3x10",
+            ["Romanian Deadlift", "Leg Curl"],
+        ),
+    ],
+)
+def test_plan_bullets_the_beta_lost_are_read(bullet, names):
+    text = f"## Training week\n{bullet}\n"
+    assert plan_exercises(text) == names
+    assert plan_unread(text) == []
+
+
+def test_parts_that_are_not_read_are_listed():
+    text = "## Training week\n- A: Squat 40 kg; do whatever feels right today; Sentadilla: 6-8\n"
+    assert plan_unread(text) == ["do whatever feels right today"]
+
+
+def test_rep_range_lines_and_rest_labels_are_not_unread():
+    assert plan_unread(PLAN) == []
