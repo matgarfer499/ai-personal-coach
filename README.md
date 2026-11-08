@@ -59,8 +59,8 @@ rule in `knowledge/` with its sources.
 | Command | Use it to |
 |---|---|
 | `/setup` | build your profile and screening, get starting targets |
-| `/checkin` | log weight, waist, food, sleep and how you feel; it watches for red flags |
-| `/import` | add workouts from a Hevy CSV export or a simple spreadsheet CSV |
+| `/checkin` | log weight, waist, food, sleep, runs and how you feel; it watches for red flags |
+| `/import` | add workouts from a Hevy CSV export or a simple spreadsheet CSV, and runs from a run CSV |
 | `/plan` | get a training week, cardio and nutrition targets, written to `data/plan.md` and printable with `coach plan export` |
 | `/review` | look back at the week and agree on changes |
 | `/menu` | build dishes you would enjoy for one or more days, from real recipes and the products you buy, that meet your targets; then a shopping list |
@@ -229,8 +229,16 @@ How the original evidence base was built, and its limits:
 - **Not everything is evidence.** About 40 knowledge rules contain a part labelled as a convention,
   heuristic or product policy, and the code has its own conventions; all are listed in
   [`docs/conventions.md`](docs/conventions.md).
-- **Heart-rate bands** follow ACSM 2011 and the GETP 10th edition; the 11th and 12th editions
-  could not be checked.
+- **Heart-rate bands** follow ACSM 2011 and the GETP 10th edition (five bands, very light to
+  near-maximal); the 11th and 12th editions could not be checked.
+- **Running** is supported for lifters, runners and both (`sport` in the profile): a stored
+  HRmax and resting HR, five HR zones, a run log (`coach runs add`, or a run CSV through
+  `/import`), weekly km with the single-run spike rule and minutes per zone at `/review`, a taper
+  before a goal race, and the endurance protein rule. Not there: race plans beyond the taper,
+  Strava, Garmin or Apple Health importers (their export formats could not be verified), a PAL
+  for runners by weekly volume, a heart-rate max field test, running-specific volume cuts for
+  pain beyond the tendon traffic-light rule, and a routine runner deload week (the research found
+  no evidence for these; see [`docs/dropped-claims.md`](docs/dropped-claims.md)).
 - **Food data** comes from USDA FoodData Central (SR Legacy, frozen in 2018) plus a few
   Spain-specific foods. No supermarket's own product table ships with the template: no chain's
   terms clearly allow redistributing its data, and some (Mercadona, Carrefour, Dia, Alcampo)
@@ -253,7 +261,7 @@ How the original evidence base was built, and its limits:
 | Folder | What |
 |---|---|
 | `.claude/skills/` | The commands, one `SKILL.md` each: setup, checkin, import, plan, review, menu, research |
-| `coach/` | The numbers: energy and macros, weight trend, zones, strength progression, safety flags, food tables, workout importers, CLI |
+| `coach/` | The numbers: energy and macros, weight trend, zones, strength progression, runs, safety flags, food tables, workout and run importers, CLI |
 | `knowledge/` | 4 rule files (strength and hypertrophy, cardio and health, nutrition, recovery and habits), 466 graded rules, 883 sources; `index.md` lists every rule |
 | `foods/`, `regions/es/` | Food composition tables (USDA FoodData Central) and Spain-specific foods; each client's own supermarket products come from Open Food Facts into `data/` |
 | `data/` | Your personal data. Ignored by git; only `.gitkeep` is committed |

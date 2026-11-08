@@ -188,3 +188,34 @@ def test_pal_override_must_be_a_plausible_pal(tmp_path, value):
 def test_pal_override_round_trips(tmp_path):
     save_profile(Profile(pal_override=1.45), tmp_path / "profile.yaml")
     assert load_profile(tmp_path / "profile.yaml").pal_override == 1.45
+
+
+# Beta p6-james-I3: the measured anchors are stored, checked like the zones flags.
+def test_heart_rates_round_trip(tmp_path):
+    save_profile(Profile(hr_max=191, hr_rest=48), tmp_path / "profile.yaml")
+    stored = load_profile(tmp_path / "profile.yaml")
+    assert (stored.hr_max, stored.hr_rest) == (191, 48)
+
+
+@pytest.mark.parametrize(
+    "kw,message",
+    [
+        ({"hr_max": 250}, "hr_max"),
+        ({"hr_max": 190.5}, "hr_max"),
+        ({"hr_max": True}, "hr_max"),
+        ({"hr_rest": 20}, "hr_rest"),
+        ({"hr_rest": 110, "hr_max": 105}, "below"),
+    ],
+)
+def test_heart_rates_are_checked(tmp_path, kw, message):
+    with pytest.raises(ValueError, match=message):
+        save_profile(Profile(**kw), tmp_path / "profile.yaml")
+
+
+# Beta p6-james-I8: running is a sport of its own.
+def test_sport_is_one_of_three(tmp_path):
+    for sport in ("lifting", "running", "both"):
+        save_profile(Profile(sport=sport), tmp_path / "profile.yaml")
+        assert load_profile(tmp_path / "profile.yaml").sport == sport
+    with pytest.raises(ValueError, match="sport"):
+        save_profile(Profile(sport="swimming"), tmp_path / "profile.yaml")

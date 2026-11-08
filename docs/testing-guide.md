@@ -96,7 +96,8 @@ c profile show --json
 c safety --json
 c energy --json            # RMR, TDEE, target
 c macros --json
-c zones --json             # add --hr-rest 55 --hr-max 188 if you know them
+c zones --json             # uses profile hr_rest/hr_max; --hr-rest 55 --hr-max 188 override
+c runs week --json         # weekly km, spikes, minutes per zone (data/runs.csv)
 c trend --json
 c strength sets --json
 c strength progress --json # add --rep-range "bench press=6-8" per lift

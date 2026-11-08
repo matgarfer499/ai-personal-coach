@@ -16,6 +16,10 @@ KCAL_PER_G = {"protein": 4, "carbs": 4, "fat": 9}
 # nutrition.md: "Daily protein target for people who lift": default 1.6 (range 1.4-2.2).
 PROTEIN_DEFAULT = 1.6
 PROTEIN_RANGE = (1.4, 2.2)
+# nutrition.md: "Daily protein target for endurance runners": about 1.6 within 1.4-2.0; runners
+# who also lift follow the lifter rule.
+PROTEIN_RUNNER = 1.6
+PROTEIN_RUNNER_RANGE = (1.4, 2.0)
 # convention: where a rule gives a range with no default, the coach uses its midpoint.
 # nutrition.md: "Protein during fat loss": 1.6-2.2 for ordinary lifters; the coach's default band
 # of 1.8-2.2 is the rule's own labelled convention.
@@ -71,6 +75,8 @@ def protein_band(
         return _midpoint(PROTEIN_OLDER), PROTEIN_OLDER, "Older adults: protein targets"
     if in_deficit:
         return _midpoint(PROTEIN_DEFICIT), PROTEIN_DEFICIT_RANGE, "Protein during fat loss"
+    if profile.sport == "running":
+        return PROTEIN_RUNNER, PROTEIN_RUNNER_RANGE, "Daily protein target for endurance runners"
     return PROTEIN_DEFAULT, PROTEIN_RANGE, "Daily protein target for people who lift"
 
 

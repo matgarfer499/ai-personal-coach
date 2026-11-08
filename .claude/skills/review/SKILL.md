@@ -68,6 +68,8 @@ say when a stored value is in use.
   `rep_range_notes`: the log sits outside 8-12 with no range given; ask the client's range and
   rerun before quoting a load.
 - `data/checkins.csv` rows of the week (sleep, notes), and `data/plan.md` if it exists.
+- Runners (`sport` running or both in `coach profile show`): `coach runs week --week-ending END`
+  and `coach injury list`.
 
 Knowledge, by situation: run only the lines that apply.
 - Always:
@@ -78,6 +80,10 @@ Knowledge, by situation: run only the lines that apply.
 - Goal fat_loss: `coach knowledge section nutrition "Rate of loss for lean, trained clients"`
 - Goal muscle_gain: `coach knowledge section nutrition "Surplus size for muscle gain"`
 - Any recovery sign from step 1: `coach knowledge section strength-hypertrophy "Deloads"`
+- Runners:
+  - `coach knowledge section cardio-health "Running load progression: cap single-run spikes, not just weekly totals"`
+  - Pain or an injury: `coach knowledge section recovery-habits "Common running injuries and who is most at risk"`
+  - Tendon pain: `coach knowledge section recovery-habits "Pain-monitoring traffic light for tendon problems"`
 
 ## Steps
 
@@ -93,7 +99,7 @@ Knowledge, by situation: run only the lines that apply.
    if the rule's population does not fit the client, say so, and relay every trend `notes`
    line (the fast-loss note). With `insufficient_data`, say
    what is missing; draw no conclusion. With `disabled`, say nothing about weight.
-4. Calories: if `recalibrated_tdee` is a number, record it (step 8). Propose a calorie change
+4. Calories: if `recalibrated_tdee` is a number, record it (step 9). Propose a calorie change
    only when the rate from step 3 is outside the goal's range (for `maintenance` and
    `recomposition` no rule gives a range, so propose none and say so); then run
    `coach energy --tdee VALUE --current-kcal CURRENT`, with VALUE as printed and CURRENT the
@@ -105,14 +111,29 @@ Knowledge, by situation: run only the lines that apply.
    `coach strength progress` with its reason in plain words. When planned sessions were missed,
    say the next session is the next one in the plan's rotation: no doubling up or catching up
    (the `/plan` convention; one missed session does not undo progress).
-6. Recovery: pass the signs from step 1, comma-separated, to
+6. Running (runners only): quote from `coach runs week` the week's `km`, `runs` and
+   `longest_km` next to `previous_week` and `change_pct` (the weekly trend), every run in
+   `spikes` with its `longest_previous_km` and `cap_km` ("Running load progression": a single run
+   more than about 10% longer than the longest of the previous 30 days raised injury rates; the
+   10% weekly rule is only a convention), and `long_run_cap_km` for the next long run. The
+   intensity mix is `zone_minutes` (minutes per zone, from each run's average HR); relay every
+   `notes` line, including minutes in zones a cap holds back and a higher logged peak to store
+   as `hr_max`. With `zone_minutes` null, say why from its notes. Pain or an injury: ask about
+   knee, shin, Achilles, heel and ankle pain; record it with `coach injury add AREA --since
+   DATE` (with `--professional WHO` once assessed), refer an unassessed one to a GP or
+   physiotherapist before that running is loaded, use the tendon traffic light for an assessed
+   tendon problem, and stop and refer for sharp or worsening pain. The coach has no other
+   running volume cut (the research found none). A goal race within 3 weeks: suggest
+   `/plan`, which runs `coach runs taper`. There is no generic runner deload week (none found
+   in the research); step 7 is for lifting.
+7. Recovery: pass the signs from step 1, comma-separated, to
    `coach strength deload --signs SIGNS` (`performance_stall`, `joint_aches`, `poor_sleep`,
    `low_motivation`, `drop_despite_rest`, `low_mood`) and quote the result, with `volume_cut`
    read as in the Deloads rule. With no sign, skip the call and say no deload is indicated.
    During a deload week, add no sets; any "add sets" advice from a stall waits until after it.
    An ache that persists after the deload week goes to a GP or physiotherapist.
-7. Propose the changes (calories from step 4, a deload from step 6) and ask whether they agree.
-8. Write `data/reviews/END.md` (create the folder if needed): `tdee_kcal: VALUE` when the trend
+8. Propose the changes (calories from step 4, a deload from step 7) and ask whether they agree.
+9. Write `data/reviews/END.md` (create the folder if needed): `tdee_kcal: VALUE` when the trend
    gave one; when the client agreed to the calorie change from step 4, also `target_kcal: KCAL`
    and `in_deficit: true|false` from that `coach energy` output (`deficit` above 0), which
    `/plan` reads. These `name: value` lines keep the CLI's format (decimal point), whatever the
@@ -126,7 +147,7 @@ Knowledge, by situation: run only the lines that apply.
 ## Output
 
 In the profile language: any safety reason first (one line each), then three to six bullets
-(adherence, weight, calories, training, recovery, next step) with every number quoted from the
+(adherence, weight, calories, training, running for runners, recovery, next step) with every number quoted from the
 CLI, then whether to rerun `/plan`: yes when the client agreed to a calorie or deload change.
 
 ## Safety

@@ -212,3 +212,42 @@ def test_hevy_reads_template_leftovers_and_marks_them_empty():
     assert [s.is_empty for s in sets] == [False, False, True, True, False, True]
     plank = next(s for s in sets if s.exercise == "Plank")
     assert plank.duration_s == 60 and not plank.is_empty
+
+
+# Beta p6-james-I2: a run CSV goes to data/runs.csv, never to sessions.csv.
+RUNS = FIXTURES / "runs"
+
+
+def test_generic_runs_csv_reads_km_and_minutes():
+    from coach.sessions.importers import generic_runs_csv
+
+    read = generic_runs_csv.GenericRunsCsv().read(RUNS / "basic.csv")
+    assert [(r.date.isoformat(), r.km, r.minutes) for r in read] == [
+        ("2026-03-20", 8.0, 48.0),
+        ("2026-03-22", 5.5, 31.5),
+        ("2026-03-25", 12.0, 75.0),
+    ]
+    assert (read[0].avg_hr, read[0].max_hr, read[0].rpe) == (142, 158, 12)
+    assert read[1].avg_hr is None and read[0].source == "generic_runs_csv"
+
+
+def test_generic_runs_csv_converts_miles_and_seconds():
+    from coach.sessions.importers import generic_runs_csv
+
+    (run,) = generic_runs_csv.GenericRunsCsv().read(RUNS / "miles_seconds.csv")
+    assert run.km == pytest.approx(5 * 1.609344)
+    assert run.minutes == 45
+
+
+def test_generic_runs_csv_needs_distance_and_duration_on_every_row():
+    from coach.sessions.importers import generic_runs_csv
+
+    with pytest.raises(ImporterError, match="line 2"):
+        generic_runs_csv.GenericRunsCsv().read(RUNS / "no_distance.csv")
+
+
+def test_run_files_and_workout_files_are_told_apart():
+    for name in ("basic.csv", "miles_seconds.csv", "overlap.csv"):
+        assert detect(RUNS / name).name == "generic_runs_csv"
+    assert detect(GENERIC / "basic.csv").name == "generic_csv"
+    assert detect(HEVY / "basic.csv").name == "hevy_csv"

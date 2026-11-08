@@ -27,7 +27,9 @@ Every one is labelled where it lives: `# convention:` in code, "convention", "he
 | `strength.INCREMENT_UPPER`, `INCREMENT_LOWER`, `LOAD_STEP_KG` | 2.5% / 5%, 0.5 kg | "Double progression" (2-10%, smaller for upper body) | smallest practical jumps |
 | `strength.BREAK_DAYS`, `SHORT_BREAK_DAYS`, `RESTART_LONG` | over 7 days off; after 14 days restart at 85% | "Short breaks cost little" (about 90% under 2 weeks, 10-20% below after) | 85% is the midpoint of 10-20% below |
 | `profile.EXPERIENCE` | novice: under 12 months of consistent training (about 2+ sessions a week); intermediate: 12 months or more, still progressing; advanced: 12 months or more, progress plateaued | "Novice strength gains and plateau" (fast gains in year one, slowing after 6-12 months), "Trained lifters: 12-20 weekly sets" (at least 1 year of training, plateaued) | no rule defines the levels; 12 months is the threshold both rules' populations share. Only novice and advanced load a rule of their own in /plan |
-| `zones.TALK_TEST["light"]` | "can talk and sing" | "0-10 effort scale and talk-test anchors" (moderate and vigorous only) | completes the scale |
+| `zones.TALK_TEST["very_light"]`, `["light"]`, `["near_maximal"]` | "can talk and sing with ease", "can talk and sing", "cannot speak" | "0-10 effort scale and talk-test anchors" (moderate and vigorous only) | completes the scale for the five "ACSM intensity bands" |
+| `zones.ACSM_BANDS` open ends | very light from 0% HRR (resting HR) or 0% HRmax and Borg 6; near-maximal to 100% and Borg 20 | "ACSM intensity bands" (gives very light as below and near-maximal as at or above a cut-off) | the scales' own ends; near-maximal starts at 85% HRR because of the rule's labelled 84% vigorous cap |
+| `runs.week` time per zone | each run's minutes count in the zone of its average HR | "ACSM intensity bands" | an average is all a run log gives; intervals inside a run are not split out |
 | `zones.PREGNANCY_RPE` light and vigorous | 9-12, 15-17 | "Gauge intensity by talk test and RPE" (moderate 13-14 from its source) | fills the bands around the source's moderate |
 | `cli.PROGRESS_LOOKBACK_DAYS` | 28 | none | `strength progress` covers lifts trained in the last 4 weeks |
 | `cli.MENU_KCAL_MARGIN` | a /menu day passes from the target up to 5% over, never under | none | close enough to plan meals without arithmetic by the model |
@@ -74,7 +76,9 @@ Every one is labelled where it lives: `# convention:` in code, "convention", "he
 | `off.OFF_TIMEOUT_S` | 20 s | how long `coach products` waits for Open Food Facts |
 | `off.SEARCH_LIMIT` | 10 hits | enough to spot a product without paging (OFF allows 10 searches a minute) |
 | `checkins.RANGES` | weight 25-400 kg, waist 40-250 cm, intake 0-15,000 kcal, sleep 0-24 h | rejects typos and impossible values |
-| `zones.HR_REST_RANGE`, `HR_MAX_RANGE` | 30-120, 100-230 bpm | rejects typos |
+| `profile.HR_REST_RANGE`, `HR_MAX_RANGE` (also `zones.`) | 30-120, 100-230 bpm | rejects typos in `coach zones` flags and the profile's `hr_rest`, `hr_max` |
+| `runs.RANGES`, `RUN_HR_RANGE`, `RPE_RANGE` | 0.1-250 km, 1-2400 min; average and peak HR 30-230 bpm, average not above peak; RPE on the Borg 6-20 scale of `coach zones` | rejects typos in `coach runs add` and run imports |
+| `runs.KEY_DECIMALS` | the same date, km to 2 decimals and minutes to 1 decimal is the same run | a re-import, or a run added by hand and imported later, counts once |
 | `foods.ENERGY_TOLERANCE` | 10% of the 4/4/9 (+2 fibre) energy | flags a food row whose stated kcal disagrees, unless it carries a `kcal_exception` |
 | `knowledge.HEADER_LINES` | 5 | where the "Evidence checked on" date may sit |
 | `check_knowledge.LONG_TITLE_RUN`, `MIN_TITLE_RUN` | 80, 20 characters | how much of a PubMed title a citation must reproduce |

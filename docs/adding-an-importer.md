@@ -5,9 +5,24 @@ The coach keeps one source-agnostic log, `data/sessions.csv`: one row per set, a
 of `ExerciseSet`s. It never writes anything: `coach import` hands the list to the store, which
 de-duplicates and saves.
 
-Built-in importers: `hevy_csv` (Hevy's CSV export) and `generic_csv` (a hand-written CSV, columns
-listed in `coach/sessions/importers/generic_csv.py`). Hevy's private web API is a possible future
-importer; it is not built.
+Built-in importers: `hevy_csv` (Hevy's CSV export), `generic_csv` (a hand-written CSV, columns
+listed in `coach/sessions/importers/generic_csv.py`) and `generic_runs_csv` (a run log, see "Run
+importers" below). Hevy's private web API is a possible future importer; it is not built. Nor are
+Strava, Garmin or Apple Health importers: their export formats could not be verified when running
+support was added, so a client exports or types a CSV with the `generic_runs_csv` columns.
+
+## Run importers
+
+Runs live in their own log, `data/runs.csv`, one row per run as `coach.runs.Run` (date, km,
+minutes, optional average and peak HR, RPE on the Borg 6-20 scale, notes, source). A run
+importer is an ordinary importer with one extra class attribute, `target = "runs"`, and its
+`read` returns `Run`s instead of `ExerciseSet`s. `coach import` checks `target` (missing means
+`"sessions"`) and hands runs to `coach.runs.append_runs`, which validates each run and skips one
+already stored with the same date, km and minutes, whatever its source (so a run added with
+`coach runs add` and imported later counts once). Detection is shared, so `can_read` must not
+claim a workout file: `generic_runs_csv` needs `date`, a distance and a duration column and no
+other columns than its own. Runs logged inside a workout app's export (a Hevy "Running" set) stay
+in `data/sessions.csv` and are not counted by `coach runs week`.
 
 ## The protocol
 

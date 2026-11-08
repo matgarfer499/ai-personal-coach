@@ -219,7 +219,28 @@ def test_zones(capsys, data_dir):
     _, out = run(capsys, data_dir, "zones", "--hr-rest", "60")
     assert out["method"] == "hrr"
     assert out["hr_max"] == 187  # Tanaka at 30
-    assert [z["name"] for z in out["zones"]] == ["light", "moderate", "vigorous"]
+    assert [z["name"] for z in out["zones"]] == [
+        "very_light",
+        "light",
+        "moderate",
+        "vigorous",
+        "near_maximal",
+    ]
+
+
+# Beta p6-james-I3: the stored anchors feed `coach zones`; flags still win.
+def test_zones_use_the_stored_heart_rates(capsys, data_dir):
+    assert run(capsys, data_dir, "profile", "set", "hr_max", "191")[0] == 0
+    assert run(capsys, data_dir, "profile", "set", "hr_rest", "48")[0] == 0
+    _, out = run(capsys, data_dir, "zones")
+    assert out["method"] == "hrr"
+    assert (out["hr_max"], out["hr_rest"], out["hr_max_source"]) == (191, 48, "measured")
+    _, out = run(capsys, data_dir, "zones", "--hr-max", "185", "--hr-rest", "55")
+    assert (out["hr_max"], out["hr_rest"]) == (185, 55)
+    code, out = run(capsys, data_dir, "profile", "set", "hr_rest", "200")
+    assert code == 2 and "hr_rest" in out["message"]
+    _, out = run(capsys, data_dir, "profile", "set", "hr_rest", "none")
+    assert out["profile"]["hr_rest"] is None
 
 
 def test_strength_e1rm_and_deload(capsys, data_dir):
@@ -1723,3 +1744,69 @@ def test_plan_check_accepts_the_kcal_as_macros_kcal_prints_it(capsys, data_dir):
     _plan_md(data_dir, f"{float(macros['kcal'])}")  # `coach macros --kcal` prints 2081.0
     _, out = run(capsys, data_dir, "plan", "check")
     assert out["ok"] is True, out["problems"]
+
+
+RUN_FIXTURES = Path(__file__).parent.parent / "fixtures" / "runs"
+
+
+# Beta p6-james-I2, I5: runs are logged and summed per week, with the spike rule.
+def test_runs_add_and_week(capsys, data_dir):
+    code, out = run(
+        capsys, data_dir, "runs", "add", "--date", "2026-03-28", "--km", "8", "--minutes", "48"
+    )
+    assert code == 0 and out["added"] == 1
+    code, out = run(
+        capsys,
+        data_dir,
+        "runs",
+        "add",
+        "--km",
+        "10",
+        "--minutes",
+        "58",
+        "--avg-hr",
+        "150",
+        "--max-hr",
+        "170",
+        "--rpe",
+        "14",
+        "--notes",
+        "long run",
+    )
+    assert code == 0 and out["run"]["date"] == TODAY
+    _, week = run(capsys, data_dir, "runs", "week")
+    assert week["km"] == 18 and week["runs"] == 2 and week["longest_km"] == 10
+    assert [s["date"] for s in week["spikes"]] == [TODAY]
+    assert set(week["zone_minutes"]) >= {"moderate", "vigorous", "no_hr"}
+
+
+def test_runs_add_refuses_a_future_date_and_bad_values(capsys, data_dir):
+    code, out = run(
+        capsys, data_dir, "runs", "add", "--date", "2026-04-02", "--km", "5", "--minutes", "30"
+    )
+    assert code == 2 and "after today" in out["message"]
+    code, out = run(capsys, data_dir, "runs", "add", "--km", "5", "--minutes", "30", "--rpe", "4")
+    assert code == 2 and "rpe" in out["message"]
+    assert not (data_dir / "runs.csv").exists()
+
+
+def test_import_runs_goes_to_runs_csv(capsys, data_dir):
+    code, out = run(capsys, data_dir, "import", str(RUN_FIXTURES / "basic.csv"))
+    assert code == 0 and out["importer"] == "generic_runs_csv"
+    assert (out["added"], out["duplicates"], out["first_day"]) == (3, 0, "2026-03-20")
+    assert (data_dir / "runs.csv").exists() and not (data_dir / "sessions.csv").exists()
+    _, out = run(capsys, data_dir, "import", str(RUN_FIXTURES / "overlap.csv"))
+    assert (out["added"], out["duplicates"]) == (1, 1)
+
+
+def test_runs_taper(capsys, data_dir):
+    _, out = run(capsys, data_dir, "runs", "taper", "--race-date", "2026-04-12")
+    assert out["in_window"] is True and out["distance_cut"] == [0.41, 0.6]
+    _, out = run(capsys, data_dir, "runs", "taper", "--race-date", "2026-06-01")
+    assert out["in_window"] is False and out["starts_on"] == "2026-05-18"
+
+
+def test_runs_taper_refused_while_training_is_on_hold(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "screening.cardiac_symptoms", "true")
+    code, out = run(capsys, data_dir, "runs", "taper", "--race-date", "2026-04-12")
+    assert code == 2 and "Cardiac warning symptoms" in out["message"]
