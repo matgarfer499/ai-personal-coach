@@ -1135,6 +1135,16 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
     path = args.data_dir / "plan.md"
     if not path.exists():
         raise ValueError(f"no plan at {path}: /plan writes it")
+    if args.plan_cmd == "export":
+        out = _in_data_dir(args, args.out)
+        text = path.read_text(encoding="utf-8")
+        exercises = export.write_plan(out, text, profile.language, qr=not args.no_qr)
+        pdf = (
+            out.relative_to(args.data_dir).as_posix()
+            if out.is_relative_to(args.data_dir)
+            else str(out)
+        )
+        return {"pdf": pdf, "exercises": exercises, "qr": not args.no_qr}
     head = path.read_text(encoding="utf-8").splitlines()[:3]
     fields = dict(line.split(":", 1) for line in head if ":" in line)
     fields = {k.strip(): v.strip() for k, v in fields.items()}
@@ -1419,13 +1429,20 @@ def build_parser() -> argparse.ArgumentParser:
         "--symptoms", default="", help=f"comma-separated: {', '.join(safety.SYMPTOMS)}"
     )
 
-    plan_cmd = add("plan", cmd_plan, "check data/plan.md's header against the CLI")
+    plan_cmd = add("plan", cmd_plan, "check data/plan.md's header, or export it as a PDF")
     plan_sub = plan_cmd.add_subparsers(dest="plan_cmd", required=True)
     check_plan = plan_sub.add_parser("check", parents=[json_flag])
     check_plan.add_argument("--goal", default=None, choices=GOALS)
     check_plan.add_argument("--pal", type=float, default=None, help="as given to /plan")
     check_plan.add_argument("--tdee", type=float, default=None, help="as given to /plan")
     check_plan.add_argument("--current-kcal", type=float, default=None, help="as given to /plan")
+    export_plan = plan_sub.add_parser(
+        "export", parents=[json_flag], help="data/plan.md as a PDF (needs the pdf extra)"
+    )
+    export_plan.add_argument(
+        "--out", type=Path, default=Path("plan.pdf"), help="default: plan.pdf in the data dir"
+    )
+    export_plan.add_argument("--no-qr", action="store_true", help="no QR code per video link")
     knowledge_cmd = add("knowledge", cmd_knowledge, "knowledge staleness and sections")
     knowledge_sub = knowledge_cmd.add_subparsers(dest="knowledge_cmd", required=True)
     stale_cmd = knowledge_sub.add_parser("stale", parents=[json_flag])

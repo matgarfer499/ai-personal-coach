@@ -61,7 +61,7 @@ rule in `knowledge/` with its sources.
 | `/setup` | build your profile and screening, get starting targets |
 | `/checkin` | log weight, waist, food, sleep and how you feel; it watches for red flags |
 | `/import` | add workouts from a Hevy CSV export or a simple spreadsheet CSV |
-| `/plan` | get a training week, cardio and nutrition targets, written to `data/plan.md` |
+| `/plan` | get a training week, cardio and nutrition targets, written to `data/plan.md` and printable with `coach plan export` |
 | `/review` | look back at the week and agree on changes |
 | `/menu` | build dishes you would enjoy for one or more days, from real recipes and the products you buy, that meet your targets; then a shopping list |
 | `/research` | refresh the evidence base on a separate branch for you to review |
@@ -81,6 +81,13 @@ it. Products added this way are marked unverified (a product typed from its labe
 "values from the label"), and prices are never fetched. The PDF export
 needs the optional extra: `uv sync --extra pdf`.
 
+`/plan` can print the plan too: `uv run python -m coach plan export` writes `data/plan.pdf`
+(`--out FILE`, `--no-qr`), the plan with a video search link and QR code per exercise for
+checking technique (no exercise pictures). It aims at one page; a long plan may run over.
+
+The coach explains terms such as RIR, RPE or bpm the first time they come up, from
+[`docs/glossary.md`](docs/glossary.md) (Spanish and English).
+
 [`docs/examples/`](docs/examples/) has dry runs of `/setup`, `/checkin`, `/import`, `/plan`,
 `/review` and `/menu` with an invented client, including the red-flag cases. They were
 regenerated with the current skills.
@@ -95,7 +102,7 @@ Requirements: Claude Code, [uv](https://docs.astral.sh/uv/) and Python 3.12.
 ```
 git clone <your private copy> ai-personal-coach
 cd ai-personal-coach
-uv sync              # or: uv sync --extra pdf, to export menus as PDF
+uv sync              # or: uv sync --extra pdf, to export menus and the plan as PDF
 claude
 ```
 

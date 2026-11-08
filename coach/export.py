@@ -1,4 +1,7 @@
-"""Print a saved menu as a PDF: the week at a glance, each recipe once, shopping list.
+"""Print a saved menu or the plan as a PDF.
+
+A menu gets the week at a glance, each recipe once and the shopping list; the plan
+(`data/plan.md`) gets its text and a video search link per exercise.
 
 Needs the optional `pdf` extra (reportlab): `uv sync --extra pdf`. The text comes from the saved
 menu and `coach shopping`; nothing is computed here. The file goes to the data directory, because
@@ -7,9 +10,10 @@ recipes are the client's own and come from the web (see `coach.recipes`).
 
 from __future__ import annotations
 
+import re
 from datetime import date
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import quote_plus, urlsplit
 from xml.sax.saxutils import escape
 
 from coach.foods import Food, find
@@ -158,6 +162,21 @@ def _date_range(first: date, last: date, words: dict) -> str:
     return f"{start} {DASH} {full(last)}"
 
 
+def qr_code(url: str):
+    """The URL as a QR code drawing QR_CM wide; call only once reportlab has imported."""
+    from reportlab.graphics.barcode.qr import QrCodeWidget
+    from reportlab.graphics.shapes import Drawing
+    from reportlab.lib import colors
+    from reportlab.lib.units import cm
+
+    widget = QrCodeWidget(url, barFillColor=colors.HexColor(INK))
+    x0, y0, x1, y1 = widget.getBounds()
+    size = QR_CM * cm
+    drawing = Drawing(size, size, transform=[size / (x1 - x0), 0, 0, size / (y1 - y0), 0, 0])
+    drawing.add(widget)
+    return drawing
+
+
 def web_link(source: str) -> str | None:
     """`source` when it is an http or https address with a host, else None."""
     source = source.strip()
@@ -182,7 +201,6 @@ def write(
     yoghurt bowl) gets a short card with its amounts on one line.
     """
     try:
-        from reportlab.graphics.barcode.qr import QrCodeWidget
         from reportlab.graphics.shapes import Drawing, Rect
         from reportlab.lib import colors
         from reportlab.lib.pagesizes import A4
@@ -252,14 +270,6 @@ def write(
                 keepWithNext=1,
             ),
         )
-
-    def qr_code(url: str):
-        widget = QrCodeWidget(url, barFillColor=colour(INK))
-        x0, y0, x1, y1 = widget.getBounds()
-        size = QR_CM * cm
-        drawing = Drawing(size, size, transform=[size / (x1 - x0), 0, 0, size / (y1 - y0), 0, 0])
-        drawing.add(widget)
-        return drawing
 
     def tick_box():
         drawing = Drawing(8, 8)
@@ -688,3 +698,185 @@ def write(
 
 def default_name(first: date) -> str:
     return f"{first.isoformat()}.pdf"
+
+
+# convention: the plan's exercise links search YouTube for the name plus "técnica"/"technique"
+# (PLAN_LABELS) instead of linking a chosen video: no picture or video is copied (licensing), and a
+# search still works when a video is taken down.
+VIDEO_SEARCH = "https://www.youtube.com/results?search_query="
+PLAN_LABELS = {
+    "es": {"plan": "Plan", "videos": "Vídeos de técnica", "search": "técnica", "page": "Página"},
+    "en": {"plan": "Plan", "videos": "Technique videos", "search": "technique", "page": "Page"},
+}
+TRAINING_WEEK = ("semana de entrenamiento", "training week")
+SOURCES = ("fuentes", "rules used")
+RULE_NAME = re.compile(r"\s*\[[^\]]+\]")
+
+
+def _plan_sections(text: str) -> list[tuple[str, list[str]]]:
+    """(heading, lines) per `## ` section of plan.md, in order; text before the first is skipped."""
+    sections: list[tuple[str, list[str]]] = []
+    for line in text.splitlines():
+        if line.startswith("## "):
+            sections.append((line[3:].strip(), []))
+        elif sections:
+            sections[-1][1].append(line.strip())
+    return sections
+
+
+def plan_exercises(text: str) -> list[str]:
+    """Exercise names from the training week's bullets, once each, in the order they appear.
+
+    shortcut: reads only bullets shaped like `- A (lunes): Sentadilla 51,0 kg; Press banca 34 kg`
+    (the shape /plan step 5 asks for): the name is each `;` part up to its first digit, prose lines
+    are skipped. Upgrade to a structured plan file if exercises go missing.
+    """
+    names: list[str] = []
+    for heading, lines in _plan_sections(text):
+        if heading.casefold() not in TRAINING_WEEK:
+            continue
+        for line in lines:
+            if not line.startswith(("- ", "* ")):
+                continue
+            label, _, lifts = RULE_NAME.sub("", line[2:]).partition(": ")  # not 18:30
+            for part in (lifts or label).split(";"):
+                name = re.split(r"\d", part, maxsplit=1)[0].strip(" .,:-")
+                if name and name.casefold() not in {n.casefold() for n in names}:
+                    names.append(name)
+    return names
+
+
+def video_link(exercise: str, language: str) -> str:
+    return VIDEO_SEARCH + quote_plus(f"{exercise} {PLAN_LABELS[language]['search']}")
+
+
+def write_plan(path: Path, text: str, language: str | None, qr: bool = True) -> list[str]:
+    """Write plan.md as a PDF and return the exercises linked; ValueError when reportlab is missing.
+
+    The plan's sections as written (inline rule names dropped, the Fuentes / Rules used section kept
+    in small print), then a grid with a video search link, and a QR code, per exercise. Aims at one
+    page; a long plan runs over.
+    """
+    try:
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import ParagraphStyle
+        from reportlab.lib.units import cm
+        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    except ImportError:
+        raise ValueError(INSTALL) from None
+
+    language = language if language in PLAN_LABELS else "es"
+    words = PLAN_LABELS[language]
+    width = A4[0] - 3 * cm - 12  # 1.5 cm margins, less the frame's 6 pt padding on each side
+
+    def style(name: str, **options) -> ParagraphStyle:
+        defaults = {"fontName": "Helvetica", "fontSize": 8.5, "leading": 11, "textColor": INK}
+        return ParagraphStyle(name, **{**defaults, **options})
+
+    body = style("body")
+    bullet = style("bullet", leftIndent=10, bulletIndent=2)
+    tiny = style("tiny", fontSize=7, leading=9, textColor=colors.HexColor(MUTED))
+    section = style(
+        "section",
+        fontName="Helvetica-Bold",
+        fontSize=11,
+        leading=14,
+        textColor=colors.HexColor(PRIMARY),
+        spaceBefore=6,
+        spaceAfter=3,
+        keepWithNext=1,
+    )
+
+    def markup(line: str) -> str:
+        return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", _text(line))
+
+    first = text.splitlines()[0] if text.strip() else ""
+    when = first.partition(":")[2].strip()
+    title = f"{words['plan']} {when}".strip()
+    story = [
+        Paragraph(
+            _text(title),
+            style(
+                "title",
+                fontName="Helvetica-Bold",
+                fontSize=16,
+                leading=20,
+                textColor=colors.HexColor(PRIMARY),
+            ),
+        ),
+        Spacer(1, 4),
+    ]
+    for heading, lines in _plan_sections(text):
+        story.append(Paragraph(_text(heading), section))
+        sources = heading.casefold() in SOURCES
+        for line in lines:
+            if not line:
+                continue
+            if sources:
+                story.append(Paragraph(markup(line), tiny))
+                continue
+            line = RULE_NAME.sub("", line)
+            if line.startswith(("- ", "* ")):
+                story.append(Paragraph(markup(line[2:]), bullet, bulletText="\u2022"))
+            else:
+                story.append(Paragraph(markup(line), body))
+
+    exercises = plan_exercises(text)
+    if exercises:
+        story.append(Paragraph(_text(words["videos"]), section))
+        column = width / 3  # three exercises a row keeps a typical week on page one
+        qr_width = (QR_CM + 0.3) * cm if qr else 0
+        cells = []
+        for name in exercises:
+            url = video_link(name, language)
+            label = Paragraph(
+                # the name carries the link: a long URL wraps, and each line would be a link
+                f'<link href="{escape(url, {chr(34): "&quot;"})}" color="{PRIMARY}">'
+                f"<b>{_text(name)}</b></link><br/>"
+                f'<font size="6.5" color="{MUTED}">{_text(url)}</font>',
+                body,
+            )
+            cells.append(
+                Table(
+                    [[qr_code(url), label]] if qr else [[label]],
+                    colWidths=[qr_width, column - qr_width - 4] if qr else [column - 4],
+                    style=[("VALIGN", (0, 0), (-1, -1), "MIDDLE")],
+                )
+            )
+        rows = [
+            cells[i : i + 3] + [""] * (3 - len(cells[i : i + 3])) for i in range(0, len(cells), 3)
+        ]
+        grid = Table(rows, colWidths=[column] * 3)
+        grid.setStyle(
+            TableStyle(
+                [
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("LINEBELOW", (0, 0), (-1, -1), 0.4, colors.HexColor(RULE)),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ]
+            )
+        )
+        story.append(grid)
+
+    def footer(canvas, doc):
+        canvas.saveState()
+        canvas.setFillColor(colors.HexColor(MUTED))
+        canvas.setFont("Helvetica", 7.5)
+        canvas.drawString(1.5 * cm, 0.9 * cm, title)
+        canvas.drawRightString(A4[0] - 1.5 * cm, 0.9 * cm, f"{words['page']} {doc.page}")
+        canvas.restoreState()
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    SimpleDocTemplate(
+        str(path),
+        pagesize=A4,
+        leftMargin=1.5 * cm,
+        rightMargin=1.5 * cm,
+        topMargin=1.3 * cm,
+        bottomMargin=1.5 * cm,
+        pageCompression=0,
+        title=title,
+        creator="ai-personal-coach",
+    ).build(story, onFirstPage=footer, onLaterPages=footer)
+    return exercises
