@@ -30,8 +30,8 @@ list. Every number comes from the CLI.
   bpm or ppm, talk test, zones, deficit, TDEE and the others), explain it in one plain sentence
   from the glossary, in the client's language; `talk_test` and the protein-basis note come in
   the profile language already; say any other CLI note with its wording in `docs/glossary.md`
-  "CLI notes" (same numbers), never quoting it in English. Rule names in brackets, wherever these steps ask for them, go in one
-  short line at the end of the message, just before the deferral line when there is one
+  "CLI notes" (same numbers), never quoting it in English. Rule names in brackets, wherever
+  these steps ask for them, go in one short line at the end of the message, just before the deferral line when there is one
   (`Fuentes: [...]`, en: `Rules used: [...]`), not inline, unless the client asks for them inline.
   Still cite every rule you use.
 - Load knowledge only with `coach knowledge section FILE "HEADING"`; cite the rule when you give

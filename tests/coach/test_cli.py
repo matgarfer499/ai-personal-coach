@@ -2170,3 +2170,13 @@ def test_veg_fruit_warning_names_400_g_once_for_a_full_day():
     totals = MenuTotals(veg_fruit_g=100.0)
     day = _menu_day(totals, {"kcal": 0, "protein_g": 0, "fat_min_g": 0, "fibre_g": 0})
     assert day["warnings"][0].count("400 g") == 1
+
+
+def test_protein_basis_note_reproduces_the_grams_off_the_fixture_height(capsys, data_dir):
+    # 155 cm caps at 72.075 kg: unrounded, 72.08 x 1.6 printed 115.33 against 115.32.
+    run(capsys, data_dir, "profile", "set", "height_cm", "155")
+    run(capsys, data_dir, "profile", "set", "weight_kg", "95")
+    out = run(capsys, data_dir, "macros", "--kcal", "2400")[1]
+    note = next(n for n in out["notes"] if "BMI 30" in n)
+    weight = float(re.search(r"from ([\d.]+) kg", note).group(1))
+    assert round(weight * out["protein_g_per_kg"], 2) == out["protein_g"]

@@ -104,12 +104,18 @@ def macro_targets(
     notes.append(
         f'nutrition.md: "{rule}": range {band[0]:g}-{band[1]:g} g/kg/day; '
         f"the coach uses {per_kg:g} g/kg/day"
+        + (
+            # PROTEIN_DEFICIT: the midpoint of the coach's own 1.8-2.2 band.
+            f", the midpoint of its {PROTEIN_DEFICIT[0]:g}-{PROTEIN_DEFICIT[1]:g} band (convention)"
+            if band == PROTEIN_DEFICIT_RANGE and in_deficit
+            else ""
+        )
     )
     cap_bmi = REFERENCE_BMI if in_deficit else OBESITY_BMI
-    protein_weight = min(weight, cap_bmi * (profile.require("height_cm") / 100) ** 2)
+    # Rounded to the two decimals the note prints, so its weight times the dose gives protein_g.
+    protein_weight = round(min(weight, cap_bmi * (profile.require("height_cm") / 100) ** 2), 2)
     protein_g = per_kg * protein_weight
     if protein_weight < weight:
-        # Two decimals, so the weight times the dose gives protein_g exactly.
         if profile.language == "es":
             notes.append(
                 f"convención: proteína calculada con {protein_weight:.2f} kg, el peso con IMC "

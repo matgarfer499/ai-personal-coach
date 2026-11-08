@@ -53,6 +53,7 @@ TALK_TEST = {
     "vigorous": "only a few words without pausing for breath",
     "near_maximal": "cannot speak",
 }
+# The same cardio-health.md: "0-10 effort scale and talk-test anchors" wording, in Spanish.
 TALK_TEST_ES = {
     "very_light": "puedes hablar y cantar sin esfuerzo",
     "light": "puedes hablar y cantar",
@@ -189,16 +190,7 @@ def zone_for(zones: list[Zone], hr: float) -> Zone | None:
     return next((z for z in reversed(bpm[1:]) if z.bpm[0] <= hr), bpm[0] if bpm else None)
 
 
-def hr_zones(profile: Profile, *args, **kwargs) -> Zones:
-    """The zones (`_hr_zones`), with the talk test in the profile language."""
-    shown = _hr_zones(profile, *args, **kwargs)
-    if profile.language == "es":
-        for zone in shown.zones:
-            zone.talk_test = TALK_TEST_ES[zone.name]
-    return shown
-
-
-def _hr_zones(
+def hr_zones(
     profile: Profile,
     flags: SafetyFlags,
     hr_rest: int | None = None,
@@ -213,4 +205,7 @@ def _hr_zones(
     if rules and result.zones:
         result.zones = [z for z in result.zones if z.name not in ABOVE_MODERATE]
         result.notes += [r for r in flags.reasons if r.startswith(rules)]
+    if profile.language == "es":  # the talk test is shown to the client as is
+        for zone in result.zones:
+            zone.talk_test = TALK_TEST_ES[zone.name]
     return result
