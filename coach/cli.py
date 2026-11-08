@@ -770,7 +770,7 @@ def cmd_profile(profile: Profile, args: argparse.Namespace) -> dict:
                 # A vigorous-work review covered the old answers, not the new ones.
                 profile.screening.pop("vigorous_reviewed", None)
             if key in CLEARANCE_ANSWERS and value != old:
-                # A medical clearance covered the old diagnoses, not the new ones.
+                # A medical clearance covered the old diagnoses and symptoms, not the new ones.
                 profile.screening.pop("medically_cleared", None)
         else:
             setattr(profile, args.field, value)
@@ -924,6 +924,7 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
         # recovery-habits.md: "Cardiac warning symptoms: stop and refer": any one of them. Saved
         # first, so a refused or invalid field cannot drop the stop.
         profile.screening["cardiac_symptoms"] = True
+        profile.screening.pop("medically_cleared", None)  # it predates these symptoms
         save_profile(profile, args.data_dir / "profile.yaml")
     flags = safety.flags(profile, args.today)
     refused = ["weight"] if flags.no_weight_targets and args.weight is not None else []

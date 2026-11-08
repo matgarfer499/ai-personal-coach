@@ -505,6 +505,7 @@ def test_known_disease_with_regular_exercise_unanswered_takes_the_cautious_cell(
     del profile.screening["regular_exercise"]
     result = flags(profile, today=date(2026, 1, 1))
     assert result.clearance_before_exercise and result.no_training
+    assert "regular exercise not answered" in result.instruction
 
 
 def test_the_acsm_clearance_stop_is_the_instruction():

@@ -1903,3 +1903,11 @@ def test_changing_symptoms_drops_an_old_medical_clearance(capsys, data_dir):
     run(capsys, data_dir, "profile", "set", "screening.symptoms", "dizzy")
     screening = run(capsys, data_dir, "profile", "show")[1]["profile"]["screening"]
     assert "medically_cleared" not in screening
+
+
+def test_symptoms_at_checkin_drop_an_old_medical_clearance(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "screening.known_disease", "metabolic")
+    run(capsys, data_dir, "profile", "set", "screening.medically_cleared", "true")
+    run(capsys, data_dir, "checkin", "add", "--symptoms", "dizzy")
+    screening = run(capsys, data_dir, "profile", "show")[1]["profile"]["screening"]
+    assert "medically_cleared" not in screening

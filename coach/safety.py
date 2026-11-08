@@ -40,8 +40,9 @@ INJURY = 'recovery-habits.md: "Some pain during exercise is acceptable in chroni
 CARDIAC = 'recovery-habits.md: "Cardiac warning symptoms: stop and refer"'
 BP = 'recovery-habits.md: "Resting BP thresholds to defer or refer"'
 UNDER_18 = 'nutrition.md: "Under-18s"'
-ACSM_STOP = f"{ACSM}: not exercising regularly"  # the "clearance before any exercise" cell
-# The rules whose reasons explain `no_training` and `review_before_vigorous` (zones, runs, taper).
+# The "clearance before any exercise" cell: not exercising regularly, or not answered.
+ACSM_STOP = (f"{ACSM}: not exercising regularly", f"{ACSM}: regular exercise not answered")
+# The rules whose reasons explain `no_training` and `review_before_vigorous`, respectively.
 TRAINING_STOPS = (CARDIAC, BP, ACSM)
 VIGOROUS_CAPS = (PARQ_THRESHOLDS, ACSM)
 
@@ -371,11 +372,10 @@ def _acsm(profile: Profile, out: SafetyFlags) -> None:
             f"{ACSM}: exercising regularly with known {named} disease: continue moderate work; "
             "medical clearance before vigorous work"
         )
-    elif not active and not cleared:  # unanswered takes the cautious cell
-        unanswered = "" if active is False else " (not answered)"
+    elif not active and not cleared:  # convention: unanswered takes the cautious cell
         out.clearance_before_exercise = out.no_training = out.refer_gp = True
         out.reasons.append(
-            f"{ACSM_STOP}{unanswered}, with known {named} disease: medical clearance "
+            f"{ACSM_STOP[active is None]}, with known {named} disease: medical clearance "
             "before any exercise, then start at light-to-moderate intensity"
         )
     elif not active and not screening.get("vigorous_reviewed"):
