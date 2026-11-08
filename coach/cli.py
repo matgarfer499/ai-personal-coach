@@ -46,6 +46,7 @@ from coach import (
 )
 from coach.checkins import Checkin, append_checkin, read_checkins, weigh_ins, weight_jump
 from coach.profile import (
+    BP_MEDICATION,
     CLEARANCE_ANSWERS,
     CONDITION_TOKENS,
     GOALS,
@@ -65,6 +66,10 @@ from coach.sessions.model import ExerciseSet
 from coach.sessions.store import append, read_sets
 from coach.text import fold, fold_words
 
+# convention: generic-name endings of common blood-pressure medicines (ACE inhibitors -pril, ARBs
+# -sartan, dihydropyridine calcium channel blockers -dipine), the classes cardio-health.md "Blood
+# pressure medicines and exercise" names; a hit only suggests the bp_medication token.
+BP_DRUG_ENDINGS = ("pril", "sartan", "dipine")
 # convention: 2 decimals in CLI output, so skills can quote numbers verbatim to a client.
 OUTPUT_DECIMALS = 2
 # convention: `strength progress` with no exercise covers lifts trained in the last 4 weeks.
@@ -378,8 +383,11 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
     if args.runs_cmd == "taper":
         flags = safety.flags(profile, args.today)
         if flags.no_training:
-            stops = [r for r in flags.reasons if r.startswith(safety.TRAINING_STOPS)]
+            stops = safety.stop_reasons(flags)
             raise ValueError("no taper while training is on hold: " + "; ".join(stops))
+        if safety.running_unassessed(profile):
+            paused = safety.running_paused(profile)
+            raise ValueError("no taper while running is paused: " + "; ".join(paused))
         return runs.taper(args.race_date, today, logged)
     if args.runs_cmd == "add":
         when = args.date or today
@@ -393,6 +401,7 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
             "run": run,
             "added": result.added,
             "duplicates": result.duplicates,
+            "paused": safety.running_paused(profile),
             "warnings": ["the same run (date, km, minutes) is already stored; not added again"]
             if result.duplicates
             else [],
@@ -403,7 +412,12 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
     hr_rest, hr_max = _heart_rates(profile, args)
     shown = zones.hr_zones(profile, flags, hr_rest, hr_max, args.today)
     every = runs.zones_to_describe(profile, flags, hr_rest, hr_max, args.today)
-    return runs.week(logged, end, shown, every, today, flags.hold_progression)
+    paused = safety.running_paused(profile)
+    # Unassessed: no next run at all. Managed by a professional: no progression, the cap stays
+    # at the longest run and the professional's limits decide the rest (as for a paused lift).
+    hold = flags.hold_progression or bool(paused)
+    week = runs.week(logged, end, shown, every, today, hold, safety.running_unassessed(profile))
+    return week | {"paused": paused}
 
 
 def menu_check(totals: dict, targets: dict, share: float = 1.0) -> dict:
@@ -799,6 +813,11 @@ def cmd_profile(profile: Profile, args: argparse.Namespace) -> dict:
             "conditions": [c for c in profile.conditions if c not in CONDITION_TOKENS],
         },
         "unrecognised_note": "recorded as given; no calculation depends on these items",
+        "suggested_tokens": {
+            m: BP_MEDICATION for m in profile.medications if fold(m).endswith(BP_DRUG_ENDINGS)
+        }
+        if not profile.has_medication(BP_MEDICATION)
+        else {},
     }
 
 
@@ -837,7 +856,10 @@ def cmd_injury(profile: Profile, args: argparse.Namespace) -> dict:
     muscle_map = strength.load_muscle_map()
     listed = [e for i in profile.active_injuries() for e in i.get("exercises", [])]
     unmatched = [
-        e for e in listed if not any(strength.named_in(x, [e], muscle_map) for x in logged)
+        e
+        for e in listed
+        if fold(e) not in safety.RUN_NAMES
+        and not any(strength.named_in(x, [e], muscle_map) for x in logged)
     ]
     return {"injuries": profile.injuries, "unmatched": unmatched}
 
@@ -916,8 +938,9 @@ def cmd_recipes(profile: Profile, args: argparse.Namespace) -> dict:
 
 
 def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
-    symptoms = [s.strip() for s in (args.symptoms or "").split(",") if s.strip()]
-    unknown = [s for s in symptoms if s not in safety.SYMPTOMS]
+    said = [s.strip() for s in (args.symptoms or "").split(",") if s.strip()]
+    unknown = [s for s in said if safety.symptom_token(s) is None]
+    symptoms = list(dict.fromkeys(safety.symptom_token(s) for s in said if s not in unknown))
     if unknown:
         raise ValueError(f"unknown symptom {', '.join(unknown)}; use {', '.join(safety.SYMPTOMS)}")
     if symptoms:
@@ -957,12 +980,20 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
     past = [c for c in read_checkins(args.data_dir / "checkins.csv") if c.date <= today]
     jump = weight_jump(checkin, past)
     stored = append_checkin(checkin, args.data_dir / "checkins.csv")
-    return dataclasses.asdict(stored) | {
+    possible = [w for w in safety.red_flag_words(args.notes or "") if w not in symptoms]
+    out = dataclasses.asdict(stored) | {
         "warnings": [jump] if jump else [],
         "given": given,
         "symptoms": symptoms,
-        "possible_red_flags": [w for w in safety.red_flag_words(args.notes) if w not in symptoms],
+        "possible_red_flags": possible,
+        "possible_injury": safety.injury_words(args.notes or ""),
     }
+    if possible:
+        # The words never set a flag: the skill asks once, and this records a yes.
+        out["confirm_with"] = f"coach checkin add --date {when} --symptoms {','.join(possible)}"
+    if symptoms:
+        out["deferral_line"], out["emergency_line"] = flags.deferral_line, flags.emergency_line
+    return out
 
 
 def cmd_foods(profile: Profile, args: argparse.Namespace) -> dict:
@@ -1299,7 +1330,17 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
     path = args.data_dir / "plan.md"
     if not path.exists():
         raise ValueError(f"no plan at {path}: /plan writes it")
+    flags = safety.flags(profile, args.today)
+    stale = (
+        "the plan is stale: safety now stops training ("
+        + "; ".join(safety.stop_reasons(flags))
+        + "); run /plan again once a clinician clears it"
+        if flags.no_training
+        else None
+    )
     if args.plan_cmd == "export":
+        if stale:
+            raise ValueError(stale)
         out = _in_data_dir(args, args.out)
         text = path.read_text(encoding="utf-8")
         exercises = export.write_plan(out, text, profile.language, qr=not args.no_qr)
@@ -1307,7 +1348,7 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
     head = path.read_text(encoding="utf-8").splitlines()[:3]
     fields = dict(line.split(":", 1) for line in head if ":" in line)
     fields = {k.strip(): v.strip() for k, v in fields.items()}
-    problems = []
+    problems = [stale] if stale else []
     if not any(k in fields for k in PLAN_DATE_KEYS):
         problems.append("line 1 must be `Date: YYYY-MM-DD` (es: `Fecha:`)")
     problems += [

@@ -115,7 +115,7 @@ Knowledge, by situation: run only the lines that apply.
    `longest_km` next to `previous_week` and `change_pct` (the weekly trend), every run in
    `spikes` with its `longest_previous_km` and `cap_km` ("Running load progression": a single run
    more than about 10% longer than the longest of the previous 30 days raised injury rates; the
-   10% weekly rule is only a convention), and `long_run_cap_km` for the next long run. The
+   10% weekly rule is only a convention), and `long_run_cap_km` for the next long run (with `paused`, quote the injury's reason; null when nobody has assessed it). The
    intensity mix is `zone_minutes` (minutes per zone, from each run's average HR); relay every
    `notes` line, including minutes in zones a cap holds back and a higher logged peak to store
    as `hr_max`. With `zone_minutes` null, say why from its notes. Pain or an injury: ask about

@@ -70,6 +70,7 @@ store the name as given and tell the client the coach cannot classify it.
 | `glp1` | semaglutide (Ozempic, Wegovy, Rybelsus), liraglutide (Saxenda, Victoza), dulaglutide (Trulicity), tirzepatide (Mounjaro) | nutrition.md "GLP-1 users: protein, training and red flags" |
 | `pregnant` | pregnant | nutrition.md "Pregnancy"; recovery-habits.md "Default is to be active" |
 | `planning_pregnancy` | trying to conceive | nutrition.md "Pregnancy" |
+| `bp_medication` | any blood-pressure medicine: enalapril, ramipril (-pril), losartan, valsartan (-sartan), amlodipine (-dipine), a diuretic for BP; `profile set` suggests it for -pril, -sartan and -dipine names. Never change or question it | cardio-health.md "Blood pressure medicines and exercise"; counts as known hypertension for the BP bands (recovery-habits.md "Resting BP thresholds to defer or refer") |
 | `hypertension` | high blood pressure, on BP medication | recovery-habits.md "Resting BP thresholds to defer or refer" |
 | `heart_disease` | diagnosed heart condition | cardio-health.md "ACSM intensity bands" (cardiac team sets zones) |
 | `weight_related_condition` | type 2 diabetes, sleep apnoea, fatty liver, or another condition a doctor links to weight | nutrition.md "Resistance training during any diet, especially for older adults" |
@@ -128,7 +129,23 @@ not a symptom awaiting a clinician.
 `unusual_fatigue`, from recovery-habits.md "Cardiac warning symptoms: stop and refer"); any one
 sets `screening.cardiac_symptoms true`. Free-text `--notes` are scanned for symptom words in
 Spanish and English (`safety.SYMPTOM_WORDS`); hits come back as `possible_red_flags`, a prompt
-for the skill to ask, never a flag on their own.
+for the skill to ask, never a flag on their own, with `confirm_with`: the exact `checkin add
+--symptoms` command that records a yes. `--symptoms` also takes synonyms
+(`safety.SYMPTOM_SYNONYMS`, e.g. `chest_tightness` is `chest_pain`). Swollen-joint words come back
+as `possible_injury` (recovery-habits.md "Knee injury: signs of ligament or meniscus damage"):
+the skill asks about an injury and records it with `coach injury add`. When symptoms are
+recorded, `checkin add` returns `deferral_line` and `emergency_line` to quote.
+
+### A stale plan
+
+With `no_training` (cardiac symptoms, BP 180+, or the ACSM clearance cell), `coach plan check`
+is not ok ("the plan is stale") and `coach plan export` refuses: an old plan.md or PDF that
+prescribes training never outlives a stop. /plan runs again once a clinician clears it. An
+injury whose `exercises` list running (`running`, `correr`, ...) makes `runs add` and `runs
+week` report `paused` with the injury's reason. Unassessed, `runs week` gives no next-run cap
+and `runs taper` refuses; managed by a professional, the cap stays at the longest run (no
+progression) and the professional's limits decide the rest. Under a training stop the BP cap is moot, but a
+reason stays asking the clinician to check blood pressure at the same visit.
 
 ### `no_training` and the energy estimate
 

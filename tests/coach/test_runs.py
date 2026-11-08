@@ -200,6 +200,15 @@ def test_no_longer_long_run_while_progression_is_on_hold():
     assert any("on hold" in n for n in result["notes"])
 
 
+# docs/safety.md: an injury that lists running pauses it, so there is no next run to cap.
+def test_a_running_pause_gives_no_cap_and_no_hold_note():
+    profile, f = zones_for()
+    shown = hr_zones(profile, f, today=TODAY)
+    result = week([Run(TODAY, 10.0, 60)], TODAY, shown, [], hold_progression=True, paused=True)
+    assert result["long_run_cap_km"] is None
+    assert not any("on hold" in n for n in result["notes"])
+
+
 # Two identical runs in one log (a morning and an evening 5 km) are two runs; re-importing the
 # same log adds neither again.
 def test_identical_runs_in_one_batch_are_both_stored(tmp_path):

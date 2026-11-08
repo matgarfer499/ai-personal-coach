@@ -185,11 +185,13 @@ def week(
     every: list[zones.Zone],
     today: date | None = None,
     hold_progression: bool = False,
+    paused: bool = False,
 ) -> dict:
     """The 7 days ending on `end`: totals, the week before, spikes, the next run's cap and,
     with HR zones, minutes per zone. `shown` is `coach zones` (capped); `every` the uncapped
     zones (`zones_to_describe`). The next run's cap counts back from `today` (default `end`);
-    with `hold_progression` (safety) it is the longest run itself, SPIKE_RATIO not applied."""
+    with `hold_progression` (safety) it is the longest run itself, SPIKE_RATIO not applied, and
+    with `paused` (an injury that lists running, `safety.running_paused`) there is none."""
     start = end - timedelta(days=6)
     days = [r for r in runs if start <= r.date <= end]
     before = [r for r in runs if start - timedelta(days=7) <= r.date < start]
@@ -231,8 +233,10 @@ def week(
         notes += shown.notes  # no zones at all (training on hold, or the cardiac team's zones)
     today = today or end
     cap_base = longest(runs, today - timedelta(days=SPIKE_LOOKBACK_DAYS - 1), today)
+    if paused or shown.method == "no_training":
+        cap_base = None  # training on hold or running paused: no next run to cap
     ratio = 1.0 if hold_progression else SPIKE_RATIO
-    if hold_progression and cap_base is not None and shown.method != "no_training":
+    if hold_progression and cap_base is not None:
         notes.append(
             "progression is on hold (coach safety): the next long run stays at or below the "
             f"longest run of the last {SPIKE_LOOKBACK_DAYS} days"
@@ -248,10 +252,7 @@ def week(
         "spikes": found,
         # The next run's cap under the rule: SPIKE_RATIO times the longest run of the last
         # SPIKE_LOOKBACK_DAYS days.
-        # None while training is on hold: no next run to cap.
-        "long_run_cap_km": cap_base * ratio
-        if cap_base is not None and shown.method != "no_training"
-        else None,
+        "long_run_cap_km": cap_base * ratio if cap_base is not None else None,
         "zone_method": shown.method,
         "zone_minutes": zone_minutes,
         "notes": notes,

@@ -1911,3 +1911,147 @@ def test_symptoms_at_checkin_drop_an_old_medical_clearance(capsys, data_dir):
     run(capsys, data_dir, "checkin", "add", "--symptoms", "dizzy")
     screening = run(capsys, data_dir, "profile", "show")[1]["profile"]["screening"]
     assert "medically_cleared" not in screening
+
+
+# PR 2 (beta 2): safety after a red flag.
+
+
+@pytest.mark.parametrize(
+    "stop",
+    [
+        ("checkin", "add", "--symptoms", "dizzy"),
+        ("profile", "set", "screening.known_disease", "metabolic"),
+    ],
+)
+def test_a_training_stop_makes_the_plan_stale_and_refuses_the_export(capsys, data_dir, stop):
+    _, macros = run(capsys, data_dir, "macros")
+    _plan_md(data_dir, macros["kcal"], "false")
+    run(capsys, data_dir, "profile", "set", "screening.regular_exercise", "false")
+    run(capsys, data_dir, "profile", "set", "screening.symptoms", "no")
+    if stop[0] != "profile":
+        run(capsys, data_dir, "profile", "set", "screening.known_disease", "no")
+    run(capsys, data_dir, *stop)
+    _, out = run(capsys, data_dir, "plan", "check")
+    assert out["ok"] is False and any("stale" in p for p in out["problems"])
+    code, out = run(capsys, data_dir, "plan", "export")
+    assert code == 2 and "stale" in out["message"]
+    assert not (data_dir / "plan.pdf").exists()
+
+
+@pytest.mark.parametrize(
+    "said,token",
+    [("chest_tightness", "chest_pain"), ("short_of_breath", "breathless"), ("Dizzy", "dizzy")],
+)
+def test_checkin_maps_symptom_synonyms_to_tokens(capsys, data_dir, said, token):
+    code, out = run(capsys, data_dir, "checkin", "add", "--symptoms", said)
+    assert code == 0 and out["symptoms"] == [token]
+
+
+@pytest.mark.parametrize(
+    "notes", ["felt unusually tired after the run", "cansancio inusual al subir escaleras"]
+)
+def test_checkin_notes_find_unusual_fatigue(capsys, data_dir, notes):
+    _, out = run(capsys, data_dir, "checkin", "add", "--notes", notes)
+    assert out["possible_red_flags"] == ["unusual_fatigue"]
+
+
+def test_checkin_notes_report_a_swollen_joint_as_a_possible_injury(capsys, data_dir):
+    _, out = run(capsys, data_dir, "checkin", "add", "--notes", "knee swollen a bit")
+    assert out["possible_red_flags"] == [] and out["possible_injury"]
+    _, out = run(capsys, data_dir, "checkin", "add", "--notes", "rodilla hinchada")
+    assert out["possible_injury"]
+
+
+def test_possible_red_flags_come_with_the_command_that_records_them(capsys, data_dir):
+    _, out = run(capsys, data_dir, "checkin", "add", "--notes", "opresion en el pecho; mareo")
+    assert out["possible_red_flags"] == ["chest_pain", "dizzy"]
+    assert out["confirm_with"] == (f"coach checkin add --date {TODAY} --symptoms chest_pain,dizzy")
+
+
+def test_recorded_symptoms_return_the_deferral_and_emergency_lines(capsys, data_dir):
+    _, out = run(capsys, data_dir, "checkin", "add", "--symptoms", "chest_pain")
+    assert out["deferral_line"] and out["emergency_line"]
+    _, quiet = run(capsys, data_dir, "checkin", "add", "--weight", "80", "--date", "2026-04-01")
+    assert "deferral_line" not in quiet
+
+
+def test_an_injury_that_lists_running_pauses_runs(capsys, data_dir):
+    _, out = run(capsys, data_dir, "injury", "add", "rodilla", "--exercises", "running")
+    assert out["unmatched"] == []
+    _, out = run(capsys, data_dir, "runs", "add", "--km", "5", "--minutes", "30")
+    assert out["paused"] and any("rodilla" in r for r in out["paused"])
+    _, week = run(capsys, data_dir, "runs", "week")
+    assert week["paused"]
+
+
+def test_a_blood_pressure_medicine_counts_as_hypertension(capsys, data_dir):
+    _, out = run(capsys, data_dir, "profile", "set", "medications", "bp_medication")
+    assert out["unrecognised"]["medications"] == []
+    _, flags = run(capsys, data_dir, "safety")
+    assert flags["cap_moderate"] and any("BP unknown" in r for r in flags["reasons"])
+
+
+@pytest.mark.parametrize("drug", ["enalapril", "Losartan", "amlodipine"])
+def test_common_bp_drug_names_get_a_token_suggestion(capsys, data_dir, drug):
+    _, out = run(capsys, data_dir, "profile", "set", "medications", drug)
+    assert out["suggested_tokens"] == {drug: "bp_medication"}
+
+
+def test_bp_reason_survives_a_training_stop_as_a_check_to_ask_for(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "conditions", "hypertension")
+    run(capsys, data_dir, "checkin", "add", "--symptoms", "chest_pain")
+    _, flags = run(capsys, data_dir, "safety")
+    assert any("blood pressure" in r and "light-to-moderate" not in r for r in flags["reasons"])
+
+
+def test_the_stale_plan_names_only_the_stop_not_the_bp_check(capsys, data_dir):
+    _, macros = run(capsys, data_dir, "macros")
+    _plan_md(data_dir, macros["kcal"], "false")
+    run(capsys, data_dir, "profile", "set", "conditions", "hypertension")
+    run(capsys, data_dir, "checkin", "add", "--symptoms", "chest_pain")
+    _, out = run(capsys, data_dir, "plan", "check")
+    stale = next(p for p in out["problems"] if "stale" in p)
+    assert "same visit" not in stale and "Cardiac" in stale
+
+
+def test_suggested_tokens_stop_once_bp_medication_is_stored(capsys, data_dir):
+    _, out = run(capsys, data_dir, "profile", "set", "medications", "enalapril,bp_medication")
+    assert out["suggested_tokens"] == {}
+
+
+def test_checkin_notes_report_plural_swollen_joints(capsys, data_dir):
+    _, out = run(capsys, data_dir, "checkin", "add", "--notes", "rodillas hinchadas")
+    assert out["possible_injury"]
+
+
+def test_a_running_pause_drops_the_next_run_cap_and_the_taper(capsys, data_dir):
+    run(capsys, data_dir, "runs", "add", "--km", "8", "--minutes", "48", "--date", "2026-03-30")
+    run(capsys, data_dir, "injury", "add", "rodilla", "--exercises", "running")
+    _, week = run(capsys, data_dir, "runs", "week")
+    assert week["paused"] and week["long_run_cap_km"] is None
+    code, out = run(capsys, data_dir, "runs", "taper", "--race-date", "2026-05-01")
+    assert code == 2 and "running is paused" in out["message"]
+
+
+def test_plain_fatigue_is_not_the_cardiac_token(capsys, data_dir):
+    code, out = run(capsys, data_dir, "checkin", "add", "--symptoms", "fatigue")
+    assert code == 2 and "unusual_fatigue" in out["message"]
+
+
+def test_a_managed_running_injury_holds_the_cap_and_allows_a_taper(capsys, data_dir):
+    run(capsys, data_dir, "runs", "add", "--km", "8", "--minutes", "48", "--date", "2026-03-30")
+    run(
+        capsys,
+        data_dir,
+        "injury",
+        "add",
+        "rodilla",
+        "--professional",
+        "fisio",
+        "--exercises",
+        "running",
+    )
+    _, week = run(capsys, data_dir, "runs", "week")
+    assert week["paused"] and week["long_run_cap_km"] == 8
+    code, _ = run(capsys, data_dir, "runs", "taper", "--race-date", "2026-05-01")
+    assert code == 0
