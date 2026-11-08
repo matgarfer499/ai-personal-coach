@@ -188,7 +188,8 @@ def calorie_target(
             adjustment = -DEFICIT_KCAL
     elif goal == "muscle_gain":
         # A surplus aims at weight gain, which is a weight target: blocked by the same flags.
-        if not (flags.prescriber_owns_weight or flags.no_weight_targets):
+        # A training stop holds maintenance too (safety.NO_TRAINING_NO_DEFICIT).
+        if not (flags.prescriber_owns_weight or flags.no_weight_targets or flags.no_training):
             adjustment = maintenance * SURPLUS_FRACTION
     stored = pal_override_applies(profile, flags.no_training) and not estimate_chosen
     if stored:

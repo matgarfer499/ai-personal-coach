@@ -1448,3 +1448,15 @@ def test_checkin_notes_report_possible_red_flags_without_setting_one(capsys, dat
     code, out = run(capsys, data_dir, "checkin", "add", "--notes", "mareo al subir escaleras")
     assert code == 0 and out["possible_red_flags"] == ["dizzy"]
     assert "cardiac_symptoms" not in load_profile(data_dir / "profile.yaml").screening
+
+
+def test_checkin_symptoms_are_kept_when_another_field_is_refused(capsys, data_dir):
+    run(capsys, data_dir, "profile", "set", "screening.scoff_positive", "true")
+    code, _ = run(capsys, data_dir, "checkin", "add", "--weight", "70", "--symptoms", "faint")
+    assert code == 2
+    assert load_profile(data_dir / "profile.yaml").screening["cardiac_symptoms"] is True
+
+
+def test_checkin_records_neck_jaw_or_arm_pain(capsys, data_dir):
+    code, out = run(capsys, data_dir, "checkin", "add", "--symptoms", "neck_jaw_arm_pain")
+    assert code == 0 and out["symptoms"] == ["neck_jaw_arm_pain"]

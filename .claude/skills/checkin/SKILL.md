@@ -107,7 +107,8 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
    leaving out what they did not give. One row per day: weight is this morning's, intake is
    yesterday's, sleep is last night's (convention). A second check-in the same day only fills in
    or replaces the fields it gives. Notes, separated by `; `: symptoms, how training went, and
-   the weekly-question notes from step 4. For another day, add `--date YYYY-MM-DD`. The CLI refuses weight, waist and calories when weigh-ins are off; then record the rest.
+   the weekly-question notes from step 4. For another day, add `--date YYYY-MM-DD`. The CLI refuses weight, waist and calories when weigh-ins are off; then record the rest. If the
+   output lists `possible_red_flags`, ask about them as step 3 says before you answer.
 6. If they gave a weight, run `coach trend` and report only its `status`, and with status `ok`
    its `rate_kg_week`. With `insufficient_data`, say how many more weigh-ins it needs (from its
    note) and nothing about the direction.

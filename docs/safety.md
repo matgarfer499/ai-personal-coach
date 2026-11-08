@@ -117,7 +117,7 @@ follow-up YES, an unassessed injury) keeps the deficit.
 ### Symptoms at check-in
 
 `coach checkin add --symptoms TOKENS` records cardiac warning symptoms as tokens (`chest_pain`,
-`breathless`, `dizzy`, `faint`, `palpitations`, `ankle_swelling`, `calf_pain`,
+`neck_jaw_arm_pain`, `breathless`, `dizzy`, `faint`, `palpitations`, `ankle_swelling`, `calf_pain`,
 `unusual_fatigue`, from recovery-habits.md "Cardiac warning symptoms: stop and refer"); any one
 sets `screening.cardiac_symptoms true`. Free-text `--notes` are scanned for symptom words in
 Spanish and English (`safety.SYMPTOM_WORDS`); hits come back as `possible_red_flags`, a prompt

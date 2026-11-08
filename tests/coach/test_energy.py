@@ -271,6 +271,12 @@ def test_positive_screen_gets_no_surplus_and_the_referral_note():
     assert any("Eating-disorder screening" in n for n in result.notes)
 
 
+def test_training_stop_gets_no_surplus():
+    # safety.NO_TRAINING_NO_DEFICIT: calories stay at maintenance until training is cleared.
+    result = target(man(goal="muscle_gain", screening=OK | {"cardiac_symptoms": True}))
+    assert result.deficit == 0
+
+
 def test_unknown_goal_is_rejected():
     with pytest.raises(ValueError, match="goal"):
         target(man(), goal="fatloss")

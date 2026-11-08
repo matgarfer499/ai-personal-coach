@@ -392,3 +392,11 @@ def test_red_flag_words_in_notes():
     assert red_flag_words("Some chest tightness on the stairs") == ["chest_pain"]
     assert red_flag_words("dormí bien, entreno de pierna") == []
     assert red_flag_words("mareado y con palpitaciones") == ["dizzy", "palpitations"]
+
+
+def test_a_bp_training_stop_comes_before_referrals():
+    profile = Profile(
+        medications=["glp1"],
+        screening=SCREENED_OK | {"scoff_positive": True, "bp_systolic": 205, "bp_diastolic": 115},
+    )
+    assert flags(profile).instruction.startswith('recovery-habits.md: "Resting BP')

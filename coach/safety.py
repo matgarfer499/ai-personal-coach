@@ -80,6 +80,7 @@ NO_EMERGENCY_NUMBER = {"es": "número de emergencias local", "en": "local emerge
 # records (`checkin add --symptoms`), from the rule's list.
 SYMPTOMS = (
     "chest_pain",
+    "neck_jaw_arm_pain",
     "breathless",
     "dizzy",
     "faint",
@@ -109,8 +110,9 @@ SYMPTOM_WORDS = {
     "calf_pain": ("dolor de gemelo al caminar", "calf pain when walking"),
 }
 
-# Reasons are listed most urgent first; `instruction` is the first. The order: stop training,
-# out-of-scope and eating-disorder blocks, medical hand-offs, referrals, then intensity caps.
+# convention: reasons are listed most urgent first; `instruction` is the first. The order: stop
+# training (any reason ending in NO_TRAINING_NO_DEFICIT), out-of-scope and eating-disorder blocks,
+# medical hand-offs, referrals, then intensity caps (listed in docs/conventions.md).
 PRIORITY = (
     CARDIAC,
     UNDER_18,
@@ -258,8 +260,10 @@ def flags(profile: Profile, today: date | None = None) -> SafetyFlags:
     return out
 
 
-def _priority(reason: str) -> int:
-    return next((i for i, rule in enumerate(PRIORITY) if reason.startswith(rule)), len(PRIORITY))
+def _priority(reason: str) -> tuple[bool, int]:
+    # A training stop (cardiac, or BP 180+) goes first whatever rule set it.
+    rank = next((i for i, rule in enumerate(PRIORITY) if reason.startswith(rule)), len(PRIORITY))
+    return NO_TRAINING_NO_DEFICIT not in reason, rank
 
 
 def red_flag_words(text: str) -> list[str]:

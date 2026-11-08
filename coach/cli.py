@@ -655,6 +655,11 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
     unknown = [s for s in symptoms if s not in safety.SYMPTOMS]
     if unknown:
         raise ValueError(f"unknown symptom {', '.join(unknown)}; use {', '.join(safety.SYMPTOMS)}")
+    if symptoms:
+        # recovery-habits.md: "Cardiac warning symptoms: stop and refer": any one of them. Saved
+        # first, so a refused or invalid field cannot drop the stop.
+        profile.screening["cardiac_symptoms"] = True
+        save_profile(profile, args.data_dir / "profile.yaml")
     flags = safety.flags(profile, args.today)
     refused = ["weight"] if flags.no_weight_targets and args.weight is not None else []
     if safety.eating_disorder_positive(profile) or flags.no_calorie_targets:
@@ -675,10 +680,6 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
         ),
     )
     append_checkin(checkin, args.data_dir / "checkins.csv")
-    if symptoms:
-        # recovery-habits.md: "Cardiac warning symptoms: stop and refer": any one of them.
-        profile.screening["cardiac_symptoms"] = True
-        save_profile(profile, args.data_dir / "profile.yaml")
     return dataclasses.asdict(checkin) | {
         "symptoms": symptoms,
         "possible_red_flags": [w for w in safety.red_flag_words(args.notes) if w not in symptoms],
