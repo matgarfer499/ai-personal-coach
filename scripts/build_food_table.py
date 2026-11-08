@@ -58,11 +58,11 @@ def load_groups(fdc_dir: Path, ids: set[str]) -> dict[str, str]:
     with (fdc_dir / "food_category.csv").open(newline="", encoding="utf-8") as handle:
         categories = {r["id"]: r["description"] for r in csv.DictReader(handle)}
     with (fdc_dir / "food.csv").open(newline="", encoding="utf-8") as handle:
-        return {
-            r["fdc_id"]: categories[r["food_category_id"]]
-            for r in csv.DictReader(handle)
-            if r["fdc_id"] in ids
-        }
+        rows = [r for r in csv.DictReader(handle) if r["fdc_id"] in ids]
+    unknown = [r["fdc_id"] for r in rows if r["food_category_id"] not in categories]
+    if unknown:
+        raise SystemExit(f"fdc_id {', '.join(unknown)}: food category missing from the release")
+    return {r["fdc_id"]: categories[r["food_category_id"]] for r in rows}
 
 
 def load_portions(fdc_dir: Path, ids: set[str]) -> dict[str, list[tuple[str, float]]]:

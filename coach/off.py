@@ -47,7 +47,7 @@ NUTRIMENTS = {
 # nutrition.md: "EU label rules and tolerances": fat, the densest at 9 kcal/g, caps 100 g at
 # 900 kcal. A value above it (or above 100 g per 100 g) is an entry error: recorded as missing.
 MAX_KCAL_PER_100G = 100 * KCAL_PER_G["fat"]
-MAX_G_PER_100G = 100
+MAX_G_PER_100G = 100  # a definition: 100 g holds at most 100 g of any nutrient
 # Search only: search hits carry the pack unit, not the label basis (see BASES).
 FIELDS = (
     "code",

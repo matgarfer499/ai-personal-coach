@@ -68,6 +68,13 @@ def test_spike_against_the_longest_run_of_the_previous_30_days():
     assert found[0]["cap_km"] == pytest.approx(12.1)
 
 
+def test_spike_note_states_the_rule_numbers():
+    logged = [Run(date(2026, 3, 20), 11.0, 65), Run(date(2026, 4, 1), 12.2, 72)]
+    profile, f = zones_for()
+    notes = week(logged, TODAY, hr_zones(profile, f, today=TODAY), [])["notes"]
+    assert any("about 10% longer" in n and "previous 30 days" in n for n in notes)
+
+
 def test_no_spike_without_an_earlier_run():
     assert spikes([Run(TODAY, 20.0, 120)], TODAY - timedelta(days=6), TODAY) == []
 

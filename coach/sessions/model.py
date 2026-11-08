@@ -6,8 +6,6 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from itertools import groupby
 
-KNOWN_SET_TYPES = ("normal", "warmup", "dropset", "failure")
-
 
 @dataclass(frozen=True)
 class ExerciseSet:

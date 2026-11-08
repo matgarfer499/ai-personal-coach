@@ -13,6 +13,7 @@ import argparse
 import dataclasses
 import hashlib
 import json
+import math
 import os
 import re
 import sys
@@ -122,7 +123,7 @@ def cmd_macros(profile: Profile, args: argparse.Namespace) -> dict:
         if kcal < allowed and energy.deficit_blockers(profile, flags, args.today):
             kcal, in_deficit = allowed, False
             notes.append(f"raised to {allowed:,} kcal: the safety rules forbid a deficit")
-        elif kcal > allowed and (flags.no_weight_targets or flags.prescriber_owns_weight):
+        elif kcal > allowed and energy.surplus_blocked(flags):
             kcal = allowed
             notes.append(f"lowered to {allowed:,} kcal: the safety rules forbid a surplus")
     result = macros.macro_targets(profile, kcal, in_deficit=in_deficit, today=args.today)
@@ -254,7 +255,10 @@ def _plan_sets(path: Path) -> dict:
         raise ValueError("the plan needs `sessions:`, a list of {name, exercises}")
     planned = []
     for session in sessions:
-        for item in session.get("exercises") or []:
+        exercises = session.get("exercises") or []
+        if not isinstance(exercises, list):
+            raise ValueError(f"`exercises:` must be a list, not {exercises!r}")
+        for item in exercises:
             sets = item.get("sets") if isinstance(item, dict) else None
             if (
                 not isinstance(sets, int)
@@ -1293,11 +1297,15 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
     fresh = cmd_macros(profile, args)
     if "target_kcal" in fields and "in_deficit" in fields:
         try:
-            kcal = float(fields["target_kcal"].replace(",", "."))
+            kcal = float(fields["target_kcal"])
+            if not math.isfinite(kcal):
+                raise ValueError
         except ValueError:
             kcal = None
             problems.append(f"target_kcal must be a number, not {fields['target_kcal']!r}")
-        if kcal is not None:
+        if fields["in_deficit"].lower() not in ("true", "false"):
+            problems.append(f"in_deficit must be true or false, not {fields['in_deficit']!r}")
+        elif kcal is not None:
             # The stored target as /menu will use it: the safety rules raise or lower it here.
             args.kcal, args.in_deficit = kcal, fields["in_deficit"].lower() == "true"
             used = cmd_macros(profile, args)
@@ -1548,7 +1556,7 @@ def build_parser() -> argparse.ArgumentParser:
     tastes_sub = tastes_cmd.add_subparsers(dest="tastes_cmd", required=True)
     tastes_sub.add_parser("show", parents=[json_flag])
     tastes_set = tastes_sub.add_parser("set", parents=[json_flag], help="FIELD VALUE")
-    tastes_set.add_argument("field", help=", ".join(tastes.ASKED))
+    tastes_set.add_argument("field", help=", ".join(tastes.SETTABLE))
     tastes_set.add_argument("value", help="lists comma-separated; none for an empty answer")
     rate_cmd = tastes_sub.add_parser("rate", parents=[json_flag], help="DISH RATING")
     rate_cmd.add_argument("dish")

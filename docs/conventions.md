@@ -15,7 +15,7 @@ Every one is labelled where it lives: `# convention:` in code, "convention", "he
 | `energy.DESK_PAL` | desk band midpoint | nutrition.md "Activity multipliers (PAL)" | convention: the value the `active` no_training note gives for `pal_override`; exercise has stopped, so the desk band applies |
 | `energy.pal` | band midpoint | nutrition.md "Activity multipliers (PAL)" | midpoint as the point estimate; with `no_training`, `desk_training` uses the `desk` band and `active` keeps its band with a note (text: `energy.calorie_target`, rule "Activity multipliers (PAL)") |
 | `macros.PROTEIN_DEFICIT`, `PROTEIN_OLDER`, `PROTEIN_GLP1` | midpoints 2.0, 1.4, 1.4 g/kg | "Protein during fat loss" (its own labelled 1.8-2.2 default inside 1.6-2.2), "Older adults: protein targets", "GLP-1 users: protein, training and red flags" | midpoint of the band; `protein_min_g`/`protein_max_g` give the rule's full range, and a menu passes from its low end |
-| `macros.REFERENCE_BMI` | 25 in a deficit, 30 (`energy.OBESITY_BMI`) otherwise | "Protein during fat loss" (fat-free mass or goal weight for clients with more body fat), "Daily protein target for people who lift" (the same for obesity) | the coach knows neither, so protein is based on the lower of body weight and the weight at that BMI for the client's height: a cap, never a switch, so no jump at any BMI (the old BMI 30 switch dropped 27 g for 1 kg); an overweight beginner in a deficit lands near the rule's 1.6-2.0 g/kg of body weight |
+| `macros.REFERENCE_BMI` | 25 in a deficit, 30 (`energy.OBESITY_BMI`) otherwise | "Protein during fat loss" (fat-free mass or goal weight for clients with more body fat), "Daily protein target for people who lift" (the same for obesity) | the coach knows neither, so protein is based on the lower of body weight and the weight at that BMI for the client's height: a cap, never a switch, so no jump at any BMI; an overweight beginner in a deficit lands near the rule's 1.6-2.0 g/kg of body weight |
 | `macros.FAT_FRACTION` | 25% of energy | "Minimum dietary fat" (default 20-35%) | lower half of the default range, leaving room for carbohydrate |
 | `trend.MIN_POINTS`, `MIN_DAYS` | 7 weigh-ins over 14 days | "Read the scale with weekly averages", "Recalibrate TDEE from the weight trend" | the plan's threshold before any trend is shown |
 | `trend.MAX_LOSS_KG_WEEK` | the trend window | nutrition.md "Upper limit on rate of loss: about 1.5 kg per week" (no window for acting given) | the fast-loss note fires on the trend's own window, 14 to 56 days |
@@ -126,7 +126,8 @@ Every one is labelled where it lives: `# convention:` in code, "convention", "he
 These rules label part of their content as a convention, heuristic or product policy (the label
 is in the rule text). Grades describe the evidence, not the labelled part.
 
-- **cardio-health.md:** ACSM intensity bands (vigorous HRR capped at 84%); Exercise for bone:
+- **cardio-health.md:** ACSM intensity bands (vigorous HRR capped at 84%); Running load
+  progression: cap single-run spikes, not just weekly totals (the 10% weekly rule); Exercise for bone:
   resistance plus impact; Energy compensation: burned calories under-deliver; Wearable calorie
   estimates are unreliable.
 - **nutrition.md:** Activity multipliers (PAL); Recalibrate TDEE from the weight trend (100-200

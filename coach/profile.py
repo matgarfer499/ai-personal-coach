@@ -51,7 +51,8 @@ HR_MAX_RANGE = (100, 230)
 
 # Tokens the calculators read.
 BETA_BLOCKER = "beta_blocker"  # cardio-health.md: "Beta-blockers: no formula-based HR zones"
-GLP1 = "glp1"  # GLP-1 agonist or tirzepatide; nutrition.md: "GLP-1 users: protein, training..."
+# GLP-1 agonist or tirzepatide; nutrition.md: "GLP-1 users: protein, training and red flags"
+GLP1 = "glp1"
 MEDICATION_TOKENS = (BETA_BLOCKER, GLP1)
 PREGNANT = "pregnant"
 PLANNING_PREGNANCY = "planning_pregnancy"

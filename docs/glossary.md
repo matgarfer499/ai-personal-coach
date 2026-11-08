@@ -23,7 +23,8 @@ primera vez que aparece, en el idioma del cliente.
   es ligera; si puedes hablar pero no cantar, vas a intensidad moderada; si solo puedes decir unas pocas palabras sin parar a respirar,
   es vigorosa [0-10 effort scale and talk-test anchors]. Ejemplo: caminar charlando con alguien sin
   poder cantar una canción es moderado.
-- **Zonas:** franjas de intensidad (ligera, moderada, vigorosa) que el coach da con el RPE, la
+- **Zonas:** franjas de intensidad (de muy ligera a casi máxima; ligera, moderada y vigorosa
+  cuando solo hay RPE) que el coach da con el RPE, la
   prueba del habla o las ppm. Ejemplo: "zona moderada" es ese paso en el que puedes hablar pero no
   cantar.
 - **Déficit:** comer menos calorías de las que gastas, para perder grasa. Ejemplo: si el plan te da 500
@@ -67,7 +68,8 @@ primera vez que aparece, en el idioma del cliente.
   if you can talk but not sing, it is moderate; if you can only say a few words without pausing for breath, it is vigorous [0-10 effort
   scale and talk-test anchors]. Example: walking while chatting with someone, but unable to sing a
   song, is moderate.
-- **Zones:** intensity bands (light, moderate, vigorous) that the coach gives as RPE, talk test or
+- **Zones:** intensity bands (very light to near maximal; light, moderate and vigorous when only
+  RPE is used) that the coach gives as RPE, talk test or
   bpm. Example: "moderate zone" is the pace where you can talk but not sing.
 - **Deficit:** eating fewer calories than you burn, to lose fat. Example: the plan gives you 500 kcal a
   day less than your maintenance; that is your deficit [Deficit size when keeping or building
