@@ -54,8 +54,9 @@ LABELS = {
         "daily_target": "Objetivo diario",
         "ingredients": "Ingredientes",
         "one_serving": "1 ración",
-        "people": "para {n} personas",
+        "people": "para {n} personas ({n} × tu ración)",
         "about_units": "aprox. {n} {unit}",
+        "packs": "{n} envases de {size}",
         "unit_names": {
             "large": "ud. grandes",
             "medium": "ud. medianas",
@@ -107,8 +108,9 @@ LABELS = {
         "daily_target": "Daily target",
         "ingredients": "Ingredients",
         "one_serving": "1 serving",
-        "people": "for {n} people",
+        "people": "for {n} people ({n} × your portion)",
         "about_units": "about {n} {unit}",
+        "packs": "{n} packs of {size}",
         "unit_names": {"large": "large", "medium": "medium", "fruit": "whole", "clove": "cloves"},
         "method": "Method",
         "on_days": "Days",
@@ -645,10 +647,14 @@ def write(
     story.append(title)
 
     def units(line: dict) -> str:
-        if "units" not in line:
+        if "packs" in line:
+            size = _quantity(Amount(line["pack_size"], "g" if "grams" in line else "ml"), comma)
+            text = words["packs"].format(n=line["packs"], size=size)
+        elif "units" in line:
+            unit = words["unit_names"].get(line["unit_name"], line["unit_name"])
+            text = words["about_units"].format(n=line["units"], unit=unit)
+        else:
             return ""
-        unit = words["unit_names"].get(line["unit_name"], line["unit_name"])
-        text = words["about_units"].format(n=line["units"], unit=unit)
         return f'<br/><font size="6.5" color="{MUTED}">{_text(text)}</font>'
 
     for chain, lines in shopping["chains"].items():

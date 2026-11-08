@@ -1019,3 +1019,94 @@ def test_shopping_counts_whole_units_of_countable_foods(capsys, data_dir):
     }
     assert "units" not in lines["tomate"]  # no unit in the table: grams only
     assert "whole units" in shop["note"]
+
+
+def shop_items(capsys, data_dir, *items, base=2000):
+    """Shop for one dish of these items plus `base` g of the test food (so the day passes)."""
+    return shop_for(
+        capsys, data_dir, meal("Comida", ("Plato", [f"Comida de prueba={base}", *items]))
+    )[0]
+
+
+def test_egg_forms_are_bought_as_raw_eggs_in_one_line(capsys, data_dir):
+    """Boiled (50 g each) and fried (46 g each) eggs are bought as raw eggs (50 g each)."""
+    shop = shop_items(
+        capsys, data_dir, "huevo cocido=110", "huevo entero, crudo=150", "huevo frito=92", base=1435
+    )
+    eggs = [line for line in shop["chains"]["any"] if "huevo" in line["name"]]
+    # 3 raw + 2.2 boiled + 2 fried = 7.2 eggs, 360 g of raw egg, 8 whole eggs
+    assert eggs == [{"name": "huevo entero, crudo", "grams": 360, "units": 8, "unit_name": "large"}]
+
+
+def test_every_buy_as_food_converts_by_unit():
+    table = foods.load_foods("es")
+    linked = [f for f in table if f.buy_as]
+    assert linked, "the egg forms carry buy_as"
+    for food in linked:
+        target = foods.find(food.buy_as, table)
+        assert target is not None and target.unit_g and food.unit_g, food.name_en
+
+
+MILK = catalogue.CatalogueProduct(
+    barcode="8400000000048",
+    product_name="Leche de prueba",
+    brand="Marca Prueba",
+    chain="Mercadona",
+    per="100 ml",
+    kcal=46,
+    protein_g=3.1,
+    carbs_g=4.7,
+    fat_g=1.6,
+    fibre_g=0,
+    allergens=("leche",),
+    url="https://world.openfoodfacts.org/product/8400000000048",
+    fetched_on=date(2026, 10, 25),
+    pack_size=1000,
+    replaces="semi-skimmed milk",
+)
+
+
+def test_a_product_replaces_the_generic_food_it_stands_for(capsys, data_dir):
+    """Milk from the menu's generic row and from the product is one line, at the product's
+    chain; the grams of the generic row become ml with its own density."""
+    catalogue.save([TEST_FOOD, MILK], data_dir)
+    shop = shop_items(
+        capsys,
+        data_dir,
+        "Leche de prueba=250ml",
+        "leche semidesnatada=200ml",
+        "leche semidesnatada=103.1",
+        base=1731,
+    )
+    lines = {line["name"]: line for line in shop["chains"]["Mercadona"]}
+    assert lines["Leche de prueba"] == {
+        "name": "Leche de prueba",
+        "ml": 550,
+        "packs": 1,
+        "pack_size": 1000,
+    }
+    assert all("leche" not in line["name"] for line in shop["chains"].get("any", []))
+
+
+def test_packs_round_up_to_whole_packs(capsys, data_dir):
+    skyr = catalogue.CatalogueProduct(**{**SKYR_PRODUCT.__dict__, "pack_size": 125})
+    catalogue.save([TEST_FOOD, skyr], data_dir)
+    shop = shop_items(capsys, data_dir, f"{SKYR}=250", f"{SKYR}=1", base=1875)
+    assert shop["chains"]["Eroski"] == [{"name": SKYR, "grams": 251, "packs": 3, "pack_size": 125}]
+
+
+def test_a_catalogue_without_the_new_columns_still_loads(data_dir):
+    path = data_dir / "catalogue.csv"
+    header, *rows = path.read_text(encoding="utf-8").splitlines()
+    cut = len(catalogue.FIELDS) - 2
+    path.write_text(
+        "\n".join(",".join(line.split(",")[:cut]) for line in [header, *rows]) + "\n",
+        encoding="utf-8",
+    )
+    products = catalogue.load(data_dir)
+    assert products[0].pack_size is None and products[0].replaces == ""
+
+
+def test_shopping_note_says_people_multiply_the_clients_portion(capsys, data_dir):
+    shop = shop_items(capsys, data_dir)
+    assert "your own portion" in shop["note"]

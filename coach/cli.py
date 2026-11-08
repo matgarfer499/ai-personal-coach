@@ -773,7 +773,9 @@ def cmd_shopping(profile: Profile, args: argparse.Namespace) -> dict:
         "note": "amounts are for the form each name gives (raw, cooked, drained); a batch is "
         "bought once at its servings, `left_over` of them are for other days or the freezer; "
         "`units` is about how many of `unit_name` (the source's portion size) the grams make, in "
-        "whole units rounded up",
+        "whole units rounded up; `packs` is whole packs of `pack_size` (the product's g or ml), "
+        "rounded up; a meal for `people` buys their number times your own portion (no "
+        "per-eater portions: the coach has no rule for them)",
     }
 
 
@@ -1337,6 +1339,40 @@ def _label_product(args: argparse.Namespace) -> dict:
     }
 
 
+def _pack_size(text: str) -> float:
+    if KCAL_THOUSANDS.fullmatch(text.strip()):  # "1.000" on a Spanish pack is 1000, not 1
+        raise ValueError(f"--pack-size {text!r} looks like a thousands number: type it as 1000")
+    try:
+        size = float(text.replace(",", "."))
+    except ValueError:
+        size = math.nan
+    if not (math.isfinite(size) and size > 0):
+        raise ValueError(f"--pack-size {text!r} must be the pack's g or ml, a number above 0")
+    return size
+
+
+def _replaces(
+    name: str, per: str, region: str | None, others: list[catalogue.CatalogueProduct]
+) -> str:
+    """The generic food's name_en this product is bought for in the shopping list ("" clears)."""
+    if not name.strip():
+        return ""
+    food = foods.find(name, foods.load_foods(region))
+    if food is None:
+        raise ValueError(
+            f"--replaces {name!r} is not a food in the food tables (`coach foods search`)"
+        )
+    if food.buy_as:  # shopping turns it into that food before it looks for a product
+        raise ValueError(f"--replaces {name!r}: it is bought as {food.buy_as!r}, replace that")
+    if foods.PER_UNITS[per] != food.unit and not food.g_per_ml:
+        raise ValueError(
+            f"--replaces {name!r}: that food has no density, so its grams cannot become ml"
+        )
+    if taken := next((p for p in others if fold(p.replaces) == fold(food.name_en)), None):
+        raise ValueError(f"{taken.product_name!r} already replaces {food.name_en!r}")
+    return food.name_en
+
+
 def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
     if args.products_cmd == "list":
         return {"products": [_catalogue_entry(p) for p in catalogue.load(args.data_dir)]}
@@ -1413,6 +1449,16 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
     table = regions.menu_table(profile.region) + [p.as_food() for p in others]
     if foods.find(name, table) is not None:
         raise ValueError(f"{name!r} is already a food or product name: choose one with --name")
+    pack_size = _pack_size(args.pack_size) if args.pack_size is not None else None
+    if pack_size is None:  # a size already stored may be the client's own: it wins over OFF's
+        # either size counts only in the unit the values are per (--per may override OFF's)
+        kept = stored.pack_size if stored and stored.per == per else None
+        pack_size = kept or (found.get("pack_size") if found["per"] == per else None)
+    replaces = (
+        _replaces(args.replaces, per, profile.region, others)
+        if args.replaces is not None
+        else (stored.replaces if stored else "")
+    )
     product = catalogue.CatalogueProduct(
         barcode=barcode,
         product_name=name,
@@ -1424,6 +1470,8 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         url=found["url"],
         fetched_on=args.today or date.today(),
         source=catalogue.LABEL_SOURCE if args.label else catalogue.SOURCE,
+        pack_size=pack_size,
+        replaces=replaces,
     )
     known = None not in (product.kcal, product.protein_g, product.carbs_g, product.fat_g)
     computed = foods.label_energy(product.to_row()) if known else 0
@@ -1797,6 +1845,14 @@ def build_parser() -> argparse.ArgumentParser:
     off_add.add_argument("--barcode", dest="label_barcode", default=None, help="--label only")
     off_add.add_argument(
         "--allergens", default=None, help='--label (required): "soja, leche", none, or unknown'
+    )
+    off_add.add_argument(
+        "--pack-size", default=None, help="one pack's g or ml (default: Open Food Facts')"
+    )
+    off_add.add_argument(
+        "--replaces",
+        default=None,
+        help='a generic food the shopping list buys this product for ("" clears it)',
     )
     products_sub.add_parser("list", parents=[json_flag])
 
