@@ -76,8 +76,16 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
      Mexico, 999 in the UK, 000 in Australia). `coach knowledge section recovery-habits
      "Cardiac warning symptoms: stop and refer"`.
    - `possible_red_flags` in the `checkin add` output: the notes contain words for those
-     symptoms. Ask about each once in plain words; record it with `--symptoms` only if they
-     confirm it.
+     symptoms. Ask about each once in plain words; if they confirm, run the `confirm_with`
+     command it prints (synonyms such as `chest_tightness` are accepted too). The same output
+     then carries `emergency_line` and `deferral_line`: quote them as above.
+   - `possible_injury` in the output: the notes mention a swollen joint. Ask whether it follows
+     an injury; if so, record it with `coach injury add AREA` (list `running` under
+     `--exercises` when running hurts it) and follow
+     `coach knowledge section recovery-habits "Knee injury: signs of ligament or meniscus damage"`
+     for a knee.
+   - After a training stop, `coach plan check` says the plan is stale and `coach plan export`
+     refuses: tell the client to set the old plan aside until a clinician clears them.
    - Fever, aches all over, or feeling unwell below the neck: no training until better
      (`coach knowledge section recovery-habits "Fever and systemic illness: do not train"`).
      A head cold only: light training is optional (`coach knowledge section recovery-habits

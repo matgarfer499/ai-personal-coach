@@ -14,6 +14,7 @@ from datetime import date
 
 from coach.profile import (
     BETA_BLOCKER,
+    BP_MEDICATION,
     GLP1,
     HYPERTENSION,
     NO_NUMBER,
@@ -40,6 +41,7 @@ INJURY = 'recovery-habits.md: "Some pain during exercise is acceptable in chroni
 CARDIAC = 'recovery-habits.md: "Cardiac warning symptoms: stop and refer"'
 BP = 'recovery-habits.md: "Resting BP thresholds to defer or refer"'
 UNDER_18 = 'nutrition.md: "Under-18s"'
+KNEE = 'recovery-habits.md: "Knee injury: signs of ligament or meniscus damage"'
 # The "clearance before any exercise" cell: not exercising regularly, or not answered.
 ACSM_STOP = (f"{ACSM}: not exercising regularly", f"{ACSM}: regular exercise not answered")
 # The rules whose reasons explain `no_training` and `review_before_vigorous`, respectively.
@@ -103,7 +105,48 @@ SYMPTOM_WORDS = {
     "palpitations": ("palpitaciones", "palpitations", "heart racing", "corazon acelerado"),
     "ankle_swelling": ("tobillos hinchados", "swollen ankles", "ankle swelling"),
     "calf_pain": ("dolor de gemelo al caminar", "calf pain when walking"),
+    "unusual_fatigue": (
+        "unusually tired",
+        "unusual tiredness",
+        "unusual fatigue",
+        "cansancio inusual",
+        "cansancio raro",
+        "agotamiento inusual",
+        "agotada sin motivo",
+        "agotado sin motivo",
+    ),
 }
+# convention: other words clients use for a token, accepted by `checkin add --symptoms` (folded,
+# spaces as underscores).
+SYMPTOM_SYNONYMS = {
+    "chest_tightness": "chest_pain",
+    "chest_pressure": "chest_pain",
+    "tight_chest": "chest_pain",
+    "short_of_breath": "breathless",
+    "shortness_of_breath": "breathless",
+    "breathlessness": "breathless",
+    "dizziness": "dizzy",
+    "lightheaded": "dizzy",
+    "fainted": "faint",
+    "fainting": "faint",
+    "heart_racing": "palpitations",
+    "swollen_ankles": "ankle_swelling",
+    "fatigue": "unusual_fatigue",
+}
+# convention: words for a swollen joint in free-text notes (es and en). A hit is a prompt to ask
+# about an injury (KNEE: swelling after a knee injury means stop loading and get it assessed),
+# never a cardiac token: ankle swelling without an injury is the cardiac one.
+INJURY_WORDS = (
+    "swollen",
+    "swelling",
+    "hinchada",
+    "hinchado",
+    "hinchazon",
+    "inflamada",
+    "inflamado",
+)
+# convention: the names under an injury's `exercises` that pause running (es and en).
+RUN_NAMES = ("running", "run", "runs", "correr", "carrera", "carreras", "trotar")
 
 # convention: reasons are listed most urgent first; `instruction` is the first. The order: stop
 # training (any reason ending in NO_TRAINING_NO_DEFICIT), out-of-scope and eating-disorder blocks,
@@ -253,6 +296,16 @@ def flags(profile: Profile, today: date | None = None) -> SafetyFlags:
         ]
         if out.cap_moderate:
             moot += [r for r in out.reasons if r.startswith(BP)]
+            # The cap is moot, the GP check is not: ask for it at the same visit.
+            screening = profile.screening
+            reading = (
+                f"{screening.get('bp_systolic', '?')}/{screening.get('bp_diastolic', '?')}"
+                if "bp_systolic" in screening or "bp_diastolic" in screening
+                else "unknown, with known hypertension"
+            )
+            out.reasons.append(
+                f"{BP}: blood pressure {reading}: ask the clinician to check it at the same visit"
+            )
         out.superseded = moot
         out.reasons = [r for r in out.reasons if r not in moot]
     out.reasons.sort(key=_priority)
@@ -273,14 +326,45 @@ def _priority(reason: str) -> tuple[bool, int]:
     return not stop, rank
 
 
+def _has_word(folded: str, words) -> bool:
+    return any(re.search(rf"\b{re.escape(w)}\b", folded) for w in words)
+
+
 def red_flag_words(text: str) -> list[str]:
     """Symptom tokens whose words appear in free text (a prompt to ask, never a flag)."""
     folded = fold(text)
-    return [
-        token
-        for token, words in SYMPTOM_WORDS.items()
-        if any(re.search(rf"\b{re.escape(w)}\b", folded) for w in words)
-    ]
+    return [token for token, words in SYMPTOM_WORDS.items() if _has_word(folded, words)]
+
+
+def injury_words(text: str) -> list[str]:
+    """Swollen-joint words in free text, outside the cardiac ankle-swelling phrases."""
+    folded = fold(text)
+    for phrase in SYMPTOM_WORDS["ankle_swelling"]:
+        folded = folded.replace(phrase, " ")
+    return [w for w in INJURY_WORDS if _has_word(folded, [w])]
+
+
+def symptom_token(said: str) -> str | None:
+    """A symptom token for what the client said: the token itself or a known synonym."""
+    key = fold(said).strip().replace(" ", "_").replace("-", "_")
+    return key if key in SYMPTOMS else SYMPTOM_SYNONYMS.get(key)
+
+
+def running_paused(profile: Profile) -> list[str]:
+    """Reasons from active injuries that list running among their exercises."""
+    out = []
+    for injury in profile.active_injuries():
+        if any(fold(e) in RUN_NAMES for e in injury.get("exercises", [])):
+            who = injury.get("professional")
+            out.append(
+                f"{INJURY}: {injury['area']} injury"
+                + (
+                    f", managed by {who}: running only within the limits {who} set"
+                    if who
+                    else ": no running until a GP or physiotherapist assesses it"
+                )
+            )
+    return out
 
 
 def _regional_emergency_number(profile: Profile) -> str | None:
@@ -414,7 +498,7 @@ def _blood_pressure(profile: Profile, out: SafetyFlags) -> None:
     systolic = profile.screening.get("bp_systolic")
     diastolic = profile.screening.get("bp_diastolic")
     if systolic is None and diastolic is None:
-        if profile.has_condition(HYPERTENSION):
+        if profile.has_condition(HYPERTENSION) or profile.has_medication(BP_MEDICATION):
             out.cap_moderate = out.refer_gp = out.hold_progression = True
             out.reasons.append(
                 f"{BP}: BP unknown with known hypertension, so a GP review before starting or "

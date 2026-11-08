@@ -45,3 +45,9 @@ One line per bug that reached main: what broke, and which review layer should ha
 - 2026-11-08 (audit, #46): a run log with a `notes` column matched no importer. Layer: tests
   (the fixtures had only the required and numeric columns).
 - 2026-11-08 (audit, #46): re-sending the same check-in notes stored them twice. Layer: tests.
+- 2026-11-08 (beta2 p1-lucia-I2): `coach plan export` printed a training PDF and `plan check`
+  stayed ok after `no_training` stopped training. Layer: design review of docs/safety.md "What
+  protects what" (the saved plan was not listed as something a stop must reach).
+- 2026-11-08 (beta2 p6-james-I4, p3-antonio-I1): check-in notes missed "unusually tired" and
+  `--symptoms chest_tightness` was refused. Layer: tests (the word list was never checked
+  against every token in the rule's symptom list).

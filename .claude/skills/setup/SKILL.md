@@ -153,8 +153,9 @@ Ask about one step per message. Store each answer as soon as you have it with
    table in `docs/safety.md` and store them as `medications` and `conditions`, each list in one
    `coach profile set` (it replaces the list, so give every item, comma-separated). Store unknown
    names as given; `coach profile show` lists them under `unrecognised`: say they are recorded
-   and no calculation depends on them (a blood-pressure medicine such as enalapril also means
-   asking whether they have `hypertension`). No medications or no diagnoses: store `none`
+   and no calculation depends on them (a blood-pressure medicine is the `bp_medication` token:
+   `profile set` lists `suggested_tokens` for names such as enalapril or losartan; confirm and
+   store it, then ask whether they have `hypertension`). No medications or no diagnoses: store `none`
    (an empty list). Women: pregnant or planning? Add `pregnant` or `planning_pregnancy` to the
    `conditions` list (they are condition tokens, not fields); neither means no. With
    `hypertension`, or if they know their blood pressure: latest seated reading after 5 min rest,

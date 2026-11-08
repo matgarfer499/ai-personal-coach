@@ -53,7 +53,10 @@ HR_MAX_RANGE = (100, 230)
 BETA_BLOCKER = "beta_blocker"  # cardio-health.md: "Beta-blockers: no formula-based HR zones"
 # GLP-1 agonist or tirzepatide; nutrition.md: "GLP-1 users: protein, training and red flags"
 GLP1 = "glp1"
-MEDICATION_TOKENS = (BETA_BLOCKER, GLP1)
+# cardio-health.md: "Blood pressure medicines and exercise": any blood-pressure medicine; the coach
+# never changes it, and it counts as known hypertension for the BP bands.
+BP_MEDICATION = "bp_medication"
+MEDICATION_TOKENS = (BETA_BLOCKER, GLP1, BP_MEDICATION)
 PREGNANT = "pregnant"
 PLANNING_PREGNANCY = "planning_pregnancy"
 HYPERTENSION = "hypertension"  # read by skills (recovery-habits.md BP bands), not calculators
