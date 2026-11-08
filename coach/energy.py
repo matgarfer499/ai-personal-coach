@@ -64,6 +64,32 @@ def rmr_mifflin(profile: Profile, today: date | None = None) -> float:
     )
 
 
+# nutrition.md: "Default RMR equation: Mifflin-St Jeor": a starting guess with about ±10% error.
+MSJ_ERROR = 0.10
+
+
+def rmr_range(profile: Profile, today: date | None = None) -> tuple[float, float]:
+    rmr = rmr_mifflin(profile, today)
+    return rmr * (1 - MSJ_ERROR), rmr * (1 + MSJ_ERROR)
+
+
+def tdee_range(
+    profile: Profile,
+    today: date | None = None,
+    no_training: bool = False,
+    multiplier: float | None = None,
+) -> tuple[float, float]:
+    """The RMR range times the PAL `tdee` used: a chosen multiplier (`--pal` or the stored
+    `pal_override`) or the client's band (nutrition.md "Activity multipliers (PAL)")."""
+    low, high = rmr_range(profile, today)
+    if multiplier is None and pal_override_applies(profile, no_training):
+        multiplier = profile.pal_override
+    if multiplier is not None:
+        return low * multiplier, high * multiplier
+    band = PAL_BANDS[_level(profile, training=not no_training)]
+    return low * band[0], high * band[1]
+
+
 def band_midpoint(level: str) -> float:
     """Convention: the band midpoint as the point estimate."""
     low, high = PAL_BANDS[level]
@@ -86,10 +112,12 @@ def pal(profile: Profile, training: bool = True) -> float:
     Without training (`no_training` flag) desk_training drops to the desk band: desk work with
     little exercise (PAL_RULE). `active` stays: it may come from the job.
     """
+    return band_midpoint(_level(profile, training))
+
+
+def _level(profile: Profile, training: bool = True) -> str:
     level = profile.require("activity_level")
-    if not training and level == "desk_training":
-        level = "desk"
-    return band_midpoint(level)
+    return "desk" if not training and level == "desk_training" else level
 
 
 def tdee(
@@ -114,8 +142,9 @@ def tdee(
 class Target:
     kcal: int
     maintenance: float
-    deficit: int  # kcal below maintenance; negative for a surplus
+    deficit: int  # kcal below maintenance (0 for a surplus)
     clamped: bool = False
+    surplus: int = 0  # kcal above maintenance
     notes: list[str] = field(default_factory=list)
 
 
@@ -233,7 +262,8 @@ def calorie_target(
     return Target(
         kcal=kcal,
         maintenance=maintenance,
-        deficit=round(maintenance) - kcal,
+        deficit=max(0, round(maintenance) - kcal),
+        surplus=max(0, kcal - round(maintenance)),
         clamped=clamped,
         notes=notes,
     )

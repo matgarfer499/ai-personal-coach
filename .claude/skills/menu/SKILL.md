@@ -298,6 +298,13 @@ database, and products added with `--label` as "values from the label". After sa
 path from `coach mealplan export`; the recipes and the shopping list are in the PDF (step 9
 says what to do without the `pdf` extra).
 
+## Protein range
+
+`coach macros` prints `protein_g` (the target to plan towards) and `protein_min_g` to
+`protein_max_g` (the rule's range). `mealplan check` passes a day from `protein_min_g`, so for a
+tight budget plan cheaper dishes near the low end instead of egg whites and cottage cheese to hit
+`protein_g` exactly; say so in one line.
+
 ## Safety
 
 - If `coach safety` shows `no_deficit` or `prescriber_owns_weight`, the targets are already
