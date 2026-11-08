@@ -120,7 +120,7 @@ def macro_targets(
             notes.append(
                 f"convención: proteína calculada con {protein_weight:.2f} kg, el peso con IMC "
                 f"{cap_bmi:g} para tu estatura, en lugar de tu peso actual: "
-                f"{protein_g / weight:.2f} g por kg de tu peso"
+                f"{protein_g / weight:.2f} g por kg de tu peso".replace(".", ",")
             )
         else:
             notes.append(

@@ -69,7 +69,11 @@ def _ordinal_mean(days: list[date]) -> float:
     return fmean(d.toordinal() for d in days)
 
 
-def weight_trend(points: list[tuple[date, float]], flags: SafetyFlags | None = None) -> Trend:
+def weight_trend(
+    points: list[tuple[date, float]],
+    flags: SafetyFlags | None = None,
+    language: str | None = None,
+) -> Trend:
     if flags is not None and flags.no_weight_targets:
         return Trend(
             status="disabled",
@@ -77,7 +81,10 @@ def weight_trend(points: list[tuple[date, float]], flags: SafetyFlags | None = N
         )
     series = _daily_means(points)
     if not series:
-        return Trend(status="insufficient_data", notes=["no weigh-ins"])
+        return Trend(
+            status="insufficient_data",
+            notes=["sin pesajes" if language == "es" else "no weigh-ins"],
+        )
     last = series[-1][0]
     start = last - timedelta(WINDOW_DAYS - 1)
     if len(series) >= MIN_POINTS:
@@ -92,7 +99,10 @@ def weight_trend(points: list[tuple[date, float]], flags: SafetyFlags | None = N
             start=window[0][0],
             end=last,
             notes=[
-                f"need at least {MIN_POINTS} weigh-ins covering {MIN_DAYS} days: "
+                f"hacen falta al menos {MIN_POINTS} pesajes que cubran {MIN_DAYS} días: faltan "
+                f"{max(0, MIN_POINTS - len(window))} pesajes y {max(0, MIN_DAYS - days)} días"
+                if language == "es"
+                else f"need at least {MIN_POINTS} weigh-ins covering {MIN_DAYS} days: "
                 f"{max(0, MIN_POINTS - len(window))} more weigh-ins and "
                 f"{max(0, MIN_DAYS - days)} more days"
             ],

@@ -976,7 +976,7 @@ def test_a_long_batch_warns_once_and_an_eaten_out_dish_never(capsys, data_dir):
     _, out = check(capsys, data_dir, draft)
     # cooked once, on its first day; the bar dish is not cooked at all
     assert [w for w in out["warnings"] if "min" in w] == [
-        "2026-10-26: Guiso takes 60 min, over the client's cooking_minutes (30)"
+        "2026-10-26: Guiso lleva 60 min, más que tu cooking_minutes (30)"
     ]
 
 
@@ -988,7 +988,7 @@ def test_a_free_meal_day_needs_only_its_share_of_vegetables_and_fruit(capsys, da
     day["meals"][1]["dishes"][0]["items"][-1] = "tomate=290"
     _, out = check(capsys, data_dir, {"days": [day]})
     [warning] = out["days"][0]["warnings"]
-    assert "under the 300 g" in warning
+    assert "por debajo de los 300 g" in warning
 
 
 def test_minutes_must_be_a_whole_number(data_dir):
@@ -1002,7 +1002,7 @@ def test_a_day_before_today_warns(capsys, data_dir):
     code, out = check(capsys, data_dir, draft)  # --today 2026-10-25
     assert code == 0 and out["ok"] is True
     [warning] = warnings_of(out, "2026-10-24")
-    assert "before today" in warning
+    assert "antes de hoy" in warning
     assert warnings_of(out, "2026-10-25") == []
 
 
@@ -1016,6 +1016,7 @@ def test_shopping_counts_whole_units_of_countable_foods(capsys, data_dir):
         "grams": 600,
         "units": 12,
         "unit_name": "large",
+        "unit_label": "tamaño grande",
     }
     assert "units" not in lines["tomate"]  # no unit in the table: grams only
     assert "whole units" in shop["note"]
@@ -1035,7 +1036,15 @@ def test_egg_forms_are_bought_as_raw_eggs_in_one_line(capsys, data_dir):
     )
     eggs = [line for line in shop["chains"]["any"] if "huevo" in line["name"]]
     # 3 raw + 2.2 boiled + 2 fried = 7.2 eggs, 360 g of raw egg, 8 whole eggs
-    assert eggs == [{"name": "huevo entero, crudo", "grams": 360, "units": 8, "unit_name": "large"}]
+    assert eggs == [
+        {
+            "name": "huevo entero, crudo",
+            "grams": 360,
+            "units": 8,
+            "unit_name": "large",
+            "unit_label": "tamaño grande",
+        }
+    ]
 
 
 def test_every_buy_as_food_converts_by_unit():
@@ -1110,3 +1119,14 @@ def test_a_catalogue_without_the_new_columns_still_loads(data_dir):
 def test_shopping_note_says_people_multiply_the_clients_portion(capsys, data_dir):
     shop = shop_items(capsys, data_dir)
     assert "your own portion" in shop["note"]
+
+
+def test_unit_names_follow_the_language():
+    from coach.mealplan import _units
+
+    assert _units(600, ("large", 50), "es") == {
+        "units": 12,
+        "unit_name": "large",
+        "unit_label": "tamaño grande",
+    }
+    assert _units(600, ("large", 50), "en") == {"units": 12, "unit_name": "large"}

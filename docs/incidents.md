@@ -88,3 +88,5 @@ One line per bug that reached main: what broke, and which review layer should ha
 - 2026-11-08 (beta3 p3-antonio-N6, p6-james-N11, p1-lucia-N10, p1-lucia-N11): a symptom stop had
   no documented exit; `medically_cleared` did not lift it and an undocumented `profile set`
   cleared it with no clinician. Layer: plan review (a stop shipped without its exit).
+- 2026-11-08 (beta3 p1-lucia-N8, p4-sara-N12): CLI errors and menu warnings stayed English
+  with language es. Layer: code review against the profile-language rule.
