@@ -76,15 +76,13 @@ when `refer_gp` is set, and names the right professional.
 1. **Invented numbers.** The whole design depends on the model copying what the CLI prints. When
    in doubt, run the command yourself and compare, decimals included.
 2. **`coach safety` before every command.** You can see it in the tool calls.
-3. **Free text in medications and conditions.** An answer like "none" can end up stored as a
-   medication called "none" and shown under `unrecognised`. Check that `/setup` clears it.
-4. **A short food catalogue.** The base table plus the Spain table are a few hundred common
+3. **A short food catalogue.** The base table plus the Spain table are under two hundred common
    foods; supermarket products come from Open Food Facts. Ask for varied menus and note what is
    missing.
-5. **Language and format.** In Spanish, decimal commas in the text; the `target_kcal:` lines of
+4. **Language and format.** In Spanish, decimal commas in the text; the `target_kcal:` lines of
    `plan.md` and of the reviews keep the CLI's decimal point.
-6. **`unmapped` exercises.** They count no sets; note them to extend `coach/muscle_map.yaml`.
-7. **Re-importing the same export** must give `added: 0` and report duplicates.
+5. **`unmapped` exercises.** They count no sets; note them to extend `coach/muscle_map.yaml`.
+6. **Re-importing the same export** must give `added: 0` and report duplicates.
 
 ## 6. The CLI directly
 

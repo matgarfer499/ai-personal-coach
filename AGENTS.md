@@ -7,7 +7,7 @@ and nothing here overrides them. Claude Code reads them directly.
 ## Where the instructions are
 
 1. **Rules for working in this repo:** [`CLAUDE.md`](CLAUDE.md). They apply to every agent: test
-   first, the four checks, privacy of `data/`, constants that cite a knowledge rule, the
+   first, the checks, privacy of `data/`, constants that cite a knowledge rule, the
    knowledge format and the safety rules.
 2. **The coach's commands:** one Markdown file per command in `.claude/skills/<name>/SKILL.md`
    (`setup`, `checkin`, `import`, `plan`, `review`, `menu`, `research`). When the client types

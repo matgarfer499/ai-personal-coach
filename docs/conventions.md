@@ -126,7 +126,8 @@ Every one is labelled where it lives: `# convention:` in code, "convention", "he
 These rules label part of their content as a convention, heuristic or product policy (the label
 is in the rule text). Grades describe the evidence, not the labelled part.
 
-- **cardio-health.md:** ACSM intensity bands (vigorous HRR capped at 84%); Exercise for bone:
+- **cardio-health.md:** ACSM intensity bands (vigorous HRR capped at 84%); Running load
+  progression: cap single-run spikes, not just weekly totals (the 10% weekly rule); Exercise for bone:
   resistance plus impact; Energy compensation: burned calories under-deliver; Wearable calorie
   estimates are unreliable.
 - **nutrition.md:** Activity multipliers (PAL); Recalibrate TDEE from the weight trend (100-200
