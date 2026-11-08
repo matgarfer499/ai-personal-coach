@@ -52,7 +52,9 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
 2. Collect, in one short message if possible: weight (this morning, after the toilet, before
    eating, per `coach knowledge section nutrition "Read the scale with weekly averages"`), waist
    (once a week is enough), logged kcal for yesterday if they track, hours slept last night,
-   anything notable. Missed days are not filled in afterwards.
+   anything notable. Missed days are not filled in afterwards, unless the client
+   gives the figures they noted on those days: then one `coach checkin add --date D` per day,
+   oldest first. A date after today is refused: ask which day they meant.
 3. Red flags, every check-in. When an answer to one of these is "not sure", describe the sign
    once more in plain words; if still unsure, treat it as absent and tell them to act as below
    if it appears.
@@ -108,7 +110,9 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
    yesterday's, sleep is last night's (convention). A second check-in the same day only fills in
    or replaces the fields it gives. Notes, separated by `; `: symptoms, how training went, and
    the weekly-question notes from step 4. For another day, add `--date YYYY-MM-DD`. The CLI refuses weight, waist and calories when weigh-ins are off; then record the rest. If the
-   output lists `possible_red_flags`, ask about them as step 3 says before you answer.
+   output lists `possible_red_flags`, ask about them as step 3 says before you answer. If it lists
+   `warnings` (a weight far from the nearest weigh-in), read the figure back and ask whether it
+   is right; a corrected figure is a second `checkin add` for that day.
 6. If they gave a weight, run `coach trend` and report only its `status`, and with status `ok`
    its `rate_kg_week`. With `insufficient_data`, say how many more weigh-ins it needs (from its
    note) and nothing about the direction.

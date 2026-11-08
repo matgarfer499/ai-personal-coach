@@ -39,7 +39,7 @@ from coach import (
     trend,
     zones,
 )
-from coach.checkins import Checkin, append_checkin, read_checkins, weigh_ins
+from coach.checkins import Checkin, append_checkin, read_checkins, weigh_ins, weight_jump
 from coach.profile import (
     CONDITION_TOKENS,
     GOALS,
@@ -467,6 +467,17 @@ _PROFILE_TYPES = {
 }
 
 
+# convention: input parsing, not coaching: a medications or conditions answer meaning "none"
+# (es and en) is stored as an empty list.
+NONE_WORDS = ("none", "no", "nothing", "ninguno", "ninguna", "nada")
+
+
+def _missing(profile: Profile, name: str) -> bool:
+    if name == "emergency_number":  # the region's number counts (coach safety prints it)
+        return profile.emergency_number is None and regions.emergency_number(profile.region) is None
+    return getattr(profile, name) is None
+
+
 def _parse_profile_value(field: str, raw: str) -> Any:
     if field.startswith("screening."):
         key = field.removeprefix("screening.")
@@ -504,7 +515,13 @@ def _parse_profile_value(field: str, raw: str) -> Any:
                 "says"
             )
     if field in ("medications", "conditions"):
-        return [item.strip() for item in raw.split(",") if item.strip()]
+        items = [item.strip() for item in raw.split(",") if item.strip()]
+        return [] if len(items) == 1 and fold(items[0]) in NONE_WORDS else items
+    if field in CONDITION_TOKENS:
+        raise ValueError(
+            f"{field!r} is not a profile field: store it as a condition, e.g. "
+            f"`coach profile set conditions {field}` (give every condition, comma-separated)"
+        )
     if field not in Profile.__dataclass_fields__:
         raise ValueError(f"unknown profile field {field!r}")
     try:
@@ -545,11 +562,12 @@ def cmd_profile(profile: Profile, args: argparse.Namespace) -> dict:
     return ({"warnings": warnings} if warnings else {}) | {
         "data_dir": str(args.data_dir.resolve()),  # skills read and write files here by path
         "profile": profile,
-        "missing": [f for f in PROFILE_REQUIRED if getattr(profile, f) is None],
+        "missing": [f for f in PROFILE_REQUIRED if _missing(profile, f)],
         "unrecognised": {
             "medications": [m for m in profile.medications if m not in MEDICATION_TOKENS],
             "conditions": [c for c in profile.conditions if c not in CONDITION_TOKENS],
         },
+        "unrecognised_note": "recorded as given; no calculation depends on these items",
     }
 
 
@@ -669,8 +687,15 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
     if refused:
         reason = safety.weight_block_reason(flags)
         raise ValueError(f"{reason}; {', '.join(refused)} not recorded")
+    today = args.today or date.today()
+    when = args.date or today
+    if when > today:
+        recorded = " (the symptoms recorded: run `coach safety`)" if symptoms else ""
+        raise ValueError(
+            f"{when} is after today ({today}); a check-in is for today or a past day{recorded}"
+        )
     checkin = Checkin(
-        date=args.date or args.today or date.today(),
+        date=when,
         weight_kg=args.weight,
         waist_cm=args.waist,
         intake_kcal=args.intake,
@@ -679,8 +704,14 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
             filter(None, [args.notes, symptoms and "symptoms: " + ", ".join(symptoms)])
         ),
     )
-    append_checkin(checkin, args.data_dir / "checkins.csv")
-    return dataclasses.asdict(checkin) | {
+    given = [k for k, v in vars(checkin).items() if k != "date" and v not in (None, "")]
+    # Rows dated after today (stored before they were refused) are not weigh-ins to compare with.
+    past = [c for c in read_checkins(args.data_dir / "checkins.csv") if c.date <= today]
+    jump = weight_jump(checkin, past)
+    stored = append_checkin(checkin, args.data_dir / "checkins.csv")
+    return dataclasses.asdict(stored) | {
+        "warnings": [jump] if jump else [],
+        "given": given,
         "symptoms": symptoms,
         "possible_red_flags": [w for w in safety.red_flag_words(args.notes) if w not in symptoms],
     }
