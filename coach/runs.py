@@ -189,7 +189,7 @@ def week(
     """The 7 days ending on `end`: totals, the week before, spikes, the next run's cap and,
     with HR zones, minutes per zone. `shown` is `coach zones` (capped); `every` the uncapped
     zones (`zones_to_describe`). The next run's cap counts back from `today` (default `end`);
-    with `hold_progression` (safety) it is the longest run itself, no 10% more."""
+    with `hold_progression` (safety) it is the longest run itself, SPIKE_RATIO not applied."""
     start = end - timedelta(days=6)
     days = [r for r in runs if start <= r.date <= end]
     before = [r for r in runs if start - timedelta(days=7) <= r.date < start]
@@ -198,8 +198,8 @@ def week(
     found = spikes(runs, start, end)
     if found:
         notes.append(
-            f"{LOAD_RULE}: a run more than about 10% longer than the longest run of the previous "
-            "30 days raised the injury rate"
+            f"{LOAD_RULE}: a run more than about {SPIKE_RATIO - 1:.0%} longer than the longest run "
+            f"of the previous {SPIKE_LOOKBACK_DAYS} days raised the injury rate"
         )
     zone_minutes = None
     if shown.method in HR_METHODS:
@@ -235,7 +235,7 @@ def week(
     if hold_progression and cap_base is not None and shown.method != "no_training":
         notes.append(
             "progression is on hold (coach safety): the next long run stays at or below the "
-            "longest run of the last 30 days"
+            f"longest run of the last {SPIKE_LOOKBACK_DAYS} days"
         )
     return {
         "week": {"start": start, "end": end},
@@ -246,7 +246,8 @@ def week(
         "previous_week": {"km": previous_km, "runs": len(before)},
         "change_pct": (km - previous_km) / previous_km * 100 if previous_km else None,
         "spikes": found,
-        # The next run's cap under the rule: 10% over the longest run of the last 30 days.
+        # The next run's cap under the rule: SPIKE_RATIO times the longest run of the last
+        # SPIKE_LOOKBACK_DAYS days.
         # None while training is on hold: no next run to cap.
         "long_run_cap_km": cap_base * ratio
         if cap_base is not None and shown.method != "no_training"
