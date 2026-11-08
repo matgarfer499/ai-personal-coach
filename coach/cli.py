@@ -834,7 +834,10 @@ def _parse_profile_value(field: str, raw: str) -> Any:
             return raw.lower() == "true"
         if kind is list:
             # "none" clears the answer (above); "no" and the other none-words are the answer none.
-            return _list_answer(raw)
+            items = _list_answer(raw)
+            if key == "symptoms":  # the synonyms `checkin add --symptoms` accepts
+                items = list(dict.fromkeys(safety.symptom_token(i) or i for i in items))
+            return items
         if kind is int:
             if not raw.isdigit():
                 raise ValueError(f"{field} must be a whole number, not {raw!r}")
@@ -1124,6 +1127,9 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
         out["confirm_with"] = f"coach checkin add --date {when} --symptoms {','.join(possible)}"
     if symptoms:
         out["deferral_line"], out["emergency_line"] = flags.deferral_line, flags.emergency_line
+    elif set(possible) & set(safety.EMERGENCY_HINTS):
+        # The first-aid sentence costs nothing to show before the client confirms.
+        out["emergency_line"] = safety.emergency_line(profile, flags)
     return out
 
 

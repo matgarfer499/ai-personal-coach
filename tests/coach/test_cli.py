@@ -2298,3 +2298,27 @@ def test_import_in_pounds_stores_two_decimals(capsys, data_dir, tmp_path):
     run(capsys, data_dir, "import", str(lbs))
     stored = (data_dir / "sessions.csv").read_text(encoding="utf-8")
     assert "63.5," in stored and "63.50293" not in stored
+
+
+@pytest.mark.parametrize(
+    "notes", ["me aprieta el pecho al subir escaleras", "siento un peso en el pecho"]
+)
+def test_a_possible_cardiac_red_flag_prints_the_emergency_line_at_once(capsys, data_dir, notes):
+    run(capsys, data_dir, "profile", "set", "language", "es")
+    _, out = run(capsys, data_dir, "checkin", "add", "--notes", notes)
+    assert out["possible_red_flags"] and "llama ya" in out["emergency_line"]
+    assert "cardiac_symptoms" not in load_profile(data_dir / "profile.yaml").screening
+
+
+@pytest.mark.parametrize(
+    "notes", ["me mareé un poco", "me duele el brazo izquierdo de las dominadas"]
+)
+def test_other_possible_red_flags_wait_for_the_confirmation(capsys, data_dir, notes):
+    _, out = run(capsys, data_dir, "checkin", "add", "--notes", notes)
+    assert out["possible_red_flags"] and "emergency_line" not in out
+
+
+def test_profile_set_screening_symptoms_accepts_synonyms(capsys, data_dir):
+    code, _ = run(capsys, data_dir, "profile", "set", "screening.symptoms", "chest_tightness")
+    assert code == 0
+    assert load_profile(data_dir / "profile.yaml").screening["symptoms"] == ["chest_pain"]

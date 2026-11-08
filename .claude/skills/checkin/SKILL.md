@@ -77,7 +77,9 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
      Mexico, 999 in the UK, 000 in Australia). `coach knowledge section recovery-habits
      "Cardiac warning symptoms: stop and refer"`.
    - `possible_red_flags` in the `checkin add` output: the notes contain words for those
-     symptoms. Ask about each once in plain words; if they confirm, run the `confirm_with`
+     symptoms. When the output already carries `emergency_line` (a possible chest pain), quote
+     it on its own line first. Ask about each once in
+     plain words; if they confirm, run the `confirm_with`
      command it prints (synonyms such as `chest_tightness` are accepted too). The same output
      then carries `emergency_line` and `deferral_line`: quote them as above.
    - `possible_injury` in the output: the notes mention a swollen joint. Ask whether it follows

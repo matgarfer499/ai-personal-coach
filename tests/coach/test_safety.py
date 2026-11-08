@@ -517,3 +517,55 @@ def test_a_bp_stop_drops_the_acsm_moderate_work_reason():
     profile = _acsm(True, ["cardiovascular"], [], bp_systolic=185, bp_diastolic=85)
     result = flags(profile, today=date(2026, 1, 1))
     assert result.no_training and not any(r.startswith(ACSM) for r in result.reasons)
+
+
+@pytest.mark.parametrize(
+    ("text", "tokens"),
+    [
+        # beta 3 report phrases
+        ("me aprieta el pecho al subir escaleras", ["chest_pain"]),
+        ("siento un peso en el pecho", ["chest_pain"]),
+        ("se me duerme el brazo izquierdo y sudo frío", ["neck_jaw_arm_pain"]),
+        ("me duele la mandíbula al andar", ["neck_jaw_arm_pain"]),
+        ("me mareé un poco al subir las escaleras", ["dizzy"]),
+        ("me falta el aire al subir escaleras", ["breathless"]),
+        # more phrasings
+        ("me cuesta respirar", ["breathless"]),
+        ("noto el corazón a mil", ["palpitations"]),
+        ("ayer me desmayé", ["faint"]),
+        ("dolor en el brazo izquierdo", ["neck_jaw_arm_pain"]),
+        ("my left arm went numb", ["neck_jaw_arm_pain"]),
+        ("me duele el pecho", ["chest_pain"]),
+        # starts with "no" but negates nothing
+        ("no sé si es mareo", ["dizzy"]),
+        ("no puedo respirar bien", ["breathless"]),
+        ("no, me mareé otra vez", ["dizzy"]),
+        # a negation that does not govern the symptom
+        ("no aguanto el dolor de pecho", ["chest_pain"]),
+        ("no sé si mareo", ["dizzy"]),
+        ("never felt this dizzy before", ["dizzy"]),
+        ("not sure if chest pain", ["chest_pain"]),
+    ],
+)
+def test_red_flag_words_find_verb_forms(text, tokens):
+    assert red_flag_words(text) == tokens
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "sin mareos hoy",
+        "no me he mareado",
+        "ni mareo ni dolor de pecho",
+        "hoy no he tenido mareos",
+        "no chest pain today",
+        "felt fine, no dizziness",
+        "without any chest pain",
+    ],
+)
+def test_red_flag_words_skip_negated_symptoms(text):
+    assert red_flag_words(text) == []
+
+
+def test_a_negation_covers_only_its_own_clause():
+    assert red_flag_words("sin mareos, pero me duele el pecho") == ["chest_pain"]

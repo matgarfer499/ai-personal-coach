@@ -76,3 +76,8 @@ One line per bug that reached main: what broke, and which review layer should ha
   in one menu).
 - 2026-11-08 (beta2 p2-marcus-I3): imports in pounds stored kg with 8 or more decimals.
   Layer: tests (lbs fixtures checked with approx, never the stored text).
+- 2026-11-08 (beta3 p3-antonio-N7, p1-lucia-N1, p1-lucia-N2): the notes scan missed Spanish
+  verb forms ("me mareé", "me aprieta el pecho", "me falta el aire") and flagged "sin mareos".
+  Layer: tests (fixtures used noun phrases only, never a verb form or a negation).
+- 2026-11-08 (beta3 p3-antonio-N2): symptom synonyms worked in `checkin` but not `profile set`.
+  Layer: code review (one input path only).
