@@ -125,6 +125,14 @@ def test_ground_rules_point_to_the_glossary(name):
     assert (ROOT / "docs" / "glossary.md").exists()
 
 
+# Beta 3 p1-lucia-N9, p5-elena-N12: skill text that drifted from the code once.
+def test_skill_text_matches_the_checkin_and_menu_code():
+    checkin = (SKILLS / "checkin" / "SKILL.md").read_text(encoding="utf-8")
+    assert "notes are added after that day's earlier notes" in checkin
+    menu = (SKILLS / "menu" / "SKILL.md").read_text(encoding="utf-8")
+    assert "protein at least\n   `protein_min_g`" in menu
+
+
 # Beta 3 p1-lucia-N10: a clearance is recorded only with `coach clearance add`.
 @pytest.mark.parametrize("name", COACH_SKILLS)
 def test_skills_never_write_a_clearance_with_profile_set(name):

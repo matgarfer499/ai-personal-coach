@@ -81,6 +81,10 @@ One line per bug that reached main: what broke, and which review layer should ha
   Layer: tests (fixtures used noun phrases only, never a verb form or a negation).
 - 2026-11-08 (beta3 p3-antonio-N2): symptom synonyms worked in `checkin` but not `profile set`.
   Layer: code review (one input path only).
+- 2026-11-08 (beta3 p2-marcus-N8, p7-nuevo-N6, p1-lucia-N12): PDF video URLs wrapped mid-word.
+  Layer: skill dry run (PDF read with pdftotext, never looked at).
+- 2026-11-08 (beta3 p1-lucia-N9, p5-elena-N12, p4-sara-N11): skill text drifted from the code
+  (notes "replace", protein "at least the target", hidden `--today`). Layer: docs tests.
 - 2026-11-08 (beta3 p3-antonio-N6, p6-james-N11, p1-lucia-N10, p1-lucia-N11): a symptom stop had
   no documented exit; `medically_cleared` did not lift it and an undocumented `profile set`
   cleared it with no clinician. Layer: plan review (a stop shipped without its exit).

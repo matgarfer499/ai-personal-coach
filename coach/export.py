@@ -915,10 +915,12 @@ def write_plan(path: Path, text: str, language: str | None, qr: bool = True) -> 
         for name in exercises:
             url = video_link(name, language)
             label = Paragraph(
-                # the name carries the link: a long URL wraps, and each line would be a link
+                # the name carries the link (and the QR code the URL)
                 f'<link href="{escape(url, {chr(34): "&quot;"})}" color="{PRIMARY}">'
                 f"<b>{_text(name)}</b></link><br/>"
-                f'<font size="6.5" color="{MUTED}">{_text(url)}</font>',
+                # A search to type from paper: a printed URL wraps mid-word in a third of a page.
+                f'<font size="6.5" color="{MUTED}">'
+                f"YouTube: {_text(name)} {_text(words['search'])}</font>",
                 body,
             )
             cells.append(

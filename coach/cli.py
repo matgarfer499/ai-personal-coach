@@ -2,7 +2,8 @@
 
     uv run python -m coach [--data-dir DIR] [--today YYYY-MM-DD] <command> ... [--json]
 
-Commands print JSON (indented unless --json asks for one compact line). A missing profile field
+Commands print JSON (indented unless --json asks for one compact line); `doctor` prints a list
+for people unless --json. A missing profile field
 exits with code 2 and {"error": "profile_incomplete", "field": "<name>"} so the skill can ask
 for it; invalid input exits 2 with {"error": "invalid", "message": ...}.
 """
@@ -171,8 +172,9 @@ def cmd_zones(profile: Profile, args: argparse.Namespace) -> zones.Zones:
     return zones.hr_zones(profile, safety.flags(profile, args.today), hr_rest, hr_max, args.today)
 
 
-def cmd_doctor(profile: Profile, args: argparse.Namespace) -> dict:
-    return doctor.run(args.data_dir)
+def cmd_doctor(profile: Profile, args: argparse.Namespace) -> dict | str:
+    report = doctor.run(args.data_dir)
+    return report if getattr(args, "json", False) else doctor.text(report)
 
 
 def cmd_safety(profile: Profile, args: argparse.Namespace) -> safety.SafetyFlags:
@@ -1790,12 +1792,20 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path(os.environ.get("COACH_DATA_DIR", DEFAULT_DATA_DIR)),
         help="default: $COACH_DATA_DIR, else data/",
     )
-    parser.add_argument("--today", type=date.fromisoformat, default=None, help="for tests")
+    parser.add_argument(
+        "--today",
+        type=date.fromisoformat,
+        default=None,
+        help="YYYY-MM-DD: the day to treat as today (also accepted after the subcommand)",
+    )
     json_flag = argparse.ArgumentParser(add_help=False)
     json_flag.add_argument("--json", action="store_true", help="one compact JSON line")
     # Also after the subcommand (`coach menu ... --today D`); it overrides the global one.
     json_flag.add_argument(
-        "--today", type=date.fromisoformat, default=argparse.SUPPRESS, help=argparse.SUPPRESS
+        "--today",
+        type=date.fromisoformat,
+        default=argparse.SUPPRESS,
+        help="YYYY-MM-DD: the day to treat as today (also accepted before the subcommand)",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
