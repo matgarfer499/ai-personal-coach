@@ -16,6 +16,7 @@ from pathlib import Path
 from urllib.parse import quote_plus, urlsplit
 from xml.sax.saxutils import escape
 
+from coach import strength
 from coach.foods import Amount, Food, find
 
 INSTALL = "PDF export needs the optional reportlab package: run `uv sync --extra pdf`"
@@ -757,9 +758,10 @@ BARE_LIFT = re.compile(rf"^((?:{_WORD}\s+){{0,5}}{_WORD})$")
 LIFT_PART = re.compile(rf"^((?:{_WORD}\s+){{0,5}}{_WORD})\s*[,:]?\s+\d")
 
 
-def _plan_parts(text: str):
+def _plan_parts(text: str, muscle_map: dict[str, dict] | None = None):
     """(bullet number, part, name or "", in_session) for each `;` part of the training week's
-    bullets."""
+    bullets. A bare name (no load, sets or reps) is a lift only when it is in the muscle map."""
+    muscle_map = muscle_map if muscle_map is not None else strength.load_muscle_map()
     bullet = 0
     for heading, lines in _plan_sections(text):
         if heading.casefold() not in TRAINING_WEEK:
@@ -775,12 +777,15 @@ def _plan_parts(text: str):
                 # bare name inside a session's list ("Zancadas"). Prose such as "cuando completes
                 # 12 repeticiones" or a label-only "Descanso martes y jueves" is not a lift.
                 part = part.strip(" .")
-                match = LIFT_PART.match(part) or (lifts and BARE_LIFT.match(part))
+                match = LIFT_PART.match(part)
+                if not match and lifts:
+                    whole = BARE_LIFT.match(part)
+                    match = whole if whole and strength.lookup(whole.group(1), muscle_map) else None
                 name = match.group(1).strip(" .,:-") if match else ""
                 yield bullet, part, name if name and name[0].isupper() else "", bool(lifts)
 
 
-def plan_exercises(text: str) -> list[str]:
+def plan_exercises(text: str, muscle_map: dict[str, dict] | None = None) -> list[str]:
     """Exercise names from the training week's bullets, once each, in the order they appear.
 
     shortcut: reads only bullets shaped like `- A (lunes): Sentadilla 51,0 kg; Press banca 34 kg`
@@ -790,7 +795,7 @@ def plan_exercises(text: str) -> list[str]:
     """
     names: list[str] = []
     seen: set[str] = set()
-    for _, _, name, _ in _plan_parts(text):
+    for _, _, name, _ in _plan_parts(text, muscle_map):
         if name and name.casefold() not in seen:
             seen.add(name.casefold())
             names.append(name)
@@ -811,10 +816,10 @@ def _session_bullets(parts: list) -> set[int]:
     }
 
 
-def plan_unread(text: str) -> list[str]:
+def plan_unread(text: str, muscle_map: dict[str, dict] | None = None) -> list[str]:
     """Parts of a session's list (`- A: x; y`) that name no lift; a part that starts with a
     number ("6-8 reps" after a lift's label) is a detail, not an unread lift."""
-    parts = list(_plan_parts(text))
+    parts = list(_plan_parts(text, muscle_map))
     sessions = _session_bullets(parts)
     return [
         part
@@ -823,16 +828,22 @@ def plan_unread(text: str) -> list[str]:
     ]
 
 
-def plan_sessions(text: str) -> int:
+def plan_sessions(text: str, muscle_map: dict[str, dict] | None = None) -> int:
     """Session bullets in the training week: those that list lifts after a label."""
-    return len(_session_bullets(list(_plan_parts(text))))
+    return len(_session_bullets(list(_plan_parts(text, muscle_map))))
 
 
 def video_link(exercise: str, language: str) -> str:
     return VIDEO_SEARCH + quote_plus(f"{exercise} {PLAN_LABELS[language]['search']}")
 
 
-def write_plan(path: Path, text: str, language: str | None, qr: bool = True) -> list[str]:
+def write_plan(
+    path: Path,
+    text: str,
+    language: str | None,
+    qr: bool = True,
+    muscle_map: dict[str, dict] | None = None,
+) -> list[str]:
     """Write plan.md as a PDF and return the exercises linked; ValueError when reportlab is missing.
 
     The plan's sections as written (inline rule names dropped, the Fuentes / Rules used section kept
@@ -906,7 +917,7 @@ def write_plan(path: Path, text: str, language: str | None, qr: bool = True) -> 
             else:
                 story.append(Paragraph(markup(line), body))
 
-    exercises = plan_exercises(text)
+    exercises = plan_exercises(text, muscle_map)
     if exercises:
         story.append(Paragraph(_text(words["videos"]), section))
         column = width / 3  # three exercises a row keeps a typical week on page one

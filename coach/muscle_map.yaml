@@ -22,7 +22,7 @@ chest press:
   aliases: [press de pecho en máquina, press de pecho iso-lateral, iso-lateral chest press]
 push up:
   muscles: {chest: 1, triceps: 0.5, front_delts: 0.5}
-  aliases: [flexiones]
+  aliases: [flexiones, push-up, push-ups, pushup, pushups]
 chest fly:
   muscles: {chest: 1}
   aliases: [aperturas, fly, flyes, pec deck, contractor de pecho]
