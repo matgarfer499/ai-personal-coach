@@ -68,3 +68,6 @@ One line per bug that reached main: what broke, and which review layer should ha
   it moved with the race date onto a spike week. Layer: tests (one race date only).
 - 2026-11-08 (beta2, a panel opinion confirmed): printed HR zones left 1-2 bpm in no zone.
   Layer: tests (zone tops were checked one by one, never against the next floor).
+- 2026-11-08 (beta2 p7-nuevo-I3): the README's install line ran `uv sync` without the pdf extra
+  that /plan's export needs, and asked to clone a private copy before saying how to make one.
+  Layer: skill dry run from a clean clone (no dry run started from the README alone).
