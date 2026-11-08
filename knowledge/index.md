@@ -6,7 +6,7 @@
 
 ## cardio-health.md
 
-Evidence checked on 2026-10-24, 96 rules.
+Evidence checked on 2026-10-24, 98 rules.
 
 | Line | Section | Rule | Grade | Sources |
 |---|---|---|---|---|
@@ -14,102 +14,104 @@ Evidence checked on 2026-10-24, 96 rules.
 | 42 | Weekly activity targets and patterns | Start low, progress gradually, screen by symptoms | strong | S016, S396, S119, S641 |
 | 50 | Weekly activity targets and patterns | Running load progression: cap single-run spikes, not just weekly totals | emerging | S870, S871, S872, S873 |
 | 58 | Weekly activity targets and patterns | Taper before a goal race | moderate | S874, S875, S876 |
-| 66 | Weekly activity targets and patterns | One or two sessions a week still count | moderate | S016, S514 |
-| 74 | Weekly activity targets and patterns | Bouts of any length count | moderate | S016, S397 |
-| 82 | Weekly activity targets and patterns | Weekend warrior pattern: mortality | moderate | S509, S510, S511 |
-| 90 | Weekly activity targets and patterns | Weekend warrior pattern: incident cardiovascular and other disease | emerging | S512, S513 |
-| 98 | Weekly activity targets and patterns | Diminishing returns at high volume | moderate | S521, S522, S016 |
-| 106 | Weekly activity targets and patterns | No upper cap on mortality grounds | moderate | S521, S522, S523, S016 |
-| 114 | Weekly activity targets and patterns | Muscle strength and strength training | strong | S016, S415, S419, S396 |
-| 122 | Weekly activity targets and patterns | Older adults: multicomponent balance and strength | strong | S016 |
-| 132 | Steps, sitting and incidental activity | Daily step targets | moderate | S398, S399 |
-| 140 | Steps, sitting and incidental activity | Steps: benefit starts low, upper plateau disputed | moderate | S400, S398, S401 |
-| 148 | Steps, sitting and incidental activity | Step cadence vs total steps | emerging | S402, S398, S400 |
-| 156 | Steps, sitting and incidental activity | Sedentary time and how much activity offsets it | moderate | S403, S404, S016 |
-| 164 | Steps, sitting and incidental activity | Light activity counts | moderate | S404, S016 |
-| 172 | Steps, sitting and incidental activity | Breaking up sitting and sit-stand desks | moderate | S405, S406 |
-| 180 | Steps, sitting and incidental activity | Exercise snacks | moderate | S515, S641 |
-| 188 | Steps, sitting and incidental activity | Vigorous intermittent lifestyle activity (VILPA) | emerging | S516, S517, S518, S519, S520, S641 |
-| 198 | Cardiorespiratory fitness | Cardiorespiratory fitness and mortality | strong | S416, S417, S418, S450 |
-| 208 | Measuring and tracking fitness | Estimated CRF is good enough for risk framing | moderate | S451, S452 |
-| 216 | Measuring and tracking fitness | Non-exercise equations: individual accuracy | moderate | S453, S454, S455 |
-| 224 | Measuring and tracking fitness | Walk and run field tests | moderate | S456, S457, S458 |
-| 232 | Measuring and tracking fitness | Submaximal step tests | moderate | S459 |
-| 240 | Measuring and tracking fitness | 6-minute walk test | emerging | S460, S461 |
-| 248 | Measuring and tracking fitness | Smartwatch VO2max estimates | moderate | S462 |
-| 256 | Measuring and tracking fitness | Apple Watch VO2max | moderate | S463, S464, S465 |
-| 264 | Measuring and tracking fitness | Garmin and Polar VO2max | emerging | S466, S467, S468 |
-| 272 | Measuring and tracking fitness | Age and sex norms | moderate | S478, S479, S480 |
-| 280 | Measuring and tracking fitness | Realistic gains: younger and middle-aged adults | moderate | S420, S469 |
-| 288 | Measuring and tracking fitness | Realistic gains: older adults | moderate | S470, S471 |
-| 296 | Measuring and tracking fitness | Low response is dose-dependent | moderate | S473, S474 |
-| 304 | Measuring and tracking fitness | Individual response: real but overstated | emerging | S475, S469, S476, S477 |
-| 312 | Measuring and tracking fitness | Re-test frequency and detecting real change | emerging | S473, S459, S462, S420, S471, S474 |
-| 322 | Setting and monitoring intensity | 0-10 effort scale and talk-test anchors | moderate | S433, S396, S776 |
-| 330 | Setting and monitoring intensity | Talk test validity | moderate | S429, S430 |
-| 338 | Setting and monitoring intensity | RPE validity | moderate | S431 |
-| 346 | Setting and monitoring intensity | Interval intensity cues without lab testing | emerging | S505, S491, S425, S489, S433 |
-| 354 | Setting and monitoring intensity | HRmax: formulas and setting the anchor | moderate | S427, S428, S436, S437 |
-| 362 | Setting and monitoring intensity | Threshold-based vs %HRR prescription | emerging | S434, S435 |
-| 370 | Setting and monitoring intensity | ACSM intensity bands | strong | S396, S776, S447 |
-| 378 | Setting and monitoring intensity | %HRR tracks %VO2R, not %VO2max | moderate | S777, S778, S779, S396 |
-| 386 | Setting and monitoring intensity | Fixed percentages miss individual thresholds | emerging | S780, S781, S782 |
-| 394 | Setting and monitoring intensity | Wrist optical HR: steady-state cardio | strong | S438, S439, S440 |
-| 402 | Setting and monitoring intensity | Wrist optical HR: intervals, cycling and resistance work | moderate | S438, S441, S442 |
-| 410 | Setting and monitoring intensity | Watch auto zones and threshold features | emerging | S443, S444 |
-| 418 | Setting and monitoring intensity | Beta-blockers: no formula-based HR zones | moderate | S445, S446, S447, S396 |
-| 426 | Setting and monitoring intensity | RPE as the anchor under beta-blockade | emerging | S448, S449, S447, S396 |
-| 436 | HIIT, SIT and moderate continuous training | HIIT and SIT raise VO2max; the edge over MICT is small | strong | S481, S482, S483, S484 |
-| 444 | HIIT, SIT and moderate continuous training | Using HIIT on top of a continuous base | moderate | S420, S421, S422, S472 |
-| 452 | HIIT, SIT and moderate continuous training | Fewer sprints, more weeks (and skip classic Wingate) | moderate | S484, S485, S486, S487, S508 |
-| 460 | HIIT, SIT and moderate continuous training | Minimum effective dose: REHIT and 3 x 20 s | moderate | S488, S489, S490, S641 |
-| 468 | HIIT, SIT and moderate continuous training | Longer submaximal intervals: 10 x 1 min and 4 x 4 min | moderate | S491, S492, S487 |
-| 476 | HIIT, SIT and moderate continuous training | Zone 2: popular claims outrun evidence | moderate | S426, S420 |
-| 484 | HIIT, SIT and moderate continuous training | HIIT for broader cardiometabolic health | moderate | S424, S425 |
-| 492 | HIIT, SIT and moderate continuous training | Insulin sensitivity and glycaemic markers | moderate | S493, S494, S495, S119 |
-| 500 | HIIT, SIT and moderate continuous training | Enjoyment and affect | emerging | S497, S498, S499 |
-| 508 | HIIT, SIT and moderate continuous training | Real-world adherence to unsupervised HIIT | emerging | S500, S501, S482 |
-| 516 | HIIT, SIT and moderate continuous training | Dropout tracks time, not intensity | moderate | S502 |
-| 524 | HIIT, SIT and moderate continuous training | Stair climbing and home-based HIIT | moderate | S503, S504 |
-| 532 | HIIT, SIT and moderate continuous training | Older adults and interval training | moderate | S506, S425, S507, S641, S119 |
-| 540 | HIIT, SIT and moderate continuous training | Choosing HIIT vs MICT vs SIT | moderate | S016, S486, S482, S489, S641 |
-| 548 | HIIT, SIT and moderate continuous training | Jump rope as conditioning | emerging | S860, S861, S862, S863 |
-| 556 | HIIT, SIT and moderate continuous training | Heavy-bag boxing as conditioning | emerging | S864, S808, S865, S866, S433 |
-| 564 | HIIT, SIT and moderate continuous training | Functional training circuits | moderate | S867, S868, S869 |
-| 574 | Bone health | Exercise for bone: resistance plus impact | strong | S784, S785 |
-| 582 | Bone health | Expected bone gains are modest | strong | S786, S787, S788 |
-| 590 | Bone health | Walking alone does little for bone density | moderate | S789, S784 |
-| 600 | Safety | Concentrated vigorous sessions: ramp up, screen by symptoms | strong | S119, S016, S531, S644 |
-| 608 | Safety | HIIT safety and pre-HIIT screening | emerging | S432, S396, S421, S482, S641, S119 |
-| 616 | Safety | Atrial fibrillation at very high endurance volumes | moderate | S524, S525, S526 |
-| 624 | Safety | Coronary calcium in very high-volume exercisers | moderate | S527, S528, S529, S530 |
-| 632 | Safety | Clinical meaning of exercise-related coronary calcium | emerging | S523, S529, S527 |
-| 642 | Cardio, weight and energy balance | Exercise alone gives modest weight loss | strong | S407, S408, S409, S563, S564, S538 |
-| 650 | Cardio, weight and energy balance | Resistance training during weight loss | moderate | S407, S409, S415 |
-| 658 | Cardio, weight and energy balance | HIIT vs MICT for body composition | moderate | S423, S422, S496, S482 |
-| 666 | Cardio, weight and energy balance | No special "fat-burning zone" | moderate | S538, S539, S423 |
-| 674 | Cardio, weight and energy balance | FATmax intensity as a sustainable default | moderate | S540, S541, S542 |
-| 682 | Cardio, weight and energy balance | Modality choice for fat loss | emerging | S423, S542, S784, S789 |
-| 690 | Cardio, weight and energy balance | Fasted vs fed cardio | moderate | S532, S533, S534 |
-| 698 | Cardio, weight and energy balance | Acute fat oxidation is not fat loss | moderate | S535, S536 |
-| 706 | Cardio, weight and energy balance | Eating before longer sessions | moderate | S537 |
-| 714 | Cardio, weight and energy balance | Time of day | emerging | S565, S566 |
-| 722 | Cardio, weight and energy balance | Energy compensation: burned calories under-deliver | emerging | S410, S411, S807 |
-| 730 | Cardio, weight and energy balance | NEAT: a real but variable lever | emerging | S412, S413, S414 |
-| 738 | Cardio, weight and energy balance | Appetite after a single session | moderate | S553, S554 |
-| 746 | Cardio, weight and energy balance | Compensators vs non-compensators | emerging | S555, S556 |
-| 754 | Cardio, weight and energy balance | Wearable calorie estimates are unreliable | strong | S543, S440, S544, S545 |
-| 762 | Cardio, weight and energy balance | Direction of calorie error: wearables vary, machines inflate | emerging | S546, S544, S547 |
-| 770 | Cardio, weight and energy balance | Gross vs net exercise calories | emerging | S808, S809 |
-| 778 | Cardio, weight and energy balance | Walking vs running energy cost | moderate | S548, S549, S550, S551, S552 |
-| 786 | Cardio, weight and energy balance | Activity volume to prevent weight regain | moderate | S409, S557, S558, S559, S560, S561, S562 |
-| 796 | Concurrent training (cardio plus lifting) | Cardio does not kill gains at moderate doses | moderate | S089, S092, S100 |
-| 804 | Concurrent training (cardio plus lifting) | Modality, frequency and duration of cardio | emerging | S092, S095, S100 |
-| 812 | Concurrent training (cardio plus lifting) | Scheduling and order | moderate | S098, S089 |
+| 66 | Weekly activity targets and patterns | Keep most running easy: pyramidal or polarized intensity | emerging | S889, S890, S891, S892, S893 |
+| 74 | Weekly activity targets and patterns | One or two sessions a week still count | moderate | S016, S514 |
+| 82 | Weekly activity targets and patterns | Bouts of any length count | moderate | S016, S397 |
+| 90 | Weekly activity targets and patterns | Weekend warrior pattern: mortality | moderate | S509, S510, S511 |
+| 98 | Weekly activity targets and patterns | Weekend warrior pattern: incident cardiovascular and other disease | emerging | S512, S513 |
+| 106 | Weekly activity targets and patterns | Diminishing returns at high volume | moderate | S521, S522, S016 |
+| 114 | Weekly activity targets and patterns | No upper cap on mortality grounds | moderate | S521, S522, S523, S016 |
+| 122 | Weekly activity targets and patterns | Muscle strength and strength training | strong | S016, S415, S419, S396 |
+| 130 | Weekly activity targets and patterns | Older adults: multicomponent balance and strength | strong | S016 |
+| 140 | Steps, sitting and incidental activity | Daily step targets | moderate | S398, S399 |
+| 148 | Steps, sitting and incidental activity | Steps: benefit starts low, upper plateau disputed | moderate | S400, S398, S401 |
+| 156 | Steps, sitting and incidental activity | Step cadence vs total steps | emerging | S402, S398, S400 |
+| 164 | Steps, sitting and incidental activity | Sedentary time and how much activity offsets it | moderate | S403, S404, S016 |
+| 172 | Steps, sitting and incidental activity | Light activity counts | moderate | S404, S016 |
+| 180 | Steps, sitting and incidental activity | Breaking up sitting and sit-stand desks | moderate | S405, S406 |
+| 188 | Steps, sitting and incidental activity | Exercise snacks | moderate | S515, S641 |
+| 196 | Steps, sitting and incidental activity | Vigorous intermittent lifestyle activity (VILPA) | emerging | S516, S517, S518, S519, S520, S641 |
+| 206 | Cardiorespiratory fitness | Cardiorespiratory fitness and mortality | strong | S416, S417, S418, S450 |
+| 216 | Measuring and tracking fitness | Estimated CRF is good enough for risk framing | moderate | S451, S452 |
+| 224 | Measuring and tracking fitness | Non-exercise equations: individual accuracy | moderate | S453, S454, S455 |
+| 232 | Measuring and tracking fitness | Walk and run field tests | moderate | S456, S457, S458 |
+| 240 | Measuring and tracking fitness | Submaximal step tests | moderate | S459 |
+| 248 | Measuring and tracking fitness | 6-minute walk test | emerging | S460, S461 |
+| 256 | Measuring and tracking fitness | Smartwatch VO2max estimates | moderate | S462 |
+| 264 | Measuring and tracking fitness | Apple Watch VO2max | moderate | S463, S464, S465 |
+| 272 | Measuring and tracking fitness | Garmin and Polar VO2max | emerging | S466, S467, S468 |
+| 280 | Measuring and tracking fitness | Age and sex norms | moderate | S478, S479, S480 |
+| 288 | Measuring and tracking fitness | Realistic gains: younger and middle-aged adults | moderate | S420, S469 |
+| 296 | Measuring and tracking fitness | Realistic gains: older adults | moderate | S470, S471 |
+| 304 | Measuring and tracking fitness | Low response is dose-dependent | moderate | S473, S474 |
+| 312 | Measuring and tracking fitness | Individual response: real but overstated | emerging | S475, S469, S476, S477 |
+| 320 | Measuring and tracking fitness | Re-test frequency and detecting real change | emerging | S473, S459, S462, S420, S471, S474 |
+| 330 | Setting and monitoring intensity | 0-10 effort scale and talk-test anchors | moderate | S433, S396, S776 |
+| 338 | Setting and monitoring intensity | Talk test validity | moderate | S429, S430 |
+| 346 | Setting and monitoring intensity | RPE validity | moderate | S431 |
+| 354 | Setting and monitoring intensity | Interval intensity cues without lab testing | emerging | S505, S491, S425, S489, S433 |
+| 362 | Setting and monitoring intensity | HRmax: formulas and setting the anchor | moderate | S427, S428, S436, S437 |
+| 370 | Setting and monitoring intensity | Threshold-based vs %HRR prescription | emerging | S434, S435 |
+| 378 | Setting and monitoring intensity | ACSM intensity bands | strong | S396, S776, S447 |
+| 386 | Setting and monitoring intensity | %HRR tracks %VO2R, not %VO2max | moderate | S777, S778, S779, S396 |
+| 394 | Setting and monitoring intensity | Fixed percentages miss individual thresholds | emerging | S780, S781, S782 |
+| 402 | Setting and monitoring intensity | Wrist optical HR: steady-state cardio | strong | S438, S439, S440 |
+| 410 | Setting and monitoring intensity | Wrist optical HR: intervals, cycling and resistance work | moderate | S438, S441, S442 |
+| 418 | Setting and monitoring intensity | Watch auto zones and threshold features | emerging | S443, S444 |
+| 426 | Setting and monitoring intensity | Beta-blockers: no formula-based HR zones | moderate | S445, S446, S447, S396 |
+| 434 | Setting and monitoring intensity | RPE as the anchor under beta-blockade | emerging | S448, S449, S447, S396 |
+| 444 | HIIT, SIT and moderate continuous training | HIIT and SIT raise VO2max; the edge over MICT is small | strong | S481, S482, S483, S484 |
+| 452 | HIIT, SIT and moderate continuous training | Using HIIT on top of a continuous base | moderate | S420, S421, S422, S472 |
+| 460 | HIIT, SIT and moderate continuous training | Fewer sprints, more weeks (and skip classic Wingate) | moderate | S484, S485, S486, S487, S508 |
+| 468 | HIIT, SIT and moderate continuous training | Minimum effective dose: REHIT and 3 x 20 s | moderate | S488, S489, S490, S641 |
+| 476 | HIIT, SIT and moderate continuous training | Longer submaximal intervals: 10 x 1 min and 4 x 4 min | moderate | S491, S492, S487 |
+| 484 | HIIT, SIT and moderate continuous training | Zone 2: popular claims outrun evidence | moderate | S426, S420 |
+| 492 | HIIT, SIT and moderate continuous training | HIIT for broader cardiometabolic health | moderate | S424, S425 |
+| 500 | HIIT, SIT and moderate continuous training | Insulin sensitivity and glycaemic markers | moderate | S493, S494, S495, S119 |
+| 508 | HIIT, SIT and moderate continuous training | Enjoyment and affect | emerging | S497, S498, S499 |
+| 516 | HIIT, SIT and moderate continuous training | Real-world adherence to unsupervised HIIT | emerging | S500, S501, S482 |
+| 524 | HIIT, SIT and moderate continuous training | Dropout tracks time, not intensity | moderate | S502 |
+| 532 | HIIT, SIT and moderate continuous training | Stair climbing and home-based HIIT | moderate | S503, S504 |
+| 540 | HIIT, SIT and moderate continuous training | Older adults and interval training | moderate | S506, S425, S507, S641, S119 |
+| 548 | HIIT, SIT and moderate continuous training | Choosing HIIT vs MICT vs SIT | moderate | S016, S486, S482, S489, S641 |
+| 556 | HIIT, SIT and moderate continuous training | Jump rope as conditioning | emerging | S860, S861, S862, S863 |
+| 564 | HIIT, SIT and moderate continuous training | Heavy-bag boxing as conditioning | emerging | S864, S808, S865, S866, S433 |
+| 572 | HIIT, SIT and moderate continuous training | Functional training circuits | moderate | S867, S868, S869 |
+| 582 | Bone health | Exercise for bone: resistance plus impact | strong | S784, S785 |
+| 590 | Bone health | Expected bone gains are modest | strong | S786, S787, S788 |
+| 598 | Bone health | Walking alone does little for bone density | moderate | S789, S784 |
+| 608 | Safety | Concentrated vigorous sessions: ramp up, screen by symptoms | strong | S119, S016, S531, S644 |
+| 616 | Safety | HIIT safety and pre-HIIT screening | emerging | S432, S396, S421, S482, S641, S119 |
+| 624 | Safety | Atrial fibrillation at very high endurance volumes | moderate | S524, S525, S526 |
+| 632 | Safety | Coronary calcium in very high-volume exercisers | moderate | S527, S528, S529, S530 |
+| 640 | Safety | Clinical meaning of exercise-related coronary calcium | emerging | S523, S529, S527 |
+| 648 | Safety | Blood pressure medicines and exercise | moderate | S888, S746 |
+| 658 | Cardio, weight and energy balance | Exercise alone gives modest weight loss | strong | S407, S408, S409, S563, S564, S538 |
+| 666 | Cardio, weight and energy balance | Resistance training during weight loss | moderate | S407, S409, S415 |
+| 674 | Cardio, weight and energy balance | HIIT vs MICT for body composition | moderate | S423, S422, S496, S482 |
+| 682 | Cardio, weight and energy balance | No special "fat-burning zone" | moderate | S538, S539, S423 |
+| 690 | Cardio, weight and energy balance | FATmax intensity as a sustainable default | moderate | S540, S541, S542 |
+| 698 | Cardio, weight and energy balance | Modality choice for fat loss | emerging | S423, S542, S784, S789 |
+| 706 | Cardio, weight and energy balance | Fasted vs fed cardio | moderate | S532, S533, S534 |
+| 714 | Cardio, weight and energy balance | Acute fat oxidation is not fat loss | moderate | S535, S536 |
+| 722 | Cardio, weight and energy balance | Eating before longer sessions | moderate | S537 |
+| 730 | Cardio, weight and energy balance | Time of day | emerging | S565, S566 |
+| 738 | Cardio, weight and energy balance | Energy compensation: burned calories under-deliver | emerging | S410, S411, S807 |
+| 746 | Cardio, weight and energy balance | NEAT: a real but variable lever | emerging | S412, S413, S414 |
+| 754 | Cardio, weight and energy balance | Appetite after a single session | moderate | S553, S554 |
+| 762 | Cardio, weight and energy balance | Compensators vs non-compensators | emerging | S555, S556 |
+| 770 | Cardio, weight and energy balance | Wearable calorie estimates are unreliable | strong | S543, S440, S544, S545 |
+| 778 | Cardio, weight and energy balance | Direction of calorie error: wearables vary, machines inflate | emerging | S546, S544, S547 |
+| 786 | Cardio, weight and energy balance | Gross vs net exercise calories | emerging | S808, S809 |
+| 794 | Cardio, weight and energy balance | Walking vs running energy cost | moderate | S548, S549, S550, S551, S552 |
+| 802 | Cardio, weight and energy balance | Activity volume to prevent weight regain | moderate | S409, S557, S558, S559, S560, S561, S562 |
+| 812 | Concurrent training (cardio plus lifting) | Cardio does not kill gains at moderate doses | moderate | S089, S092, S100 |
+| 820 | Concurrent training (cardio plus lifting) | Modality, frequency and duration of cardio | emerging | S092, S095, S100 |
+| 828 | Concurrent training (cardio plus lifting) | Scheduling and order | moderate | S098, S089 |
 
 ## nutrition.md
 
-Evidence checked on 2026-10-24, 128 rules.
+Evidence checked on 2026-10-24, 129 rules.
 
 | Line | Section | Rule | Grade | Sources |
 |---|---|---|---|---|
@@ -196,51 +198,52 @@ Evidence checked on 2026-10-24, 128 rules.
 | 686 | Food logging and measurement accuracy | Measured label and menu errors | emerging | S317, S318, S319, S320 |
 | 694 | Food logging and measurement accuracy | Atwater factors overstate whole almonds | emerging | S321, S319 |
 | 702 | Food logging and measurement accuracy | Eyeballing portions versus weighing | emerging | S322, S323, S324 |
-| 712 | Supplements | Creatine monohydrate for adults under 50 | strong | S242, S243, S244 |
-| 720 | Supplements | Older adults: protein per meal | emerging | S802 |
-| 728 | Supplements | Creatine in older adults | moderate | S245 |
-| 736 | Supplements | Creatine safety and kidneys | strong | S242, S246, S247 |
-| 744 | Supplements | Creatine questions: water, hair, cramps and loading | moderate | S244 |
-| 752 | Supplements | Caffeine before training | strong | S248, S249, S250 |
-| 760 | Supplements | Caffeine safety limits | strong | S250, S251 |
-| 768 | Supplements | Vitamin D | strong | S252, S253, S824, S825 |
-| 776 | Supplements | Omega-3: fish rather than capsules | moderate | S254, S255 |
-| 784 | Supplements | Supplement evidence tiers (ISSN 2018) | moderate | S326, S821, S822, S823, S256 |
-| 792 | Supplements | Fat burners, weight-loss pills and BCAAs | moderate | S256, S257, S258 |
-| 802 | Hydration and sodium | Daily total water intake | strong | S375, S376, S805, S806 |
-| 810 | Hydration and sodium | Older adults and thirst | strong | S376, S804 |
-| 818 | Hydration and sodium | Fluid during exercise and sweat rate | moderate | S377, S378, S803 |
-| 826 | Hydration and sodium | Mild dehydration and strength | moderate | S379 |
-| 834 | Hydration and sodium | Overdrinking and hyponatraemia | strong | S380, S378 |
-| 842 | Hydration and sodium | Sodium in long sessions and rehydration | moderate | S377, S378 |
-| 850 | Hydration and sodium | Salt limits | strong | S381, S382, S383, S316 |
-| 858 | Hydration and sodium | Salt reduction lowers blood pressure | strong | S384, S385 |
-| 866 | Hydration and sodium | Salt reduction in normotensive people | moderate | S386 |
-| 874 | Hydration and sodium | Potassium-enriched salt substitutes | moderate | S382, S387 |
-| 884 | Alcohol | No protective level of alcohol | strong | S259, S260, S261, S392 |
-| 892 | Alcohol | Spanish low-risk limits and binge drinking | strong | S388, S389, S390, S391 |
-| 900 | Alcohol | Energy content of alcohol | strong | S316 |
-| 908 | Alcohol | Alcohol increases food intake | moderate | S393, S394 |
-| 916 | Alcohol | Alcohol and body weight | emerging | S395 |
-| 924 | Alcohol | Alcohol after training | emerging | S262 |
-| 934 | Energy availability, hormones and eating-disorder risk | Low energy availability drives hormonal disruption | moderate | S336, S337 |
-| 942 | Energy availability, hormones and eating-disorder risk | REDs: red flags and referral | moderate | S336, S346, S347 |
-| 950 | Energy availability, hormones and eating-disorder risk | No fixed energy-availability threshold | moderate | S348, S337 |
-| 958 | Energy availability, hormones and eating-disorder risk | Menstrual dysfunction: stop and refer | moderate | S348 |
-| 966 | Energy availability, hormones and eating-disorder risk | Very-low-fat diets and female hormones | emerging | S334, S335, S333 |
-| 974 | Energy availability, hormones and eating-disorder risk | Low-fat diets and testosterone in men | emerging | S332, S333 |
-| 982 | Energy availability, hormones and eating-disorder risk | Eating-disorder screening: brief questions as a prompt | moderate | S349, S350 |
-| 990 | Energy availability, hormones and eating-disorder risk | Eating-disorder screen: EDE-QS | emerging | S351, S352 |
-| 998 | Energy availability, hormones and eating-disorder risk | Calorie tracking and eating-disorder risk | moderate | S353, S354, S355, S356, S357, S358 |
-| 1008 | Medical situations and special populations | Low- and very-low-calorie diets need clinical supervision | strong | S359, S360, S361 |
-| 1016 | Medical situations and special populations | Total diet replacement minimums | strong | S362, S363 |
-| 1024 | Medical situations and special populations | Diabetes on insulin or sulfonylureas | moderate | S364, S360, S365, S359 |
-| 1032 | Medical situations and special populations | Chronic kidney disease | moderate | S366 |
-| 1040 | Medical situations and special populations | Pregnancy | strong | S367, S368, S364 |
-| 1048 | Medical situations and special populations | Breastfeeding | emerging | S369, S364 |
-| 1056 | Medical situations and special populations | Under-18s | moderate | S370, S359 |
-| 1064 | Medical situations and special populations | GLP-1 and tirzepatide: lean-mass loss | moderate | S371, S361, S372, S373 |
-| 1072 | Medical situations and special populations | GLP-1 users: protein, training and red flags | moderate | S361, S374, S360 |
+| 710 | Food logging and measurement accuracy | Raw to cooked weight for meat and poultry: USDA cooking yields | strong | S894 |
+| 720 | Supplements | Creatine monohydrate for adults under 50 | strong | S242, S243, S244 |
+| 728 | Supplements | Older adults: protein per meal | emerging | S802 |
+| 736 | Supplements | Creatine in older adults | moderate | S245 |
+| 744 | Supplements | Creatine safety and kidneys | strong | S242, S246, S247 |
+| 752 | Supplements | Creatine questions: water, hair, cramps and loading | moderate | S244 |
+| 760 | Supplements | Caffeine before training | strong | S248, S249, S250 |
+| 768 | Supplements | Caffeine safety limits | strong | S250, S251 |
+| 776 | Supplements | Vitamin D | strong | S252, S253, S824, S825 |
+| 784 | Supplements | Omega-3: fish rather than capsules | moderate | S254, S255 |
+| 792 | Supplements | Supplement evidence tiers (ISSN 2018) | moderate | S326, S821, S822, S823, S256 |
+| 800 | Supplements | Fat burners, weight-loss pills and BCAAs | moderate | S256, S257, S258 |
+| 810 | Hydration and sodium | Daily total water intake | strong | S375, S376, S805, S806 |
+| 818 | Hydration and sodium | Older adults and thirst | strong | S376, S804 |
+| 826 | Hydration and sodium | Fluid during exercise and sweat rate | moderate | S377, S378, S803 |
+| 834 | Hydration and sodium | Mild dehydration and strength | moderate | S379 |
+| 842 | Hydration and sodium | Overdrinking and hyponatraemia | strong | S380, S378 |
+| 850 | Hydration and sodium | Sodium in long sessions and rehydration | moderate | S377, S378 |
+| 858 | Hydration and sodium | Salt limits | strong | S381, S382, S383, S316 |
+| 866 | Hydration and sodium | Salt reduction lowers blood pressure | strong | S384, S385 |
+| 874 | Hydration and sodium | Salt reduction in normotensive people | moderate | S386 |
+| 882 | Hydration and sodium | Potassium-enriched salt substitutes | moderate | S382, S387 |
+| 892 | Alcohol | No protective level of alcohol | strong | S259, S260, S261, S392 |
+| 900 | Alcohol | Spanish low-risk limits and binge drinking | strong | S388, S389, S390, S391 |
+| 908 | Alcohol | Energy content of alcohol | strong | S316 |
+| 916 | Alcohol | Alcohol increases food intake | moderate | S393, S394 |
+| 924 | Alcohol | Alcohol and body weight | emerging | S395 |
+| 932 | Alcohol | Alcohol after training | emerging | S262 |
+| 942 | Energy availability, hormones and eating-disorder risk | Low energy availability drives hormonal disruption | moderate | S336, S337 |
+| 950 | Energy availability, hormones and eating-disorder risk | REDs: red flags and referral | moderate | S336, S346, S347 |
+| 958 | Energy availability, hormones and eating-disorder risk | No fixed energy-availability threshold | moderate | S348, S337 |
+| 966 | Energy availability, hormones and eating-disorder risk | Menstrual dysfunction: stop and refer | moderate | S348 |
+| 974 | Energy availability, hormones and eating-disorder risk | Very-low-fat diets and female hormones | emerging | S334, S335, S333 |
+| 982 | Energy availability, hormones and eating-disorder risk | Low-fat diets and testosterone in men | emerging | S332, S333 |
+| 990 | Energy availability, hormones and eating-disorder risk | Eating-disorder screening: brief questions as a prompt | moderate | S349, S350 |
+| 998 | Energy availability, hormones and eating-disorder risk | Eating-disorder screen: EDE-QS | emerging | S351, S352 |
+| 1006 | Energy availability, hormones and eating-disorder risk | Calorie tracking and eating-disorder risk | moderate | S353, S354, S355, S356, S357, S358 |
+| 1016 | Medical situations and special populations | Low- and very-low-calorie diets need clinical supervision | strong | S359, S360, S361 |
+| 1024 | Medical situations and special populations | Total diet replacement minimums | strong | S362, S363 |
+| 1032 | Medical situations and special populations | Diabetes on insulin or sulfonylureas | moderate | S364, S360, S365, S359 |
+| 1040 | Medical situations and special populations | Chronic kidney disease | moderate | S366 |
+| 1048 | Medical situations and special populations | Pregnancy | strong | S367, S368, S364 |
+| 1056 | Medical situations and special populations | Breastfeeding | emerging | S369, S364 |
+| 1064 | Medical situations and special populations | Under-18s | moderate | S370, S359 |
+| 1072 | Medical situations and special populations | GLP-1 and tirzepatide: lean-mass loss | moderate | S371, S361, S372, S373 |
+| 1080 | Medical situations and special populations | GLP-1 users: protein, training and red flags | moderate | S361, S374, S360 |
 
 ## recovery-habits.md
 
