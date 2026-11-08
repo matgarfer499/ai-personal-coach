@@ -87,13 +87,13 @@ Computed by `coach safety` from the profile; the calculators obey them.
 | New irregular periods | `hold_deficit`, `refer_gp` | no new or deeper deficit |
 | Periods absent 3+ months (or fewer than 6 a year) | `no_deficit`, `refer_gp` | maintenance calories |
 | PAR-Q+ follow-up YES | `refer_gp`, `hold_progression` | `strength progress` says `hold`: same load and reps |
-| PAR-Q+ not answered; or any PAR-Q+ YES (a follow-up YES counts), or aged 45 or more (from `birth_date`), until `vigorous_reviewed` is true | `review_before_vigorous` | no vigorous zone (the zones note says why, even when the zones are RPE only); the skills prescribe no vigorous or maximal work (HIIT, 1RM tests, all-out sprints, jump rope, plyometric jumps) until a qualified exercise professional or clinician has reviewed it. It does not set `refer_gp`: the plan itself needs no review, so the skills name the professional when vigorous work comes up instead of ending every answer with the deferral line |
+| PAR-Q+ not answered; or any PAR-Q+ YES (a follow-up YES counts), or aged 45 or more (from `birth_date`), until `vigorous_reviewed` is true | `review_before_vigorous` | no vigorous or near-maximal zone (the zones note says why, even when the zones are RPE only); the skills prescribe no vigorous or maximal work (HIIT, 1RM tests, all-out sprints, jump rope, plyometric jumps) until a qualified exercise professional or clinician has reviewed it. It does not set `refer_gp`: the plan itself needs no review, so the skills name the professional when vigorous work comes up instead of ending every answer with the deferral line |
 | Any PAR-Q+ YES, reviewed or not, or PAR-Q+ not answered | `no_all_out_sprints` | no SIT or REHIT: they need every PAR-Q+ answer NO. With every answer NO, /plan also requires 4+ weeks of regular moderate cardio without symptoms and never gives them to sedentary beginners (skill text) |
 | Active injury with `exercises` listed | `paused_exercises` (exercise: its reasons and whether a professional assessed it) | `strength progress` says `paused`: no progression, no stall, no added sets. Unassessed: no load at all. Assessed: at most the last load, or the lower restart load after a break; the professional's limits decide the rest. Names match logged lifts by case, accents, "(Equipment)" and muscle-map aliases; `coach injury add` lists names that match no logged lift as `unmatched`. A new injury in a cleared area starts unassessed. Sessions up to its `cleared_on` never count as a stall afterwards |
 | Active injury with no `professional` | `refer_gp` | a GP or physiotherapist assesses it before it is loaded; sharp or worsening pain: stop and refer |
 | Cardiac warning symptoms | `no_training`, `hold_progression`, `refer_gp`, `no_deficit` | stop exercising until a clinician clears it: no zones, no loads, calories at maintenance (energy: see "`no_training` and the energy estimate"); `emergency_line` says when to call the number now |
 | Resting BP 180+ systolic or 110+ diastolic | `no_training`, `hold_progression`, `refer_gp`, `no_deficit` | no zones, no training until a doctor reviews it (200/110+: no exercise, see a doctor promptly) (energy: see "`no_training` and the energy estimate") |
-| Resting BP 160-179 systolic or 90-109 diastolic, or hypertension with BP unknown | `cap_moderate`, `hold_progression`, `refer_gp` | no vigorous zone; GP review before starting or progressing |
+| Resting BP 160-179 systolic or 90-109 diastolic, or hypertension with BP unknown | `cap_moderate`, `hold_progression`, `refer_gp` | no vigorous or near-maximal zone; GP review before starting or progressing |
 | Resting BP 140-159 systolic with diastolic below 90 | `cap_moderate`, `refer_gp` | moderate intensity; GP check |
 | Age 65+ without obesity and a weight-related condition | (calculator rule) | no deficit |
 | Heart disease | (calculator rule) | no zones; the cardiac team sets them |
@@ -171,7 +171,9 @@ call emergency services now (`emergency_number` from `coach safety`), before any
 ## What protects what
 
 - **Code:** the calorie floors, every deficit and surplus block, the weigh-in and body-log
-  refusal, zone methods and caps (including the vigorous zone held back until the review), the
+  refusal, zone methods and caps (the vigorous and near-maximal zones held back by the same
+  caps, including until the review; `coach runs week` still reports minutes logged in them, with
+  the cap's reason, so a review can see them), the
   progression hold, the injury pause and the no-training stop. `mealplan check` and `save` also
   flag menu items that match a recorded allergy or intolerance and refuse to save them, but the
   match is by name only (no synonyms or hidden ingredients), so it is a safety net, not a

@@ -5,7 +5,7 @@ import pytest
 
 from coach.profile import Profile, ProfileIncomplete
 from coach.safety import flags
-from coach.zones import hr_zones, tanaka
+from coach.zones import hr_zones, tanaka, zone_for
 
 TODAY = date(2026, 1, 1)
 
@@ -119,7 +119,7 @@ def test_talk_test_on_every_zone():
 def test_bp_cap_removes_the_vigorous_zone():
     profile = person(screening={"bp_systolic": 165, "bp_diastolic": 85})
     result = zones(profile, hr_rest=60)
-    assert [z.name for z in result.zones] == ["light", "moderate"]
+    assert [z.name for z in result.zones] == ["very_light", "light", "moderate"]
     assert any("Resting BP" in n for n in result.notes)
 
 
@@ -138,7 +138,7 @@ def test_cardiac_symptoms_say_why_there_are_no_zones():
 # vigorous zone until it has happened.
 def test_vigorous_zone_waits_for_the_review_after_a_parq_yes():
     result = zones(person(screening={"parq_any_yes": True}), hr_rest=60)
-    assert [z.name for z in result.zones] == ["light", "moderate"]
+    assert [z.name for z in result.zones] == ["very_light", "light", "moderate"]
     assert any("PAR-Q+ specific thresholds" in n for n in result.notes)
     reviewed = person(screening={"parq_any_yes": True, "vigorous_reviewed": True})
     assert band(zones(reviewed, hr_rest=60), "vigorous")
@@ -146,7 +146,7 @@ def test_vigorous_zone_waits_for_the_review_after_a_parq_yes():
 
 def test_over_45_gets_no_vigorous_zone_until_reviewed():
     result = zones(person(birth_date=date(1975, 1, 1)), hr_rest=60)
-    assert [z.name for z in result.zones] == ["light", "moderate"]
+    assert [z.name for z in result.zones] == ["very_light", "light", "moderate"]
     reviewed = {"parq_any_yes": False, "vigorous_reviewed": True}
     assert band(zones(person(birth_date=date(1975, 1, 1), screening=reviewed)), "vigorous")
 
@@ -155,3 +155,44 @@ def test_parq_note_shows_even_when_rpe_zones_have_no_vigorous_band():
     screening = {"parq_any_yes": True}
     result = zones(person(medications=["beta_blocker"], screening=screening))
     assert any("PAR-Q+ specific thresholds" in n for n in result.notes)
+
+
+# cardio-health.md "ACSM intensity bands": five bands, very light to near-maximal; near-maximal
+# starts at 85% HRR (the rule's 84% vigorous cap) and 96% HRmax, RPE 18 or more.
+FIVE = ["very_light", "light", "moderate", "vigorous", "near_maximal"]
+
+
+def test_five_zones_with_resting_hr():
+    result = zones(person(), hr_rest=48, hr_max=191)
+    assert [z.name for z in result.zones] == FIVE
+    assert band(result, "very_light").rpe == (6, 8)
+    assert band(result, "near_maximal").rpe == (18, 20)
+    assert band(result, "very_light").bpm == (48, round(48 + 0.29 * 143))
+    assert band(result, "near_maximal").bpm == (round(48 + 0.85 * 143), 191)
+
+
+def test_five_zones_without_resting_hr():
+    result = zones(person(), hr_max=191)
+    assert [z.name for z in result.zones] == FIVE
+    assert band(result, "very_light").bpm[1] == round(0.56 * 191)
+    assert band(result, "near_maximal").bpm == (round(0.96 * 191), 191)
+
+
+def test_a_peak_of_186_falls_in_a_zone():
+    result = zones(person(), hr_rest=48, hr_max=191)
+    assert zone_for(result.zones, 186).name == "near_maximal"
+    # Rounding leaves a 1 bpm gap between displayed bands; every beat still lands in one.
+    assert all(zone_for(result.zones, hr) for hr in range(48, 192))
+
+
+def test_caps_hide_vigorous_and_near_maximal():
+    for screening in ({"parq_any_yes": True}, {"bp_systolic": 165, "bp_diastolic": 85}):
+        result = zones(person(screening=screening), hr_rest=48, hr_max=191)
+        assert [z.name for z in result.zones] == ["very_light", "light", "moderate"]
+
+
+def test_rpe_only_paths_keep_their_bands():
+    pregnant = zones(person(sex="female", conditions=["pregnant"]))
+    assert [z.name for z in pregnant.zones] == ["light", "moderate", "vigorous"]
+    beta = zones(person(medications=["beta_blocker"]))
+    assert [z.name for z in beta.zones] == ["light", "moderate"]

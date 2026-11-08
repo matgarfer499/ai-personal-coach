@@ -6,7 +6,14 @@ from dataclasses import dataclass, field
 from datetime import date
 
 from coach import safety
-from coach.profile import BETA_BLOCKER, HEART_DISEASE, PREGNANT, Profile
+from coach.profile import (  # noqa: F401  (HR ranges re-exported: zones.HR_MAX_RANGE)
+    BETA_BLOCKER,
+    HEART_DISEASE,
+    HR_MAX_RANGE,
+    HR_REST_RANGE,
+    PREGNANT,
+    Profile,
+)
 from coach.safety import PREGNANCY_INTENSITY, SafetyFlags
 
 BANDS_RULE = 'cardio-health.md: "ACSM intensity bands"'
@@ -21,19 +28,30 @@ RPE_REASON_RULES = (safety.BETA_BLOCKER_RULE, safety.PREGNANCY_INTENSITY)
 TANAKA_INTERCEPT, TANAKA_SLOPE = 208, 0.7
 
 # cardio-health.md: "ACSM intensity bands" (Garber 2011, Table 5): %HRR, %HRmax, Borg RPE 6-20.
-# The vigorous HRR band stops at 84%, not 89%: the rule's labelled convention that keeps it
-# inside both the 2011 and the GETP 10th-edition tables.
+# Very light is below 30% HRR, 57% HRmax and RPE 9; near-maximal is 90% HRR, 96% HRmax and RPE 18
+# or more. The vigorous HRR band stops at 84%, not 89%, so near-maximal starts at 85%: the rule's
+# labelled convention that keeps both inside the 2011 and the GETP 10th-edition tables. The open
+# ends are the scales' own: 0% HRR (resting HR) or 0% HRmax, 100%, and Borg 6 and 20.
 ACSM_BANDS = {
+    "very_light": {"hrr": (0.0, 0.29), "hrmax": (0.0, 0.56), "rpe": (6, 8)},
     "light": {"hrr": (0.30, 0.39), "hrmax": (0.57, 0.63), "rpe": (9, 11)},
     "moderate": {"hrr": (0.40, 0.59), "hrmax": (0.64, 0.76), "rpe": (12, 13)},
     "vigorous": {"hrr": (0.60, 0.84), "hrmax": (0.77, 0.95), "rpe": (14, 17)},
+    "near_maximal": {"hrr": (0.85, 1.0), "hrmax": (0.96, 1.0), "rpe": (18, 20)},
 }
+# The zones the caps hide: cap_moderate and review_before_vigorous allow neither.
+ABOVE_MODERATE = ("vigorous", "near_maximal")
+# The RPE-only paths (beta-blocker, pregnancy) keep the three bands their rules speak to.
+RPE_ONLY_ZONES = ("light", "moderate", "vigorous")
 # cardio-health.md: "0-10 effort scale and talk-test anchors": moderate can talk but not sing;
-# vigorous only a few words without pausing. convention: "light" = can talk and sing.
+# vigorous only a few words without pausing. convention: "very_light" = can talk and sing with
+# ease, "light" = can talk and sing, "near_maximal" = cannot speak; the rule gives no text.
 TALK_TEST = {
+    "very_light": "can talk and sing with ease",
     "light": "can talk and sing",
     "moderate": "can talk, but not sing",
     "vigorous": "only a few words without pausing for breath",
+    "near_maximal": "cannot speak",
 }
 # recovery-habits.md: "Gauge intensity by talk test and RPE, not a heart-rate cap": moderate is
 # RPE 13-14 in pregnancy (the source's number). "Vigorous work: avoid near-maximal efforts":
@@ -44,10 +62,6 @@ PREGNANCY_RPE = {"light": (9, 12), "moderate": (13, 14), "vigorous": (15, 17)}
 # cardio-health.md: "RPE as the anchor under beta-blockade": no sustained vigorous work (RPE 14
 # or more) without medical clearance, so every band stops at 13.
 BETA_BLOCKER_MAX_RPE = 13
-
-# Plausibility limits for typed-in heart rates (convention: input validation, not coaching).
-HR_REST_RANGE = (30, 120)
-HR_MAX_RANGE = (100, 230)
 
 
 @dataclass
@@ -81,13 +95,15 @@ def _rpe_zones(names: list[str], rpe: dict[str, tuple[int, int]]) -> list[Zone]:
     return [Zone(name, rpe[name], TALK_TEST[name]) for name in names]
 
 
-def _hr_zones(
+def all_zones(
     profile: Profile,
     flags: SafetyFlags,
     hr_rest: int | None = None,
     hr_max: int | None = None,
     today: date | None = None,
 ) -> Zones:
+    """Every zone the method allows, before the intensity caps. Only for describing logged
+    runs (`coach runs week`); prescribe from `hr_zones`, which applies the caps."""
     _check(hr_rest, HR_REST_RANGE, "resting HR")
     _check(hr_max, HR_MAX_RANGE, "HRmax")
 
@@ -107,8 +123,8 @@ def _hr_zones(
 
     if flags.use_rpe_not_hr:
         notes = [r for r in flags.reasons if r.startswith(RPE_REASON_RULES)]
-        rpe = {name: band["rpe"] for name, band in ACSM_BANDS.items()}
-        names = list(ACSM_BANDS)
+        rpe = {name: ACSM_BANDS[name]["rpe"] for name in RPE_ONLY_ZONES}
+        names = list(RPE_ONLY_ZONES)
         if profile.has_condition(PREGNANT):
             rpe = PREGNANCY_RPE
             notes += [
@@ -156,6 +172,12 @@ def _hr_zones(
     )
 
 
+def zone_for(zones: list[Zone], hr: float) -> Zone | None:
+    """The bpm zone a heart rate falls in: the highest zone starting at or below it, so the
+    1 bpm gaps rounding leaves between bands, and rates above HRmax, still land in one."""
+    return next((z for z in reversed(zones) if z.bpm and z.bpm[0] <= hr), None)
+
+
 def hr_zones(
     profile: Profile,
     flags: SafetyFlags,
@@ -163,11 +185,11 @@ def hr_zones(
     hr_max: int | None = None,
     today: date | None = None,
 ) -> Zones:
-    result = _hr_zones(profile, flags, hr_rest, hr_max, today)
-    # Each cap removes the vigorous zone and says which rule did it.
+    result = all_zones(profile, flags, hr_rest, hr_max, today)
+    # Each cap removes the vigorous and near-maximal zones and says which rule did it.
     caps = {safety.BP: flags.cap_moderate, safety.PARQ_THRESHOLDS: flags.review_before_vigorous}
     rules = tuple(rule for rule, on in caps.items() if on)
     if rules and result.zones:
-        result.zones = [z for z in result.zones if z.name != "vigorous"]
+        result.zones = [z for z in result.zones if z.name not in ABOVE_MODERATE]
         result.notes += [r for r in flags.reasons if r.startswith(rules)]
     return result

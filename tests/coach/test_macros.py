@@ -156,3 +156,24 @@ def test_protein_range_follows_the_rule():
     assert result.protein_max_g == pytest.approx(2.2 * 80)
     maintenance = macros(lifter(), 2600)
     assert maintenance.protein_min_g == pytest.approx(1.4 * 80)  # "...people who lift": 1.4-2.2
+
+
+# nutrition.md "Daily protein target for endurance runners": about 1.6 within 1.4-2.0; runners
+# who also lift follow the lifter rule.
+def test_runner_protein_follows_the_endurance_rule():
+    result = macros(lifter(sport="running"), 2600)
+    assert result.protein_g_per_kg == pytest.approx(1.6)
+    assert result.protein_min_g == pytest.approx(1.4 * 80)
+    assert result.protein_max_g == pytest.approx(2.0 * 80)
+    assert any("endurance runners" in n for n in result.notes)
+
+
+def test_runner_who_lifts_follows_the_lifter_rule():
+    result = macros(lifter(sport="both"), 2600)
+    assert result.protein_max_g == pytest.approx(2.2 * 80)
+    assert any("people who lift" in n for n in result.notes)
+
+
+def test_runner_in_a_deficit_keeps_the_fat_loss_rule():
+    result = macros(lifter(sport="running"), 2081, in_deficit=True)
+    assert any("Protein during fat loss" in n for n in result.notes)

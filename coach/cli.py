@@ -36,6 +36,7 @@ from coach import (
     off,
     recipes,
     regions,
+    runs,
     safety,
     strength,
     tastes,
@@ -145,10 +146,19 @@ def cmd_trend(profile: Profile, args: argparse.Namespace) -> dict:
     return dataclasses.asdict(result) | {"recalibrated_tdee": recalibrated}
 
 
-def cmd_zones(profile: Profile, args: argparse.Namespace) -> zones.Zones:
-    return zones.hr_zones(
-        profile, safety.flags(profile, args.today), args.hr_rest, args.hr_max, args.today
+def _heart_rates(profile: Profile, args: argparse.Namespace) -> tuple[int | None, int | None]:
+    """(resting, max): the --hr-rest/--hr-max flags, else the profile's stored values."""
+    rest = getattr(args, "hr_rest", None)
+    peak = getattr(args, "hr_max", None)
+    return (
+        profile.hr_rest if rest is None else rest,
+        profile.hr_max if peak is None else peak,
     )
+
+
+def cmd_zones(profile: Profile, args: argparse.Namespace) -> zones.Zones:
+    hr_rest, hr_max = _heart_rates(profile, args)
+    return zones.hr_zones(profile, safety.flags(profile, args.today), hr_rest, hr_max, args.today)
 
 
 def cmd_safety(profile: Profile, args: argparse.Namespace) -> safety.SafetyFlags:
@@ -286,8 +296,33 @@ def _leftover_warning(leftovers: list[ExerciseSet]) -> str:
     )
 
 
+def _import_runs(importer: importers.Importer, args: argparse.Namespace) -> dict:
+    """A run importer (`target = "runs"`): its runs go to data/runs.csv."""
+    read = importer.read(args.path)
+    today = args.today or date.today()
+    kept = [r for r in read if r.date <= today]
+    result = runs.append_runs(kept, args.data_dir / "runs.csv")
+    days = sorted(r.date for r in kept)
+    future = len(read) - len(kept)
+    return {
+        "importer": importer.name,
+        "store": "runs.csv",
+        "read": len(read),
+        "added": result.added,
+        "duplicates": result.duplicates,
+        "skipped_future": future,
+        "first_day": days[0] if days else None,
+        "last_day": days[-1] if days else None,
+        "warnings": [f"{future} runs dated after today ({today}) were not stored"]
+        if future
+        else [],
+    }
+
+
 def cmd_import(profile: Profile, args: argparse.Namespace) -> dict:
     importer = importers.get(args.importer) if args.importer else importers.detect(args.path)
+    if getattr(importer, "target", "sessions") == "runs":
+        return _import_runs(importer, args)
     read = importer.read(args.path)
     # Empty rows are what an app leaves when a routine template's sets are never filled in. They
     # carry nothing any calculator reads (no reps, so not a working set), so storing them would
@@ -328,6 +363,37 @@ def cmd_import(profile: Profile, args: argparse.Namespace) -> dict:
         "last_day": days[-1] if days else None,
         "warnings": warnings,
     }
+
+
+def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
+    path = args.data_dir / "runs.csv"
+    today = args.today or date.today()
+    logged = [r for r in runs.read_runs(path) if r.date <= today]
+    if args.runs_cmd == "taper":
+        return runs.taper(args.race_date, today, logged)
+    if args.runs_cmd == "add":
+        when = args.date or today
+        if when > today:
+            raise ValueError(f"{when} is after today ({today}); log a run on the day or after it")
+        run = runs.Run(
+            when, args.km, args.minutes, args.avg_hr, args.max_hr, args.rpe, args.notes.strip()
+        )
+        result = runs.append_runs([run], path)
+        return {
+            "run": run,
+            "added": result.added,
+            "duplicates": result.duplicates,
+            "warnings": ["the same run (date, km, minutes) is already stored; not added again"]
+            if result.duplicates
+            else [],
+        }
+    # Default: the 7 days ending on the last logged run, the latest week with data.
+    end = args.week_ending or max((r.date for r in logged), default=today)
+    flags = safety.flags(profile, args.today)
+    hr_rest, hr_max = _heart_rates(profile, args)
+    shown = zones.hr_zones(profile, flags, hr_rest, hr_max, args.today)
+    every = runs.zones_to_describe(profile, flags, hr_rest, hr_max, args.today)
+    return runs.week(logged, end, shown, every)
 
 
 def menu_check(totals: dict, targets: dict, share: float = 1.0) -> dict:
@@ -557,6 +623,8 @@ _PROFILE_TYPES = {
     "weight_kg": float,
     "pal_override": float,
     "research_reminder_months": int,
+    "hr_max": int,
+    "hr_rest": int,
 }
 
 
@@ -588,7 +656,7 @@ def _parse_profile_value(field: str, raw: str) -> Any:
                 raise ValueError(f"{field} must be a whole number, not {raw!r}")
             return int(raw)
         return raw
-    if field == "pal_override" and raw.lower() == "none":
+    if field in ("pal_override", "hr_max", "hr_rest", "sport") and raw.lower() == "none":
         return None
     if field == "injuries":
         raise ValueError("injuries are set with `coach injury add` and `coach injury clear`")
@@ -1244,8 +1312,8 @@ def build_parser() -> argparse.ArgumentParser:
     trend_cmd = add("trend", cmd_trend, "weight trend from data/checkins.csv")
     trend_cmd.add_argument("--energy-density", type=float, default=trend.ENERGY_DENSITY_KCAL_PER_KG)
     zones_cmd = add("zones", cmd_zones, "heart-rate and RPE zones")
-    zones_cmd.add_argument("--hr-rest", type=int, default=None)
-    zones_cmd.add_argument("--hr-max", type=int, default=None)
+    zones_cmd.add_argument("--hr-rest", type=int, default=None, help="default: profile hr_rest")
+    zones_cmd.add_argument("--hr-max", type=int, default=None, help="default: profile hr_max")
     add("safety", cmd_safety, "screening flags and the rules behind them")
 
     strength_cmd = add("strength", cmd_strength, "e1RM, weekly sets, progression, deload")
@@ -1277,9 +1345,28 @@ def build_parser() -> argparse.ArgumentParser:
         f"sets is ignored; default {strength.REP_RANGE[0]}-{strength.REP_RANGE[1]}",
     )
 
-    import_cmd = add("import", cmd_import, "import a workout export into data/sessions.csv")
+    import_cmd = add(
+        "import", cmd_import, "import a workout export into data/sessions.csv (runs: runs.csv)"
+    )
     import_cmd.add_argument("path", type=Path)
     import_cmd.add_argument("--importer", default=None, help="default: detect from the header")
+
+    runs_cmd = add("runs", cmd_runs, "log runs in data/runs.csv, weekly km and zones, taper")
+    runs_sub = runs_cmd.add_subparsers(dest="runs_cmd", required=True)
+    runs_add = runs_sub.add_parser("add", parents=[json_flag], help="one run")
+    runs_add.add_argument("--date", type=date.fromisoformat, default=None, help="default: today")
+    runs_add.add_argument("--km", type=float, required=True)
+    runs_add.add_argument("--minutes", type=float, required=True)
+    runs_add.add_argument("--avg-hr", type=int, default=None)
+    runs_add.add_argument("--max-hr", type=int, default=None)
+    runs_add.add_argument("--rpe", type=int, default=None, help="Borg 6-20, as in coach zones")
+    runs_add.add_argument("--notes", default="")
+    runs_week = runs_sub.add_parser("week", parents=[json_flag], help="weekly km, spikes, zones")
+    runs_week.add_argument(
+        "--week-ending", type=date.fromisoformat, default=None, help="default: last logged run"
+    )
+    runs_taper = runs_sub.add_parser("taper", parents=[json_flag], help="taper before a race")
+    runs_taper.add_argument("--race-date", type=date.fromisoformat, required=True)
 
     menu_cmd = add("menu", cmd_menu, "macro totals for foods and grams")
     menu_cmd.add_argument("--item", action="append", required=True, help='"NAME=GRAMS", repeat')
