@@ -154,7 +154,8 @@ CLI, then whether to rerun `/plan`: yes when the client agreed to a calorie or d
 ## Safety
 
 - Never judge progress on one weigh-in, and never mention weight when the trend is `disabled`.
-- With `no_training`, give no training, load or deload advice: say training waits for a
+- With `no_training`, give no training, load or deload advice (a cleared client is recorded
+  with `coach clearance add`, as /checkin says): say training waits for a
   clinician's clearance. With `hold_progression`, loads stay as `coach strength progress` says.
 - A lift `paused` by an injury is neither a stall nor a reason to add sets: quote its reason.
   Ask whether the professional has cleared the injury; if so, `coach injury clear AREA`. An

@@ -49,6 +49,7 @@ from coach.checkins import Checkin, append_checkin, read_checkins, weigh_ins, we
 from coach.profile import (
     BP_MEDICATION,
     CLEARANCE_ANSWERS,
+    CLEARANCE_RECORD,
     CONDITION_TOKENS,
     GOALS,
     HEART_DISEASE,
@@ -894,6 +895,7 @@ def cmd_profile(profile: Profile, args: argparse.Namespace) -> dict:
         value = _parse_profile_value(args.field, args.value)
         if args.field.startswith("screening."):
             key = args.field.removeprefix("screening.")
+            _refuse_lifting_a_stop(profile, key, value)
             old = profile.screening.pop(key, None)
             if value is not None:
                 profile.screening[key] = value
@@ -902,10 +904,14 @@ def cmd_profile(profile: Profile, args: argparse.Namespace) -> dict:
                 profile.screening.pop("vigorous_reviewed", None)
             if key in CLEARANCE_ANSWERS and value != old:
                 # A medical clearance covered the old diagnoses and symptoms, not the new ones.
-                profile.screening.pop("medically_cleared", None)
+                for name in CLEARANCE_RECORD:
+                    profile.screening.pop(name, None)
+                if key != "known_disease" and value:
+                    _record_symptoms(profile, args.today or date.today())
         else:
             setattr(profile, args.field, value)
         save_profile(profile, args.data_dir / "profile.yaml")  # validates enums and screening
+        _sync_plan_suspension(profile, args)
     warnings = (
         _pal_override_warnings(profile, args)
         if getattr(args, "field", None) == "pal_override"
@@ -988,6 +994,123 @@ def cmd_injury(profile: Profile, args: argparse.Namespace) -> dict:
     return {"injuries": profile.injuries, "unmatched": unmatched} | (
         {"warnings": warnings} if warnings else {}
     )
+
+
+CLEARANCE_ONLY = "a symptom stop is lifted only by a clinician: `coach clearance add`"
+
+
+def _refuse_lifting_a_stop(profile: Profile, key: str, value: Any) -> None:
+    """`profile set` cannot write a clearance or drop a recorded symptom (docs/safety.md)."""
+    if key in CLEARANCE_RECORD or key == "symptoms_on":
+        raise ValueError(f"screening.{key} is not set by hand: {CLEARANCE_ONLY}")
+    old = profile.screening.get(key)
+    if key == "cardiac_symptoms" and old and not value:
+        raise ValueError(f"screening.cardiac_symptoms stays recorded: {CLEARANCE_ONLY}")
+    if key == "symptoms" and set(old or []) - set(value or []):
+        raise ValueError(f"recorded symptoms stay recorded: {CLEARANCE_ONLY}")
+
+
+def _record_symptoms(profile: Profile, day: date) -> None:
+    """A clearance and a vigorous-work review predate new symptoms: both go. `symptoms_on`
+    keeps the latest report day."""
+    screening = profile.screening
+    for name in (*CLEARANCE_RECORD, "vigorous_reviewed"):
+        screening.pop(name, None)
+    since = screening.get("symptoms_on")
+    screening["symptoms_on"] = max(day, since) if since else day
+
+
+# The heading of the section a training stop adds at the end of plan.md (es, en).
+SUSPENDED = {"es": "## Plan suspendido", "en": "## Plan suspended"}
+SUSPENDED_TEXT = {
+    "es": "Entrenamiento en pausa desde {day}: {why}. No sigas la semana de entrenamiento de "
+    "arriba hasta que un médico te dé el alta; entonces se registra con `coach clearance add` y "
+    "se rehace el plan con /plan.",
+    "en": "Training on hold since {day}: {why}. Do not follow the training week above until a "
+    "doctor clears you; that is recorded with `coach clearance add` and the plan is rewritten "
+    "with /plan.",
+}
+# The day an existing suspension section started, kept while the stop lasts.
+SUSPENDED_SINCE = re.compile(
+    r"^(?:Entrenamiento en pausa desde|Training on hold since) (\d{4}-\d{2}-\d{2}):", re.M
+)
+
+
+def _without_suspension(text: str) -> str:
+    lines = text.splitlines(keepends=True)
+    start = next((i for i, line in enumerate(lines) if line.strip() in SUSPENDED.values()), None)
+    if start is None:
+        return text
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+    return ("".join(lines[:start]).rstrip("\n") + "\n" + "".join(lines[end:])).rstrip("\n") + "\n"
+
+
+def _sync_plan_suspension(profile: Profile, args: argparse.Namespace) -> None:
+    """plan.md carries a trailing suspension section exactly while training is stopped. At the
+    end, never near the header: /menu reads the header lines by position."""
+    path = args.data_dir / "plan.md"
+    if not path.exists():
+        return
+    text = path.read_text(encoding="utf-8")
+    bare = _without_suspension(text)
+    flags = safety.flags(profile, args.today)
+    if flags.no_training:
+        language = profile.language if profile.language in SUSPENDED else "en"
+        why = "; ".join(safety.stop_reasons(flags))
+        held = SUSPENDED_SINCE.search(text)
+        symptom_stop = safety.symptomatic(profile) and not safety.symptoms_cleared(profile)
+        day = (
+            held.group(1)
+            if held
+            else (symptom_stop and profile.screening.get("symptoms_on"))
+            or args.today
+            or date.today()
+        )
+        bare += f"\n{SUSPENDED[language]}\n\n" + SUSPENDED_TEXT[language].format(day=day, why=why)
+        bare += "\n"
+    if bare != text:
+        path.write_text(bare, encoding="utf-8")
+
+
+def cmd_clearance(profile: Profile, args: argparse.Namespace) -> dict:
+    screening = profile.screening
+    if args.clearance_cmd == "add":
+        who, note = args.by.strip(), (args.note or "").strip()
+        if not who or not note:
+            raise ValueError("a clearance needs --by (who cleared it) and --note (what they said)")
+        today = args.today or date.today()
+        when = args.date or today
+        if when > today:
+            raise ValueError(f"the clearance date {when} is after today ({today})")
+        since = screening.get("symptoms_on")
+        if since is not None and when < since:
+            raise ValueError(
+                f"the clearance date {when} is before the latest symptom report ({since}); "
+                "a clearance must come after it"
+            )
+        if not safety.symptomatic(profile) and not screening.get("known_disease"):
+            raise ValueError("nothing to clear: no recorded symptom or known disease")
+        screening.update(
+            medically_cleared=True, cleared_on=when, cleared_by=who, clearance_note=note
+        )
+        save_profile(profile, args.data_dir / "profile.yaml")
+        _sync_plan_suspension(profile, args)
+    flags = safety.flags(profile, args.today)
+    record = (
+        {
+            "by": screening.get("cleared_by"),
+            "on": screening.get("cleared_on"),
+            "note": screening.get("clearance_note"),
+        }
+        if screening.get("cleared_on")
+        else None
+    )
+    return {
+        "clearance": record,
+        "symptoms_on": screening.get("symptoms_on"),
+        "no_training": flags.no_training,
+        "still_applies": flags.reasons,
+    }
 
 
 def cmd_tastes(profile: Profile, args: argparse.Namespace) -> dict:
@@ -1076,13 +1199,19 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
     unknown = [s for s in said if safety.symptom_token(s) is None]
     symptoms = list(dict.fromkeys(safety.symptom_token(s) for s in said if s not in unknown))
     if unknown:
-        raise ValueError(f"unknown symptom {', '.join(unknown)}; use {', '.join(safety.SYMPTOMS)}")
+        none = [s for s in unknown if fold(s) in NONE_WORDS]
+        hint = f"; to lift a stop, {CLEARANCE_ONLY}" if none else ""
+        raise ValueError(
+            f"unknown symptom {', '.join(unknown)}; use {', '.join(safety.SYMPTOMS)}{hint}"
+        )
     if symptoms:
         # recovery-habits.md: "Cardiac warning symptoms: stop and refer": any one of them. Saved
         # first, so a refused or invalid field cannot drop the stop.
         profile.screening["cardiac_symptoms"] = True
-        profile.screening.pop("medically_cleared", None)  # it predates these symptoms
+        today = args.today or date.today()
+        _record_symptoms(profile, min(args.date or today, today))
         save_profile(profile, args.data_dir / "profile.yaml")
+        _sync_plan_suspension(profile, args)
     flags = safety.flags(profile, args.today)
     refused = ["weight"] if flags.no_weight_targets and args.weight is not None else []
     if safety.eating_disorder_positive(profile) or flags.no_calorie_targets:
@@ -1884,6 +2013,17 @@ def build_parser() -> argparse.ArgumentParser:
     injury_clear.add_argument("area")
     injury_clear.add_argument("--on", type=date.fromisoformat, default=None, help="default: today")
     injury_sub.add_parser("list", parents=[json_flag])
+    clearance_cmd = add(
+        "clearance", cmd_clearance, "a clinician cleared exercise after symptoms or a disease"
+    )
+    clearance_sub = clearance_cmd.add_subparsers(dest="clearance_cmd", required=True)
+    clearance_add = clearance_sub.add_parser("add", parents=[json_flag], help="record it")
+    clearance_add.add_argument("--by", required=True, help="who cleared it, e.g. GP, cardiologist")
+    clearance_add.add_argument(
+        "--date", type=date.fromisoformat, default=None, help="when; default: today"
+    )
+    clearance_add.add_argument("--note", required=True, help="what they said, in a few words")
+    clearance_sub.add_parser("show", parents=[json_flag])
 
     tastes_cmd = add("tastes", cmd_tastes, "show, set or rate data/tastes.yaml (food preferences)")
     tastes_sub = tastes_cmd.add_subparsers(dest="tastes_cmd", required=True)

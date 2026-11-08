@@ -355,11 +355,20 @@ def flags(profile: Profile, today: date | None = None) -> SafetyFlags:
     _blood_pressure(profile, out)
     _acsm(profile, out)
 
-    if symptomatic(profile):
+    if symptomatic(profile) and not symptoms_cleared(profile):
         out.refer_gp = out.no_training = True
         out.reasons.append(
             f"{CARDIAC}: stop exercising and seek medical evaluation; no training until a "
-            f"clinician clears it{NO_TRAINING_NO_DEFICIT}"
+            f"clinician clears it (`coach clearance add`){NO_TRAINING_NO_DEFICIT}"
+        )
+    elif symptomatic(profile) and not screening.get("vigorous_reviewed"):
+        # The ACSM "cleared" cell: light-to-moderate first, vigorous work after a review. Starts
+        # with ACSM so zones and runs cite it (VIGOROUS_CAPS) and a training stop moots it.
+        out.review_before_vigorous = True
+        out.reasons.append(
+            f"{ACSM}: cleared by {screening.get('cleared_by')} on {screening.get('cleared_on')} "
+            f"after warning symptoms ({CARDIAC}): start at light-to-moderate intensity and build "
+            "up; vigorous work after a review"
         )
 
     if out.no_training:
@@ -390,7 +399,7 @@ def flags(profile: Profile, today: date | None = None) -> SafetyFlags:
     language = profile.language or "en"
     if out.refer_gp:
         out.deferral_line = DEFERRAL_LINE[language]
-    if symptomatic(profile):
+    if symptomatic(profile) and not symptoms_cleared(profile):
         out.emergency_line = emergency_line(profile, out)
     return out
 
@@ -554,6 +563,19 @@ def symptomatic(profile: Profile) -> bool:
     return bool(screening.get("cardiac_symptoms") or screening.get("symptoms"))
 
 
+def symptoms_cleared(profile: Profile) -> bool:
+    """A clinician's clearance (`coach clearance add`) dated on or after the latest symptom
+    report. A bare `medically_cleared` with no date (stored before clearances had one) does not
+    lift a symptom stop."""
+    screening = profile.screening
+    cleared, since = screening.get("cleared_on"), screening.get("symptoms_on")
+    return (
+        bool(screening.get("medically_cleared"))
+        and cleared is not None
+        and (since is None or cleared >= since)
+    )
+
+
 ACSM_ANSWERS = ("regular_exercise", "known_disease", "symptoms")
 
 
@@ -567,7 +589,7 @@ def _acsm(profile: Profile, out: SafetyFlags) -> None:
     # the cardiac rule in `flags`; here only the known-disease cells without symptoms.
     screening = profile.screening
     disease = screening.get("known_disease") or []
-    if not disease or symptomatic(profile):
+    if not disease or (symptomatic(profile) and not symptoms_cleared(profile)):
         return
     named = ", ".join(disease)
     active = screening.get("regular_exercise")

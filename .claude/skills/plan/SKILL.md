@@ -47,10 +47,24 @@ running week, `both` the two together.
 ## When to use
 
 - After `/setup`, when a block ends, or when `/review` recommends a change.
-- Not when `coach safety` shows `no_training`: say a doctor must review first and stop. With
-  `clearance_before_exercise` (ACSM: inactive with a known disease) the stop covers training
-  only: quote its `instruction`, give no exercise, and nutrition targets still follow
-  `coach macros`.
+- Not when `coach safety` shows `no_training`: say a doctor must review first, write no
+  training, and give the waiting guidance below. With `clearance_before_exercise` (ACSM:
+  inactive with a known disease) the stop covers training only: quote its `instruction`, give no
+  exercise, and nutrition targets still follow `coach macros`.
+  The way back is the doctor's clearance, recorded with `coach clearance add --by WHO --date
+  YYYY-MM-DD --note "what they said"` once the client says it happened (who, when, what they
+  said; never record it for them on a guess, and never lift a stop with `profile set`). Then
+  `coach safety` gives the light-to-moderate start and /plan writes a new plan; the old plan.md
+  carries a "Plan suspendido" section until then. A BP stop lifts only with a new reading
+  (`profile set screening.bp_systolic`), an injury with `coach injury clear`.
+  Waiting guidance while `no_training` holds and the client has `hypertension`,
+  `bp_medication` or a BP reason in `coach safety`: from `coach knowledge section nutrition
+  "Salt limits"`, "Salt reduction lowers blood pressure" and "Potassium-enriched salt
+  substitutes", and recovery-habits "Resting BP thresholds to defer or refer": under 5 g salt a
+  day, cut cured meats, ready meals, snacks, bread and cheese, cook at home, more fruit and
+  vegetables; no potassium salt substitute while on an ACE inhibitor, ARB or potassium-sparing
+  diuretic unless their GP agrees; never change or question the medicine; take a seated reading
+  after 5 min rest to bring to the GP. Calories stay at the `coach macros` figure (maintenance).
 
 ## Reads
 
