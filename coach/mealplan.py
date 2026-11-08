@@ -504,7 +504,8 @@ COOKED_YIELDS = {
     "brown rice, cooked": ("brown rice, raw", 2.60),
     "pasta, cooked": ("pasta, dry", 2.10),
     "lentils, cooked": ("lentils, dry", 2.73),
-    "broccoli, boiled": ("broccoli, raw", 1.11),
+    # The rule: boiled vegetables change little, "weigh them raw as roughly the cooked weight".
+    "broccoli, boiled": ("broccoli, raw", 1.0),
 }
 
 
@@ -519,7 +520,8 @@ def _bought_as(
     """The food actually bought for this item, with the amount in its unit."""
     dry = dry_form(food)
     raw = find(dry[0], table) if dry else None
-    if raw is not None and unit == "g":
+    # A product that stands for the cooked food (a jar, a cooked-rice pouch) is bought as is.
+    if raw is not None and unit == "g" and fold(food.name_en) not in replaced:
         food, amount = raw, amount / dry[1]
     target = find(food.buy_as, table) if food.buy_as else None
     if target is not None and unit == "g" and food.unit_g and target.unit_g:

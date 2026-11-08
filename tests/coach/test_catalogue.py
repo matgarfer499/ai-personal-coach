@@ -380,7 +380,6 @@ def test_pack_size_and_replaces_are_typed_and_checked(capsys, data_dir, off_retu
         (["--pack-size", "nan"], "--pack-size"),
         (["--pack-size", "1.000"], "thousands"),  # a Spanish "1.000 ml" is not 1 ml
         (["--replaces", "huevo cocido"], "bought as"),  # shopping buys it as a raw egg
-        (["--replaces", "arroz blanco, cocido"], "bought as"),  # beta 3 p4-sara-N2: dry rice
         (["--replaces", "leche de unicornio"], "not a food"),
         (["--replaces", "Salteado campestre"], "not a food"),
     ],
@@ -450,3 +449,23 @@ def test_a_dry_product_cannot_replace_a_cooked_food(capsys, data_dir):
         "--replaces", "garbanzos, cocidos",
     )  # fmt: skip
     assert code != 0 and "dry" in out["message"]
+
+
+def test_a_cooked_product_can_replace_its_cooked_food(capsys, data_dir):
+    code, out = run(
+        capsys, data_dir, "products", "add", "--label", "--name", "Arroz cocido vasito prueba",
+        "--chain", "Mercadona", "--per", "100 g", "--kcal", "150", "--protein", "3",
+        "--carbs", "32", "--fat", "1", "--allergens", "ninguno",
+        "--replaces", "arroz blanco, cocido",
+    )  # fmt: skip
+    assert code == 0 and out["added"]["replaces"] == "white rice, cooked"
+
+
+def test_a_dry_rice_product_is_pointed_to_the_dry_food(capsys, data_dir):
+    code, out = run(
+        capsys, data_dir, "products", "add", "--label", "--name", "Arroz redondo prueba",
+        "--chain", "Mercadona", "--per", "100 g", "--kcal", "350", "--protein", "7",
+        "--carbs", "78", "--fat", "1", "--allergens", "ninguno",
+        "--replaces", "arroz blanco, cocido",
+    )  # fmt: skip
+    assert code != 0 and "white rice, raw" in out["message"]

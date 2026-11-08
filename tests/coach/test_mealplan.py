@@ -1150,7 +1150,7 @@ def test_cooked_forms_are_bought_dry_or_raw():
     lines = {line["name"]: line for line in shop["chains"]["any"]}
     assert lines["arroz blanco, crudo"]["grams"] == round(300 / 2.98, 1)
     assert lines["lentejas, crudas"]["grams"] == round(300 / 2.73, 1)
-    assert lines["brócoli, crudo"]["grams"] == round(300 / 1.11, 1)
+    assert lines["brócoli, crudo"]["grams"] == 300
     assert lines["pasta, cruda"]["grams"] == round(210 / 2.10, 1)
     assert not any("cocid" in name for name in lines)
 
@@ -1161,3 +1161,26 @@ def test_every_cooked_yield_names_a_food_in_the_table():
     table = foods.load_foods("es")
     for cooked, (raw, factor) in COOKED_YIELDS.items():
         assert foods.find(cooked, table) and foods.find(raw, table) and factor > 0, cooked
+
+
+def test_a_product_for_the_cooked_food_is_bought_as_is():
+    from dataclasses import replace
+    from datetime import date as day
+
+    from coach import mealplan
+
+    table = foods.load_foods("es")
+    jar = replace(
+        foods.find("lentejas, cocidas", table),
+        name_en="Lentejas bote prueba",
+        name_es="Lentejas bote prueba",
+        chain="Mercadona",
+        replaces="lentils, cooked",
+    )
+    _, days = mealplan.parse(
+        {"days": [{"date": day(2026, 11, 2), "meals": [
+            {"meal": "comida", "dishes": [
+                {"dish": "Plato", "items": ["lentejas, cocidas=300"]}]}]}]}
+    )  # fmt: skip
+    shop = mealplan.shopping(days, [*table, jar], "es")
+    assert shop["chains"]["Mercadona"] == [{"name": "Lentejas bote prueba", "grams": 300}]
