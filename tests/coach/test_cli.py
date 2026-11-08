@@ -2208,3 +2208,12 @@ def test_today_after_the_subcommand_overrides_the_global_one(capsys, data_dir):
     code, out = run(capsys, data_dir, "checkin", "add", "--weight", "80",
                     "--date", "2026-03-05", "--today", "2026-03-01")  # fmt: skip
     assert code == 2 and "after today (2026-03-01)" in out["message"]
+
+
+def test_a_low_energy_label_within_20_kcal_is_not_refused(capsys, data_dir):
+    # Black coffee: 2 kcal against 0.4 from its rounded protein is 400% off but only 1.6 kcal.
+    coffee = ["--kcal", "2", "--protein", "0.1", "--carbs", "0", "--fat", "0"]
+    args = _label(name="Cafe solo")
+    args[9:17] = coffee
+    code, out = run(capsys, data_dir, *args)
+    assert code == 0 and out["warnings"]

@@ -460,7 +460,8 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
 
 def menu_check(totals: dict, targets: dict, share: float = 1.0) -> dict:
     """'ok', 'under' or 'over' per target: kcal within [target, target + MENU_KCAL_MARGIN], protein
-    at least the low end of its range, fibre at least its target, fat at least its minimum.
+    at least the low end of its range ('over', still passing, above its top), fibre at least its
+    target, fat at least its minimum.
     Carbohydrate fills the rest.
 
     'missing' when an item lacks the value: always for kcal; for a floor only while the known
@@ -930,8 +931,9 @@ def cmd_tastes(profile: Profile, args: argparse.Namespace) -> dict:
         when = args.date or today
         if when > today:
             raise ValueError(f"{when} is after today ({today}); rate a dish already eaten")
+        rated_before = any(fold(r.dish) == fold(args.dish) for r in current.ratings)
         known = (
-            any(fold(r.dish) == fold(args.dish) for r in current.ratings)
+            rated_before
             or recipes.find_in_menus(args.data_dir, args.dish)
             or any(
                 fold(r["dish"]) == fold(args.dish) for r in recipes.load_all(args.data_dir, current)
@@ -942,8 +944,8 @@ def cmd_tastes(profile: Profile, args: argparse.Namespace) -> dict:
                 f"{args.dish!r} is in no saved menu and not in the recipe library: check the "
                 "name, or give its recipe link with --source"
             )
-        scheduled = recipes.menu_dates(args.data_dir, args.dish)
-        rated_before = any(fold(r.dish) == fold(args.dish) for r in current.ratings)
+        # An explicit --date is the client saying when they ate it (off the menu, before it).
+        scheduled = recipes.menu_dates(args.data_dir, args.dish) if args.date is None else []
         if scheduled and all(d > when for d in scheduled) and not rated_before:
             raise ValueError(
                 f"{args.dish!r} is first scheduled for {scheduled[0]}, after {when}: rate it once "
@@ -954,7 +956,7 @@ def cmd_tastes(profile: Profile, args: argparse.Namespace) -> dict:
         tastes.save_tastes(current, path)
         # a dish the client likes joins the recipe library (data/recipes/)
         saved = (
-            recipes.save(args.data_dir, args.dish, args.source.strip(), today)
+            recipes.save(args.data_dir, rating.dish, args.source.strip(), today)
             if args.rating in recipes.SAVED_RATINGS
             else None
         )
@@ -1358,17 +1360,18 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         fetched_on=args.today or date.today(),
         source=catalogue.LABEL_SOURCE if args.label else catalogue.SOURCE,
     )
-    gap = None
-    if args.label and None not in (product.kcal, product.protein_g, product.carbs_g, product.fat_g):
-        kind, reason = foods.energy_check(product.to_row(), typed=True) or ("", "")
-        computed = foods.label_energy(product.to_row())
-        if kind == foods.GAP and abs(product.kcal - computed) / computed > LABEL_REFUSE_GAP:
-            gap = reason
-    if gap and not args.confirm_kcal:
+    known = None not in (product.kcal, product.protein_g, product.carbs_g, product.fat_g)
+    computed = foods.label_energy(product.to_row()) if known else 0
+    kcal_off = abs(product.kcal - computed) if computed else 0
+    if (
+        args.label
+        and not args.confirm_kcal
+        and kcal_off > max(LABEL_REFUSE_KCAL, LABEL_REFUSE_GAP * computed)
+    ):
         raise ValueError(
-            f"label kcal is {gap}: more than {LABEL_REFUSE_GAP:.0%} off, so probably a typo or "
-            "the wrong column (per serving, kJ). Read the label again; if it really says so, add "
-            "--confirm-kcal"
+            f"label kcal is {kcal_off / computed:.0%} from the 4/4/9 factors: more than "
+            f"{LABEL_REFUSE_GAP:.0%} off, so probably a typo or the wrong column (per serving, "
+            "kJ). Read the label again; if it really says so, add --confirm-kcal"
         )
     catalogue.save([*others, product], args.data_dir)
     warnings = []
@@ -1376,7 +1379,7 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         warnings.append(UNRECOGNISED_WARNING)
     elif args.label and "unknown" in product.allergens:
         warnings.append("allergens unknown: do not use for anyone with an allergy or intolerance")
-    if None not in (product.kcal, product.protein_g, product.carbs_g, product.fat_g):
+    if known:
         kind, reason = foods.energy_check(product.to_row(), typed=args.label) or ("", "")
         again = (
             ": read the label again, fix it with --replace" if args.label else "; check the pack"
@@ -1393,6 +1396,9 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
 # confirmed: nutrition.md "EU label rules and tolerances" allows about 20%, so a gap this size is a
 # typo, a per-serving column or kJ, not a tolerance. Between 10% and 50% it is a warning.
 LABEL_REFUSE_GAP = 0.5
+# nutrition.md: "EU label rules and tolerances": do not argue over 10-20 kcal, so a low-energy
+# product (black coffee, a zero drink) whose rounded figures are far apart in % is not refused.
+LABEL_REFUSE_KCAL = 20
 
 
 # The header lines /plan writes at the top of data/plan.md (.claude/skills/plan/SKILL.md step 6).

@@ -206,3 +206,17 @@ def test_cli_rate_refuses_a_dish_only_scheduled_after_the_rating_day(capsys, tmp
     code, out = run(capsys, tmp_path, "tastes", "rate", "Lentejas estofadas", "loved")
     assert code == 2 and "2026-10-27" in out["message"]
     assert not (tmp_path / "tastes.yaml").exists()
+
+
+def test_cli_rate_takes_an_explicit_date_before_the_scheduled_day(capsys, tmp_path):
+    # Eaten off the menu (at a relative's) before the saved menu schedules it.
+    menus = tmp_path / "menus"
+    menus.mkdir()
+    (menus / "2026-10-27.yaml").write_text(
+        "days:\n  - date: 2026-10-27\n    meals:\n      - meal: comida\n"
+        "        dishes:\n          - dish: Lentejas estofadas\n",
+        encoding="utf-8",
+    )
+    code, _ = run(capsys, tmp_path, "tastes", "rate", "Lentejas estofadas", "loved",
+                  "--date", "2026-10-20")  # fmt: skip
+    assert code == 0

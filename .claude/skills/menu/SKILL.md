@@ -179,8 +179,8 @@ Every lunch and dinner dish, whatever its source:
      never estimate one, and leave `--fibre` out when the label has none. Read the allergen
      declaration on the pack too: `--allergens` is required, `"a, b"` for the declared ones,
      `none` only if the pack declares none, `unknown` if the client cannot read it (the CLI then
-     warns). Say the product is "values from the label". A kcal more than 50% off its macros is
-     refused: read the label again with the client (per serving? kJ?); add `--confirm-kcal`
+     warns). Say the product is "values from the label". A kcal more than 50% (and 20 kcal) off its
+     macros is refused: read the label again with the client (per serving? kJ?); add `--confirm-kcal`
      only if the label really says so. If the CLI warns that kcal and macros
      disagree, read the label again and fix the entry with `--replace`.
    - Exit code 2 naming `COACH_OFF_CONTACT`: use `--label` as above, and tell the person running
