@@ -8,6 +8,7 @@ from datetime import date
 from coach import safety
 from coach.energy import FLOOR_KCAL, OBESITY_BMI, OLDER_ADULT_AGE, floor_note
 from coach.profile import GLP1, Profile
+from coach.text import number
 
 # nutrition.md: "EU label rules and tolerances": 4 kcal/g protein and carbohydrate, 9 fat.
 KCAL_PER_G = {"protein": 4, "carbs": 4, "fat": 9}
@@ -118,9 +119,9 @@ def macro_targets(
     if protein_weight < weight:
         if profile.language == "es":
             notes.append(
-                f"convención: proteína calculada con {protein_weight:.2f} kg, el peso con IMC "
-                f"{cap_bmi:g} para tu estatura, en lugar de tu peso actual: "
-                f"{protein_g / weight:.2f} g por kg de tu peso"
+                f"convención: proteína calculada con {number(protein_weight, 'es')} kg, el peso "
+                f"con IMC {cap_bmi:g} para tu estatura, en lugar de tu peso actual: "
+                f"{number(protein_g / weight, 'es')} g por kg de tu peso"
             )
         else:
             notes.append(

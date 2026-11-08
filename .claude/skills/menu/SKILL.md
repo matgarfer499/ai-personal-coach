@@ -204,8 +204,9 @@ Every lunch and dinner dish, whatever its source:
    `over` or `missing` for kcal, protein, fat and fibre. Fix any name in `unknown` first
    (another food, or ask the client; never estimate). `missing` means an item has no value for
    that nutrient: never fill it in; swap the item, or reach the floor with the known values.
-   Adjust grams until `ok` is true (kcal from the target up to 5% over it, protein and fibre at
-   least their targets, fat at least `fat_min_g`; a convention, see docs/conventions.md).
+   Adjust grams until `ok` is true (kcal from the target up to 5% over it, protein at least
+   `protein_min_g` and aiming for `protein_g`, fibre at least its target, fat at least
+   `fat_min_g`; a convention, see docs/conventions.md).
    Carbohydrate is not checked: it fills the rest. Spread protein over the meals per the loaded
    rule; to see a meal's protein, run `coach menu` with that meal's items only. Never sum
    anything yourself.

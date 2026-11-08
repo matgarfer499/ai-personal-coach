@@ -76,3 +76,27 @@ One line per bug that reached main: what broke, and which review layer should ha
   in one menu).
 - 2026-11-08 (beta2 p2-marcus-I3): imports in pounds stored kg with 8 or more decimals.
   Layer: tests (lbs fixtures checked with approx, never the stored text).
+- 2026-11-08 (beta3 p3-antonio-N7, p1-lucia-N1, p1-lucia-N2): the notes scan missed Spanish
+  verb forms ("me mareé", "me aprieta el pecho", "me falta el aire") and flagged "sin mareos".
+  Layer: tests (fixtures used noun phrases only, never a verb form or a negation).
+- 2026-11-08 (beta3 p3-antonio-N2): symptom synonyms worked in `checkin` but not `profile set`.
+  Layer: code review (one input path only).
+- 2026-11-08 (beta3 p2-marcus-N8, p7-nuevo-N6, p1-lucia-N12): PDF video URLs wrapped mid-word.
+  Layer: skill dry run (PDF read with pdftotext, never looked at).
+- 2026-11-08 (beta3 p1-lucia-N9, p5-elena-N12, p4-sara-N11): skill text drifted from the code
+  (notes "replace", protein "at least the target", hidden `--today`). Layer: docs tests.
+- 2026-11-08 (beta3 p3-antonio-N6, p6-james-N11, p1-lucia-N10, p1-lucia-N11): a symptom stop had
+  no documented exit; `medically_cleared` did not lift it and an undocumented `profile set`
+  cleared it with no clinician. Layer: plan review (a stop shipped without its exit).
+- 2026-11-08 (beta3 p1-lucia-N8, p4-sara-N12): CLI errors and menu warnings stayed English
+  with language es. Layer: code review against the profile-language rule.
+- 2026-11-08 (beta3 p5-elena-N1, p5-elena-N2, p5-elena-N4, p2-marcus-N2, p6-james-N15): `plan
+  check` compared session counts and kcal only, so content errors passed. Layer: code review
+  (a check named for the plan that read only its header).
+- 2026-11-08 (beta3 p6-james-N13): Push-up unmapped. Layer: tests.
+- 2026-11-08 (beta3 p4-sara-N2): a dry product replaced a cooked food gram for gram. Layer:
+  tests (replaces fixtures used the same form).
+- 2026-11-08 (beta3 p4-sara-N6): the first rating kept the typed case. Layer: tests.
+- 2026-11-08 (beta3 p6-james-N8): after a running injury the long-run cap returned to the spike
+  run that preceded it. Layer: tests (no fixture with a spike before an injury).
+- 2026-11-08 (beta3 p6-james-N9): `strength deload` answered under no_training. Layer: tests.

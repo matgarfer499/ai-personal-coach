@@ -8,6 +8,8 @@ from dataclasses import astuple, dataclass, fields, replace
 from datetime import date
 from pathlib import Path
 
+from coach.text import number
+
 # Plausibility limits for typed-in values (convention: input validation, not coaching).
 RANGES = {
     "weight_kg": (25.0, 400.0),
@@ -25,7 +27,9 @@ JUMP_KG_PER_DAY = 1.0
 JUMP_MAX_DAYS = 7
 
 
-def weight_jump(checkin: Checkin, earlier: list[Checkin]) -> str | None:
+def weight_jump(
+    checkin: Checkin, earlier: list[Checkin], language: str | None = None
+) -> str | None:
     """A warning when the new weight is implausibly far from the nearest other weigh-in."""
     others = [c for c in earlier if c.weight_kg is not None and c.date != checkin.date]
     if checkin.weight_kg is None or not others:
@@ -34,6 +38,13 @@ def weight_jump(checkin: Checkin, earlier: list[Checkin]) -> str | None:
     change, days = checkin.weight_kg - near.weight_kg, abs((near.date - checkin.date).days)
     if abs(change) <= JUMP_KG_PER_DAY * min(days, JUMP_MAX_DAYS):
         return None
+    if language == "es":
+        return (
+            f"el peso {number(checkin.weight_kg, language)} kg está a "
+            f"{number(abs(change), language)} kg de {number(near.weight_kg, language)} kg del "
+            f"{near.date} ({days} día{'s' if days > 1 else ''}): guardado; comprueba que no es "
+            "una errata"
+        )
     return (
         f"weight {checkin.weight_kg:g} kg is {abs(change):g} kg away from {near.weight_kg:g} kg on "
         f"{near.date} ({days} day{'s' if days > 1 else ''}): stored; confirm it is not a typo"

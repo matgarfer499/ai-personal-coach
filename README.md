@@ -37,7 +37,8 @@ rule in `knowledge/` with its sources.
 ## Why this one
 
 - **Every number from code.** Calories, macros, zones, loads and the weight trend come from the
-  `coach` CLI (`uv run python -m coach ... --json`), with tests, not from the model.
+  `coach` CLI (`uv run python -m coach ... --json`; `--json` goes after the subcommand, as in
+  `coach energy --json`), with tests, not from the model.
 - **Every rule graded and sourced.** Each rule in `knowledge/` is graded strong, moderate or
   emerging and cites the studies or guidelines it rests on; what could not be confirmed is listed in
   [`docs/dropped-claims.md`](docs/dropped-claims.md).
@@ -50,6 +51,29 @@ rule in `knowledge/` with its sources.
   choose. The conversation itself goes to your model provider, as in any Claude Code session.
 - **Menus you would eat.** Dishes from real recipes and the products you buy, checked against
   your targets, with a shopping list and a printable PDF.
+
+## Scope: a base to build on
+
+The point of this repo is a solid, AI-ready evidence base, not a coach for everything. It covers
+the common ground for a healthy adult: energy and macros, strength training, general cardio and
+running basics, recovery and the safety screening, each as a graded, sourced rule that the coach
+can quote and the CLI can compute.
+
+It will not try to cover every sport or diet: running build-ups, contact sports, swimming, a
+sodium-restricted diet for high blood pressure, gluten-free or lactose-free menus each deserve
+their own rules, and nobody can write them all well. Instead it is built to be extended for your
+case:
+
+1. `/research "your topic"` (for example `"swimming volume for masters swimmers"` or
+   `"low-sodium diet and blood pressure"`) searches, verifies and adds graded rules to
+   `knowledge/` on a branch you review.
+2. When the new rules need numbers, add them to the `coach` package with a test, and cite the rule
+   next to each constant (see [`CLAUDE.md`](CLAUDE.md)).
+3. When they need a new conversation, add or adapt a skill in `.claude/skills/`.
+
+After four simulated betas (3.5, 3.7, 4.1 and 4.1 out of 5) the core is stable and active
+development has stopped. [`docs/roadmap.md`](docs/roadmap.md) lists what the betas asked for and
+was left out on purpose, as examples of extensions rather than a backlog.
 
 ## First 10 minutes
 
@@ -67,7 +91,17 @@ You need a terminal (Terminal on macOS, PowerShell on Windows); new to it? See t
    Python 3.12 and the coach's libraries for you, and [Git](https://git-scm.com/downloads) if
    `git --version` says it is missing (on Windows, Git for Windows also helps Claude Code).
 3. **Make your own private copy** before adding anything about you: on GitHub, "Use this
-   template" and choose Private (see [Your data stays private](#your-data-stays-private)).
+   template" and choose Private (see [Your data stays private](#your-data-stays-private)). No
+   GitHub account? Download it and keep it on your computer only:
+
+   ```
+   git clone https://github.com/matgarfer499/ai-personal-coach.git ai-personal-coach
+   cd ai-personal-coach
+   git remote remove origin
+   ```
+
+   With no `origin`, nothing you add can be pushed anywhere (then start step 4 at
+   `uv sync --extra pdf`: you are already in the folder).
 4. **Download it and install the coach**, using your copy's address:
 
    ```
@@ -78,7 +112,9 @@ You need a terminal (Terminal on macOS, PowerShell on Windows); new to it? See t
    ```
 
    `coach doctor` checks Python, the PDF extra, the data folder, uv and Claude Code, and prints
-   the command that fixes anything missing.
+   one line per check with the command that fixes anything missing (`--json` for the same as
+   JSON). On a fresh install the `profile` line says `FIX ... no profile yet`: that is expected
+   until `/setup` has run.
 5. **Start the coach**: run `claude` in that folder. At Claude's prompt (where you type to it),
    type `/setup` and press Enter. It asks one question per message, in your language, for about
    15 minutes: you, three health questions from the ACSM preparticipation method (regular
@@ -86,6 +122,12 @@ You need a terminal (Terminal on macOS, PowerShell on Windows); new to it? See t
    eating-disorder prompt, medication and blood pressure. The PAR-Q+ questionnaire is offered by
    link as an optional extra ([forms/README.md](forms/README.md)). Then it gives your starting
    targets, and `/plan` writes your first plan.
+
+   Claude Code asks once whether you trust the folder, then asks before running a command or
+   editing a file (the coach runs `uv run python -m coach ...` and writes to `data/`). Approve
+   them, or choose "don't ask again" for `uv run python -m coach` commands in this folder; that
+   choice is yours to make, so the repo ships no permission settings
+   ([permissions](https://code.claude.com/docs/en/permissions)).
 
 Words such as RIR, RPE or bpm are explained the first time they come up, from
 [`docs/glossary.md`](docs/glossary.md) (Spanish and English).
@@ -278,13 +320,21 @@ How the original evidence base was built, and its limits:
   `desk_training` (desk band); for `active` it adds a note and the client stores `pal_override` if
   the activity comes from exercise (a job-plus-exercise mix cannot be modelled yet).
 
+## Roadmap
+
+There is no planned work: the coach is meant to be extended per case (see
+[Scope](#scope-a-base-to-build-on)). [docs/roadmap.md](docs/roadmap.md) lists the gaps the betas
+found and why each was left out (most lack a rule in `knowledge/`): run-by-run running schedules,
+sodium-aware menus, portions per eater, a few grades and wordings for the next research pass, and
+the rest of the CLI in Spanish.
+
 ## What is inside
 
 | Folder | What |
 |---|---|
 | `.claude/skills/` | The commands, one `SKILL.md` each: setup, checkin, import, plan, review, menu, research |
 | `coach/` | The numbers: energy and macros, weight trend, zones, strength progression, runs, safety flags, food tables, workout and run importers, CLI |
-| `knowledge/` | 4 rule files (strength and hypertrophy, cardio and health, nutrition, recovery and habits), 469 graded rules, 890 sources; `index.md` lists every rule |
+| `knowledge/` | 4 rule files (strength and hypertrophy, cardio and health, nutrition, recovery and habits), 474 graded rules, 898 sources; `index.md` lists every rule |
 | `foods/`, `regions/es/` | Food composition tables (USDA FoodData Central) and Spain-specific foods; each client's own supermarket products come from Open Food Facts into `data/` |
 | `data/` | Your personal data. Ignored by git; only `.gitkeep` is committed |
 | `docs/` | Safety, conventions, how the evidence was gathered, dry-run examples, a testing guide |
@@ -305,6 +355,8 @@ Every number in `coach/` cites the knowledge rule it comes from; numbers no rule
 
 ## Extending it
 
+- Another sport, diet or population: `/research` first, then code and a skill only if needed
+  (see [Scope](#scope-a-base-to-build-on)).
 - Another workout app: [`docs/adding-an-importer.md`](docs/adding-an-importer.md).
 - Another country's foods and supermarkets: [`docs/adding-a-region.md`](docs/adding-a-region.md).
 - Working on the repo with Claude Code: [`CLAUDE.md`](CLAUDE.md); with another agent:

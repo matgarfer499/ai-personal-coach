@@ -209,3 +209,14 @@ def test_a_session_whose_lifts_are_all_unread_is_still_a_session():
         "sentadilla 3x8",
     ]
     assert plan_sessions(text) == 2
+
+
+# Beta 3 p2-marcus-N8, p7-nuevo-N6, p1-lucia-N12: printed URLs wrapped mid-word.
+def test_the_video_grid_prints_a_search_to_type_not_a_wrapping_url(capsys, data_dir):
+    pytest.importorskip("reportlab")
+    run(capsys, data_dir, "plan", "export")
+    data = (data_dir / "plan.pdf").read_bytes()
+    links = data.count(b"/URI (https://www.youtube.com/results")
+    assert links == len(plan_exercises(PLAN))
+    assert data.count(b"youtube.com/results") == links  # only in the link targets
+    assert b"YouTube: Press banca t" in data

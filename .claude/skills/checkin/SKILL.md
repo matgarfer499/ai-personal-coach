@@ -77,7 +77,9 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
      Mexico, 999 in the UK, 000 in Australia). `coach knowledge section recovery-habits
      "Cardiac warning symptoms: stop and refer"`.
    - `possible_red_flags` in the `checkin add` output: the notes contain words for those
-     symptoms. Ask about each once in plain words; if they confirm, run the `confirm_with`
+     symptoms. When the output already carries `emergency_line` (a possible chest pain), quote
+     it on its own line first. Ask about each once in
+     plain words; if they confirm, run the `confirm_with`
      command it prints (synonyms such as `chest_tightness` are accepted too). The same output
      then carries `emergency_line` and `deferral_line`: quote them as above.
    - `possible_injury` in the output: the notes mention a swollen joint. Ask whether it follows
@@ -85,8 +87,12 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
      `--exercises` when running hurts it) and follow
      `coach knowledge section recovery-habits "Knee injury: signs of ligament or meniscus damage"`
      for a knee.
-   - After a training stop, `coach plan check` says the plan is stale and `coach plan export`
-     refuses: tell the client to set the old plan aside until a clinician clears them.
+   - After a training stop, `coach plan check` says the plan is stale, `coach plan export`
+     refuses and plan.md gains a "Plan suspendido" section: tell the client to set the old plan
+     aside until a clinician clears them. When they say a doctor has cleared them, ask who, when
+     and what they said, record it with `coach clearance add --by WHO --date YYYY-MM-DD --note
+     "..."` (the only way to lift a symptom stop; `profile set` and `--symptoms no` refuse), and
+     offer /plan for the light-to-moderate restart `coach safety` then gives.
    - Fever, aches all over, or feeling unwell below the neck: no training until better
      (`coach knowledge section recovery-habits "Fever and systemic illness: do not train"`).
      A head cold only: light training is optional (`coach knowledge section recovery-habits
@@ -129,7 +135,7 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
 5. Record: `coach checkin add --weight KG --waist CM --intake KCAL --sleep H --notes "..."`,
    leaving out what they did not give. One row per day: weight is this morning's, intake is
    yesterday's, sleep is last night's (convention). A second check-in the same day only fills in
-   or replaces the fields it gives. Notes, separated by `; `: symptoms, how training went, and
+   or replaces the numbers it gives; its notes are added after that day's earlier notes. Notes, separated by `; `: symptoms, how training went, and
    the weekly-question notes from step 4. For another day, add `--date YYYY-MM-DD`. The CLI refuses weight, waist and calories when weigh-ins are off; then record the rest. If the
    output lists `possible_red_flags`, ask about them as step 3 says before you answer. If it lists
    `warnings` (a weight far from the nearest weigh-in), read the figure back and ask whether it

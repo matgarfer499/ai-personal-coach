@@ -121,7 +121,7 @@ def test_pal_override_reaches_energy_and_macros(capsys, data_dir):
     assert shown["profile"]["pal_override"] == energy.DESK_PAL
     assert "pal_override" not in shown["missing"]
     # The flag clears: the stored choice is ignored, never silently kept in force.
-    run(capsys, data_dir, "profile", "set", "screening.cardiac_symptoms", "false")
+    run(capsys, data_dir, "clearance", "add", "--by", "GP", "--note", "ok")
     _, out = run(capsys, data_dir, "energy")
     assert out["tdee"] == pytest.approx(_rmr(data_dir) * energy.band_midpoint("active"))
     run(capsys, data_dir, "profile", "set", "pal_override", "none")
@@ -136,7 +136,7 @@ def test_profile_set_pal_override_warns_when_it_has_no_effect(capsys, data_dir):
     assert any("no effect" in w for w in warnings())  # activity level is desk
     _stopped_active(data_dir)
     assert warnings() == []
-    run(capsys, data_dir, "profile", "set", "screening.cardiac_symptoms", "false")
+    run(capsys, data_dir, "clearance", "add", "--by", "GP", "--note", "ok")
     assert any("inactive until a training hold applies" in w for w in warnings())
 
 
@@ -1674,9 +1674,14 @@ def test_import_skips_sets_after_today(capsys, data_dir, tmp_path):
 
 
 # Beta p1-lucia-I10, p5-elena-I13: plan.md's header is checked against the CLI.
-def _plan_md(data_dir, kcal, in_deficit="true"):
+# A plan written before a training stop lists training.
+OLD_WEEK = "\n- A: Squat 3x8 60 kg\n"
+
+
+def _plan_md(data_dir, kcal, in_deficit="true", week=""):
     (data_dir / "plan.md").write_text(
-        f"Date: 2026-04-01\ntarget_kcal: {kcal}\nin_deficit: {in_deficit}\n\n## Training week\n",
+        f"Date: 2026-04-01\ntarget_kcal: {kcal}\nin_deficit: {in_deficit}\n\n"
+        f"## Training week\n{week}",
         encoding="utf-8",
     )
 
@@ -1880,7 +1885,7 @@ def test_unknown_acsm_tokens_are_refused(capsys, data_dir):
 
 def test_changing_known_disease_drops_an_old_medical_clearance(capsys, data_dir):
     run(capsys, data_dir, "profile", "set", "screening.known_disease", "metabolic")
-    run(capsys, data_dir, "profile", "set", "screening.medically_cleared", "true")
+    run(capsys, data_dir, "clearance", "add", "--by", "GP", "--note", "ok")
     run(capsys, data_dir, "profile", "set", "screening.known_disease", "metabolic, renal")
     screening = run(capsys, data_dir, "profile", "show")[1]["profile"]["screening"]
     assert "medically_cleared" not in screening
@@ -1902,7 +1907,7 @@ def test_taper_refusal_names_the_acsm_clearance_stop(capsys, data_dir):
 
 def test_changing_symptoms_drops_an_old_medical_clearance(capsys, data_dir):
     run(capsys, data_dir, "profile", "set", "screening.known_disease", "metabolic")
-    run(capsys, data_dir, "profile", "set", "screening.medically_cleared", "true")
+    run(capsys, data_dir, "clearance", "add", "--by", "GP", "--note", "ok")
     run(capsys, data_dir, "profile", "set", "screening.symptoms", "dizzy")
     screening = run(capsys, data_dir, "profile", "show")[1]["profile"]["screening"]
     assert "medically_cleared" not in screening
@@ -1910,7 +1915,7 @@ def test_changing_symptoms_drops_an_old_medical_clearance(capsys, data_dir):
 
 def test_symptoms_at_checkin_drop_an_old_medical_clearance(capsys, data_dir):
     run(capsys, data_dir, "profile", "set", "screening.known_disease", "metabolic")
-    run(capsys, data_dir, "profile", "set", "screening.medically_cleared", "true")
+    run(capsys, data_dir, "clearance", "add", "--by", "GP", "--note", "ok")
     run(capsys, data_dir, "checkin", "add", "--symptoms", "dizzy")
     screening = run(capsys, data_dir, "profile", "show")[1]["profile"]["screening"]
     assert "medically_cleared" not in screening
@@ -1928,7 +1933,7 @@ def test_symptoms_at_checkin_drop_an_old_medical_clearance(capsys, data_dir):
 )
 def test_a_training_stop_makes_the_plan_stale_and_refuses_the_export(capsys, data_dir, stop):
     _, macros = run(capsys, data_dir, "macros")
-    _plan_md(data_dir, macros["kcal"], "false")
+    _plan_md(data_dir, macros["kcal"], "false", OLD_WEEK)
     run(capsys, data_dir, "profile", "set", "screening.regular_exercise", "false")
     run(capsys, data_dir, "profile", "set", "screening.symptoms", "no")
     if stop[0] != "profile":
@@ -2009,7 +2014,7 @@ def test_bp_reason_survives_a_training_stop_as_a_check_to_ask_for(capsys, data_d
 
 def test_the_stale_plan_names_only_the_stop_not_the_bp_check(capsys, data_dir):
     _, macros = run(capsys, data_dir, "macros")
-    _plan_md(data_dir, macros["kcal"], "false")
+    _plan_md(data_dir, macros["kcal"], "false", OLD_WEEK)
     run(capsys, data_dir, "profile", "set", "conditions", "hypertension")
     run(capsys, data_dir, "checkin", "add", "--symptoms", "chest_pain")
     _, out = run(capsys, data_dir, "plan", "check")
@@ -2226,7 +2231,7 @@ def test_race_in_the_profile_feeds_taper_and_plan(capsys, data_dir):
     code, out = run(capsys, data_dir, "runs", "taper")
     assert code == 0 and out["race_date"] == "2026-04-12"
     code, plan = run(capsys, data_dir, "runs", "plan")
-    assert code == 0 and plan["race"] == {"date": "2026-04-12", "km": 21.1}
+    assert code == 0 and plan["race"]["date"] == "2026-04-12" and plan["race"]["km"] == 21.1
     assert plan["easy_share_min"] == 0.7 and plan["long_run_cap_km"] == pytest.approx(13.2)
     assert plan["taper"]["in_window"] is True and plan["weekly_km_max"] is None
 
@@ -2298,3 +2303,34 @@ def test_import_in_pounds_stores_two_decimals(capsys, data_dir, tmp_path):
     run(capsys, data_dir, "import", str(lbs))
     stored = (data_dir / "sessions.csv").read_text(encoding="utf-8")
     assert "63.5," in stored and "63.50293" not in stored
+
+
+@pytest.mark.parametrize(
+    "notes", ["me aprieta el pecho al subir escaleras", "siento un peso en el pecho"]
+)
+def test_a_possible_cardiac_red_flag_prints_the_emergency_line_at_once(capsys, data_dir, notes):
+    run(capsys, data_dir, "profile", "set", "language", "es")
+    _, out = run(capsys, data_dir, "checkin", "add", "--notes", notes)
+    assert out["possible_red_flags"] and "llama ya" in out["emergency_line"]
+    assert "cardiac_symptoms" not in load_profile(data_dir / "profile.yaml").screening
+
+
+@pytest.mark.parametrize(
+    "notes", ["me mareé un poco", "me duele el brazo izquierdo de las dominadas"]
+)
+def test_other_possible_red_flags_wait_for_the_confirmation(capsys, data_dir, notes):
+    _, out = run(capsys, data_dir, "checkin", "add", "--notes", notes)
+    assert out["possible_red_flags"] and "emergency_line" not in out
+
+
+def test_profile_set_screening_symptoms_accepts_synonyms(capsys, data_dir):
+    code, _ = run(capsys, data_dir, "profile", "set", "screening.symptoms", "chest_tightness")
+    assert code == 0
+    assert load_profile(data_dir / "profile.yaml").screening["symptoms"] == ["chest_pain"]
+
+
+# Beta 3 p4-sara-N11, p4-sara-I11 (b1): `--today` after the subcommand is in its --help.
+def test_today_after_the_subcommand_is_in_its_help(capsys):
+    with pytest.raises(SystemExit):
+        main(["menu", "--help"])
+    assert "--today" in capsys.readouterr().out

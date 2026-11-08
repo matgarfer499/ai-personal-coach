@@ -88,15 +88,23 @@ SCREENING_KEYS = {
     "regular_exercise": bool,
     "known_disease": list,  # DISEASE_TOKENS diagnosed by a doctor; an empty list is none
     "symptoms": list,  # SYMPTOM_TOKENS reported at screening; an empty list is none
-    "medically_cleared": bool,  # a clinician cleared exercise for the known disease
+    "medically_cleared": bool,  # a clinician cleared exercise (`coach clearance add`)
+    # recovery-habits.md: "Cardiac warning symptoms: stop and refer": training resumes only once a
+    # clinician clears it; `coach clearance add` records who, when and what they said.
+    "cleared_on": date,
+    "cleared_by": str,
+    "clearance_note": str,
+    "symptoms_on": date,  # the latest day a warning symptom was reported
     "menstrual": str,  # one of MENSTRUAL_STATES
     "bp_systolic": int,  # latest seated resting reading, mmHg
     "bp_diastolic": int,
 }
 # The PAR-Q+ answers a vigorous-work review covers; changing one drops `vigorous_reviewed`.
 PARQ_ANSWERS = ("parq_any_yes", "parq_followup_yes")
-# The answers a medical clearance covers; changing one drops `medically_cleared`.
+# The answers a medical clearance covers; changing one drops the clearance record.
 CLEARANCE_ANSWERS = ("known_disease", "symptoms", "cardiac_symptoms")
+# The clearance record: written only by `coach clearance add`, never by `profile set`.
+CLEARANCE_RECORD = ("medically_cleared", "cleared_on", "cleared_by", "clearance_note")
 # recovery-habits.md: "ACSM 2015 screening algorithm": the diseases that change the cell.
 # Hypertension is not one of them (ACSM 2015 dropped risk-factor counting).
 DISEASE_TOKENS = ("cardiovascular", "metabolic", "renal")
@@ -171,6 +179,7 @@ TYPES = {
     "hr_rest": int,
     "language": str,
     "region": str,
+    "race_goal_time": str,
     "medications": list,
     "conditions": list,
     "screening": dict,
@@ -204,6 +213,7 @@ class Profile:
     # `coach runs plan` read it.
     race_date: date | None = None
     race_km: float | None = None
+    race_goal_time: str | None = None  # H:MM:SS or MM:SS, the client's goal finish time
     language: str | None = None
     region: str | None = None
     emergency_number: str | None = None  # the client's own; else their region's (coach safety)
@@ -239,6 +249,28 @@ class Profile:
         return self.require("weight_kg") / height_m**2
 
 
+_DURATION = re.compile(r"^(?:(\d{1,2}):)?(\d{1,3}):([0-5]\d)$")
+
+
+def parse_duration(text: str) -> int:
+    """Seconds in an H:MM:SS or MM:SS time; ValueError for anything else."""
+    match = _DURATION.match(str(text).strip())
+    if not match:
+        raise ValueError(f"a time must be H:MM:SS or MM:SS, not {text!r}")
+    hours, minutes, seconds = (int(g or 0) for g in match.groups())
+    if hours and minutes > 59 or not (hours or minutes or seconds):
+        raise ValueError(f"a time must be H:MM:SS or MM:SS, not {text!r}")
+    return hours * 3600 + minutes * 60 + seconds
+
+
+def format_duration(seconds: float) -> str:
+    """H:MM:SS for an hour or more, else M:SS; rounded to the second."""
+    total = round(seconds)
+    hours, rest = divmod(total, 3600)
+    minutes, secs = divmod(rest, 60)
+    return f"{hours}:{minutes:02d}:{secs:02d}" if hours else f"{minutes}:{secs:02d}"
+
+
 def _validate(data: dict) -> None:
     known = {f.name for f in fields(Profile)}
     unknown = sorted(set(data) - known)
@@ -257,6 +289,8 @@ def _validate(data: dict) -> None:
         if value is not None and (isinstance(value, bool) or not isinstance(value, kind)):
             hint = "a date YYYY-MM-DD, unquoted" if kind is date else kind.__name__
             raise ValueError(f"{name} must be {hint}, not {value!r}")
+    if data.get("race_goal_time") is not None:
+        parse_duration(data["race_goal_time"])  # raises for a malformed time
     if data.get("race_km") is not None and not data["race_km"] > 0:
         raise ValueError(f"race_km must be above 0, not {data['race_km']!r}")
     for name, limits in (("hr_max", HR_MAX_RANGE), ("hr_rest", HR_REST_RANGE)):

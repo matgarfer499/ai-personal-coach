@@ -483,7 +483,7 @@ def shopping(
         "chains": {
             chain: [
                 {"name": name, UNIT_KEY[unit]: round(total, 1)}
-                | _units(total, unit_g.get((name, unit)))
+                | _units(total, unit_g.get((name, unit)), language)
                 | _packs(total, packs.get((name, unit)))
                 for (name, unit), total in sorted(amounts[chain].items())
             ]
@@ -496,10 +496,33 @@ def shopping(
     }
 
 
+# nutrition.md: "Dry or raw to cooked weight for grains, pasta, legumes and vegetables: Bognar
+# yield factors": cooked edible weight per dry or raw weight; dry or raw = cooked / factor. Only
+# foods with a row in that rule (no chickpeas or canned legumes: D276).
+COOKED_YIELDS = {
+    "white rice, cooked": ("white rice, raw", 2.98),
+    "brown rice, cooked": ("brown rice, raw", 2.60),
+    "pasta, cooked": ("pasta, dry", 2.10),
+    "lentils, cooked": ("lentils, dry", 2.73),
+    # The rule: boiled vegetables change little, "weigh them raw as roughly the cooked weight".
+    "broccoli, boiled": ("broccoli, raw", 1.0),
+}
+
+
+def dry_form(food: Food) -> tuple[str, float] | None:
+    """(the dry or raw food's name_en, the yield factor) a cooked food is bought as, else None."""
+    return COOKED_YIELDS.get(food.name_en)
+
+
 def _bought_as(
     food: Food, amount: float, unit: str, table: list[Food], replaced: dict[str, Food]
 ) -> tuple[Food, float, str]:
     """The food actually bought for this item, with the amount in its unit."""
+    dry = dry_form(food)
+    raw = find(dry[0], table) if dry else None
+    # A product that stands for the cooked food (a jar, a cooked-rice pouch) is bought as is.
+    if raw is not None and unit == "g" and fold(food.name_en) not in replaced:
+        food, amount = raw, amount / dry[1]
     target = find(food.buy_as, table) if food.buy_as else None
     if target is not None and unit == "g" and food.unit_g and target.unit_g:
         food, amount = target, amount / food.unit_g * target.unit_g
@@ -521,11 +544,18 @@ def _packs(amount: float, size: float | None) -> dict:
     return {"packs": math.ceil(round(amount / size, 2)), "pack_size": size}
 
 
-def _units(grams: float, unit: tuple[str, float] | None) -> dict:
+def _units(grams: float, unit: tuple[str, float] | None, language: str | None = None) -> dict:
     """`units` and `unit_name` for a countable food, else nothing."""
     if unit is None:
         return {}
     name, weight = unit
+    # `unit_name` stays the table's value (the PDF translates it); `unit_label` is for reading.
+    if language == "es":  # the PDF's Spanish unit words (export.LABELS)
+        from coach.export import LABELS  # imported here: the PDF module is optional weight
+
+        label = {"unit_label": LABELS["es"]["unit_names"].get(name, name)}
+    else:
+        label = {}
     # convention: whole units, rounded up (one buys whole eggs); 2 decimals first, so 600 g of
     # 50 g eggs is 12, not 13 from float noise.
-    return {"units": math.ceil(round(grams / weight, 2)), "unit_name": name}
+    return {"units": math.ceil(round(grams / weight, 2)), "unit_name": name} | label

@@ -44,9 +44,9 @@ as question text. `coach profile set screening.KEY none` clears an answer (an ol
 
 | Screen | How | Stored as | Rule | Asked again |
 |---|---|---|---|---|
-| ACSM 2015 preparticipation screen (the default) | Three questions in the coach's own words, one per message: regular exercise (30+ min of planned moderate exercise, 3+ days a week, for the last 3 months), a doctor's diagnosis of cardiovascular, metabolic (type 1 or 2 diabetes) or renal disease, and the warning symptoms. It is a published method, not a form, so it can be asked in the chat; the PAR-Q+ cannot (below) | `regular_exercise`, `known_disease` (list of `cardiovascular`, `metabolic`, `renal`; `no` stores none), `symptoms` (list of the symptom tokens; `no` stores none), `medically_cleared` | recovery-habits.md "ACSM 2015 screening algorithm", "Cardiac warning symptoms: stop and refer" | at /setup redo; `coach profile set` drops `medically_cleared` whenever `known_disease`, `symptoms` or `cardiac_symptoms` changes, and `checkin add --symptoms` drops it too |
+| ACSM 2015 preparticipation screen (the default) | Three questions in the coach's own words, one per message: regular exercise (30+ min of planned moderate exercise, 3+ days a week, for the last 3 months), a doctor's diagnosis of cardiovascular, metabolic (type 1 or 2 diabetes) or renal disease, and the warning symptoms. It is a published method, not a form, so it can be asked in the chat; the PAR-Q+ cannot (below) | `regular_exercise`, `known_disease` (list of `cardiovascular`, `metabolic`, `renal`; `no` stores none), `symptoms` (list of the symptom tokens; `no` stores none), `medically_cleared` | recovery-habits.md "ACSM 2015 screening algorithm", "Cardiac warning symptoms: stop and refer" | at /setup redo; the clearance is written only by `coach clearance add`; `coach profile set` drops it whenever `known_disease`, `symptoms` or `cardiac_symptoms` changes, and `checkin add --symptoms` drops it too |
 | PAR-Q+ 2023 (optional) | Offered by link, never required. The client fills in the official form (eparmedx.com) in their language; the coach then asks only the two outcomes, in its own words. The form's terms forbid putting its questions into a chat or app, translating them or redistributing them without written permission from the PAR-Q+ Collaboration, so the coach never quotes them | `parq_any_yes`, `parq_followup_yes` | recovery-habits.md "PAR-Q+ 2023 as an optional extra screen", "PAR-Q+ specific thresholds" | at /setup redo, e.g. after a new diagnosis, medication or pregnancy |
-| Review before vigorous work | Asked when `review_before_vigorous` is set and the client wants vigorous or maximal work: has a qualified exercise professional or clinician reviewed it? | `vigorous_reviewed` | recovery-habits.md "PAR-Q+ specific thresholds" | at /setup redo; `coach profile set` drops it whenever `parq_any_yes` or `parq_followup_yes` changes, since the review covered the old answers |
+| Review before vigorous work | Asked when `review_before_vigorous` is set and the client wants vigorous or maximal work: has a qualified exercise professional or clinician reviewed it? | `vigorous_reviewed` | recovery-habits.md "PAR-Q+ specific thresholds" | at /setup redo; `coach profile set` drops it whenever `parq_any_yes` or `parq_followup_yes` changes, and a new warning symptom (`checkin add --symptoms` or `profile set`) drops it too, since the review covered the old answers |
 | Injuries | Any current injury or pain in an area: where, since when, who assessed it, which logged exercises it affects | `injuries` (not under `screening`; set with `coach injury add` and `coach injury clear`) | recovery-habits.md "Some pain during exercise is acceptable in chronic, assessed pain" | at /setup, /plan, and whenever the client reports pain or a clearance at /checkin |
 | Eating-disorder prompt | The five SCOFF-style questions in the coach's own words, as a prompt for a conversation, never a diagnosis; one follow-up for a partial answer | `scoff_yes_count` (clear yes answers, 0 to 5), `scoff_positive` (a warning sign) | nutrition.md "Eating-disorder screening: brief questions as a prompt" | set again if warning signs appear (Red flags) |
 | Cardiac warning symptoms | Part of the ACSM screen at /setup (`symptoms`); at /checkin `checkin add --symptoms` | `symptoms`, `cardiac_symptoms` | recovery-habits.md "Cardiac warning symptoms: stop and refer" | every /checkin |
@@ -128,9 +128,12 @@ not a symptom awaiting a clinician.
 `neck_jaw_arm_pain`, `breathless`, `dizzy`, `faint`, `palpitations`, `ankle_swelling`, `calf_pain`,
 `unusual_fatigue`, from recovery-habits.md "Cardiac warning symptoms: stop and refer"); any one
 sets `screening.cardiac_symptoms true`. Free-text `--notes` are scanned for symptom words in
-Spanish and English (`safety.SYMPTOM_WORDS`); hits come back as `possible_red_flags`, a prompt
-for the skill to ask, never a flag on their own, with `confirm_with`: the exact `checkin add
---symptoms` command that records a yes. `--symptoms` also takes synonyms
+Spanish and English (`safety.SYMPTOM_WORDS`, verb forms included: "me mareé", "me aprieta el
+pecho", "me falta el aire"); a phrase right after a negation in the same clause ("sin mareos
+hoy", `safety.NEGATIONS`) is skipped. Hits come back as `possible_red_flags`, a prompt for the
+skill to ask, never a flag on their own, with `confirm_with`: the exact `checkin add --symptoms`
+command that records a yes. A possible chest-pain hit also returns `emergency_line` at once,
+before the client confirms. `--symptoms` and `profile set screening.symptoms` also take synonyms
 (`safety.SYMPTOM_SYNONYMS`, e.g. `chest_tightness` is `chest_pain`). Swollen-joint words come back
 as `possible_injury` (recovery-habits.md "Knee injury: signs of ligament or meniscus damage"):
 the skill asks about an injury and records it with `coach injury add`. When symptoms are
@@ -140,7 +143,27 @@ recorded, `checkin add` returns `deferral_line` and `emergency_line` to quote.
 
 With `no_training` (cardiac symptoms, BP 180+, or the ACSM clearance cell), `coach plan check`
 is not ok ("the plan is stale") and `coach plan export` refuses: an old plan.md or PDF that
-prescribes training never outlives a stop. /plan runs again once a clinician clears it. An
+prescribes training never outlives a stop, and plan.md gets a trailing "Plan suspendido" / "Plan
+suspended" section while the stop lasts (at the end, never near the header lines /menu reads).
+/plan runs again once a clinician clears it.
+
+### Clearance: the only way out of a symptom stop
+
+`coach clearance add --by WHO --date YYYY-MM-DD --note TEXT` records that a clinician cleared
+exercise (`medically_cleared`, `cleared_on`, `cleared_by`, `clearance_note`). The date cannot be in
+the future or before the latest symptom report (`symptoms_on`, set by `checkin add --symptoms`
+and by adding symptoms with `profile set`). `profile set` refuses to write these keys or to drop
+a recorded symptom, and `checkin add --symptoms no` points here: the coach cannot tell a typo
+from a real report, so only a clinician's clearance lifts it.
+
+What clearance lifts: the cardiac-symptom stop (`no_training`, `refer_gp`, `no_deficit`, the
+emergency line) and the ACSM "clearance before any exercise" cell. The client then starts at
+light-to-moderate intensity with `review_before_vigorous` until `vigorous_reviewed` (the ACSM
+cleared cell), and the plan.md suspension section goes. What it does not lift: a BP stop or cap
+(it follows the next reading), an injury pause (`coach injury clear`), the eating-disorder,
+under-18, pregnancy, GLP-1 and menstrual flags. A new symptom after the clearance drops it and
+stops training again. A `medically_cleared` with no `cleared_on` (stored before this command
+existed) still counts for a known disease, never for a symptom stop. An
 injury whose `exercises` list running (`running`, `correr`, ...) makes `runs add` and `runs
 week` report `paused` with the injury's reason. Unassessed, `runs week` gives no next-run cap
 and `runs taper` refuses; managed by a professional, the cap stays at the longest run (no

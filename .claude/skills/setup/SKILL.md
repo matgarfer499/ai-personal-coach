@@ -129,8 +129,12 @@ Ask about one step per message. Store each answer as soon as you have it with
      country, 112 across the EU, 911 in the US, Canada and Mexico, 999 in the UK, 000 in
      Australia).
    - With a known disease, ask whether a doctor has cleared them for exercise; only a clear yes
-     is stored as `screening.medically_cleared true`. `coach safety` then gives the cell; quote
-     its `instruction`, never work the cell out yourself.
+     is recorded, with `coach clearance add --by WHO --date YYYY-MM-DD --note "what they said"`
+     (never `profile set screening.medically_cleared`: the CLI refuses it). Symptoms stored at
+     /setup are dated today, so a clearance that came earlier cannot be dated before them: when
+     the client says a clinician already cleared those symptoms, record it with today's date and
+     put the clinician's date in `--note`. `coach safety` then
+     gives the cell; quote its `instruction`, never work the cell out yourself.
 5. **PAR-Q+ (optional).** Offer it in one line, never require it. Its terms forbid putting the
    form's questions into a chat or app, translating or rewording them without written
    permission (forms/README.md;
@@ -180,9 +184,16 @@ Ask about one step per message. Store each answer as soon as you have it with
    run CSV, or one `coach runs add --date D --km K --minutes M` per run they remember with
    figures) so `coach runs week` has the baseline the single-run spike rule needs. Their runs per
    week count as training days for `activity_level` below.
-   `experience` (convention, listed in `docs/conventions.md`; no rule defines the levels): the
-   levels describe lifting only, also for runners; a runner who does not lift is `novice`, and
-   their running experience is the weekly km and runs above, not this field. Ask
+   Then ask whether a goal race is coming. If so, store its date, distance and the finish time
+   they aim for: `coach profile set race_date YYYY-MM-DD`, `coach profile set race_km KM`,
+   `coach profile set race_goal_time H:MM:SS` (skip the time if they have none). A recent race
+   result is not stored: /plan asks for it and passes it to `coach runs plan --recent-km K
+   --recent-time T` for a predicted time (`coach knowledge section cardio-health
+   "Half-marathon goal pace from a recent race"`).
+   `experience` (convention, listed in `docs/conventions.md`; no rule defines the levels): it
+   describes lifting. For a runner who does not lift, say so in one line ("this one is about
+   weights; your running experience is the weekly km and runs you just gave me") and store
+   `novice`: /plan reads running experience from the logged runs, never from this field. Ask
    how many months they have trained consistently (about 2 or more sessions a week), then store
    `novice` for under 12 months; `intermediate` for 12 months or more while they still add load
    or reps most months; `advanced` for 12 months or more once progress has slowed to a plateau.
@@ -212,7 +223,7 @@ Ask about one step per message. Store each answer as soon as you have it with
    `emergency_number` is listed (it is not when the region supplies one); if the client declines, store `none` and do not ask again. Go on
    to step 10 when `missing` is empty. Mention any `unrecognised` items.
 10. **Targets.** Run `coach safety`, then `coach energy` and `coach macros`. Only when
-    `use_rpe_not_hr` is false, ask every client (lifters too) for a resting pulse taken seated
+    `use_rpe_not_hr` and `no_training` are both false, ask every client (lifters too) for a resting pulse taken seated
     in the morning, averaged over a few days, and an observed all-out peak if they have one
     (a well-fitted chest strap in a hard interval or race), per `coach knowledge section
     cardio-health "HRmax: formulas and setting the anchor"`; store them with
