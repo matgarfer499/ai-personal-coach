@@ -37,7 +37,8 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
 ## When to use
 
 - The client gives any daily data or says how they feel; most days, ideally.
-- Not for workout logs (that is `/import`) or a weekly look back (that is `/review`).
+- Not for workout exports (that is `/import`) or a weekly look back (that is `/review`). A run
+  the client tells you about is recorded here (step 6).
 
 ## Reads
 
@@ -89,7 +90,11 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
      suggest a GP or physiotherapist before loading it, per `coach knowledge section
      recovery-habits "Some pain during exercise is acceptable in chronic, assessed pain"`;
      sharp or worsening pain, or numbness or weakness, means stop and see a doctor. When the
-     client says the professional has cleared it: `coach injury clear AREA`. An injury nobody
+     client says the professional has cleared it: `coach injury clear AREA`. Pain while
+     running (knee, shin, Achilles, heel, ankle): `coach knowledge section recovery-habits
+     "Common running injuries and who is most at risk"`; for an assessed tendon problem,
+     `coach knowledge section recovery-habits "Pain-monitoring traffic light for tendon problems"`
+     decides whether the next run is cut back. An injury nobody
      assessed is cleared only when the client says the pain is gone and they train the lifts
      it paused without pain; otherwise suggest the assessment again.
    - The client wants HIIT, sprints, jump rope, jumps or a max test while `coach safety` shows
@@ -113,13 +118,20 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
    output lists `possible_red_flags`, ask about them as step 3 says before you answer. If it lists
    `warnings` (a weight far from the nearest weigh-in), read the figure back and ask whether it
    is right; a corrected figure is a second `checkin add` for that day.
-6. If they gave a weight, run `coach trend` and report only its `status`, and with status `ok`
+6. A run they report (any day up to today): `coach runs add --date D --km KM --minutes MIN`,
+   adding `--avg-hr`, `--max-hr` and `--rpe` (Borg 6-20, as in `coach zones`) only when they
+   give them, and `--notes` for how it felt. Ask only for distance and time if missing; never
+   estimate them. A run already stored (same date, km and minutes) is reported in `warnings` and
+   not added twice. If `coach safety` shows `no_training`, record it but say training waits for a
+   clinician's clearance.
+7. If they gave a weight, run `coach trend` and report only its `status`, and with status `ok`
    its `rate_kg_week`. With `insufficient_data`, say how many more weigh-ins it needs (from its
    note) and nothing about the direction.
 
 ## Writes
 
-- `data/checkins.csv` through `coach checkin add`; screening updates through `coach profile set`.
+- `data/checkins.csv` through `coach checkin add`; `data/runs.csv` through `coach runs add`;
+  screening updates through `coach profile set`.
 
 ## Output
 

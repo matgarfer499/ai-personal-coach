@@ -1197,7 +1197,7 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
     return {"added": product, "missing": product.missing(), "warnings": warnings}
 
 
-# The header lines /plan writes at the top of data/plan.md (.claude/skills/plan/SKILL.md step 5).
+# The header lines /plan writes at the top of data/plan.md (.claude/skills/plan/SKILL.md step 6).
 PLAN_DATE_KEYS = ("Date", "Fecha")
 
 

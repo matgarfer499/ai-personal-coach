@@ -154,7 +154,18 @@ Ask about one step per message. Store each answer as soon as you have it with
    maintenance, muscle_gain, or recomposition (eat around maintenance while training; for
    beginners, returning lifters and higher body fat, per `coach knowledge section nutrition
    "Body recomposition"`).
-   `experience` (convention, listed in `docs/conventions.md`; no rule defines the levels): ask
+   `sport`: what they train for: `lifting`, `running` or `both` (store it with
+   `coach profile set sport VALUE`; unset behaves as lifting). It picks the protein rule
+   (`coach macros` uses "Daily protein target for endurance runners" for `running`; `both`
+   follows the lifter rule, as that rule says) and what /plan builds.
+   Runners (`running` or `both`): ask their usual weekly km and runs per week, and their longest
+   recent run. These are not profile fields: suggest logging their recent runs (`/import` with a
+   run CSV, or one `coach runs add --date D --km K --minutes M` per run they remember with
+   figures) so `coach runs week` has the baseline the single-run spike rule needs. Their runs per
+   week count as training days for `activity_level` below.
+   `experience` (convention, listed in `docs/conventions.md`; no rule defines the levels): the
+   levels describe lifting only, also for runners; a runner who does not lift is `novice`, and
+   their running experience is the weekly km and runs above, not this field. Ask
    how many months they have trained consistently (about 2 or more sessions a week), then store
    `novice` for under 12 months; `intermediate` for 12 months or more while they still add load
    or reps most months; `advanced` for 12 months or more once progress has slowed to a plateau.
@@ -183,9 +194,14 @@ Ask about one step per message. Store each answer as soon as you have it with
 9. **Check.** `coach profile show`: `missing` must be empty. Ask as in step 1 only if
    `emergency_number` is listed (it is not when the region supplies one); if the client declines, store `none` and do not ask again. Go on
    to step 10 when `missing` is empty. Mention any `unrecognised` items.
-10. **Targets.** Run `coach safety`, then `coach energy`, `coach macros` and `coach zones`.
-    Only when `use_rpe_not_hr` is false, ask for a morning resting pulse (`--hr-rest N`) and an
-    observed all-out peak (`--hr-max N`); skip either if unknown.
+10. **Targets.** Run `coach safety`, then `coach energy` and `coach macros`. Only when
+    `use_rpe_not_hr` is false, ask every client (lifters too) for a resting pulse taken seated
+    in the morning, averaged over a few days, and an observed all-out peak if they have one
+    (a well-fitted chest strap in a hard interval or race), per `coach knowledge section
+    cardio-health "HRmax: formulas and setting the anchor"`; store them with
+    `coach profile set hr_rest N` and `coach profile set hr_max N` (skip either if unknown; the
+    CLI then uses the formula, and says so). With `use_rpe_not_hr`, store neither: zones are RPE
+    only. Then run `coach zones`, which reads the stored values.
     When the `coach energy` `notes` hold the `active` `no_training` note, ask whether the activity
     comes from the job or from exercise. Only when it was exercise that has stopped, run
     `coach profile set pal_override VALUE` with the value the note gives (never one you chose or
@@ -208,7 +224,8 @@ One message in the profile language:
 2. Starting targets quoted from the CLI (say the estimate's spread once: `coach energy` prints
    `tdee_range`): calorie target (and, unless `no_weight_targets` is set,
    that it is a starting estimate to be corrected from their trend after 2-4 weeks), protein, fat, carbohydrate and fibre, and the
-   intensity zones with their talk-test cues.
+   intensity zones `coach zones` printed (up to five, very light to near-maximal) with their
+   talk-test cues; never mention a zone it did not print.
 3. Every reason from `coach safety` and every note from `coach energy` that changes what they
    should do, in plain words, keeping the rule name in brackets.
 4. Next steps: `/checkin` on most days, `/import` for workout exports, `/plan` for the plan.

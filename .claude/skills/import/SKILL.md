@@ -39,6 +39,12 @@ Adds an exported workout log to `data/sessions.csv` without duplicates.
 - The client has a Hevy CSV export (Hevy: Settings, Export data) or a CSV with the generic
   columns (`date`, `exercise`, optional `weight_kg`, `reps`, `rir`, `rpe`, `set_type`...; see
   `docs/adding-an-importer.md`).
+- The client has a run log as CSV with the columns `date`, `distance_km` or `distance_miles`,
+  `duration_minutes` or `duration_seconds`, and optionally `avg_hr`, `max_hr`, `rpe` (Borg
+  6-20). It goes to `data/runs.csv`, not the workout log. Strava, Garmin and Apple Health exports
+  are not read directly (their formats could not be verified): the client copies the columns
+  above into a CSV. Runs logged as sets in Hevy stay in the workout log and are not counted by
+  `coach runs week`.
 - Re-importing a newer full export is fine: sets already stored are skipped. They are kept as
   first imported, so a set corrected or deleted in the app afterwards is not updated here.
 
@@ -50,8 +56,12 @@ Adds an exported workout log to `data/sessions.csv` without duplicates.
 
 1. Run `coach safety`.
 2. `coach import PATH`. If the importer cannot be detected, ask which app it came from and use
-   `coach import PATH --importer hevy_csv` or `--importer generic_csv`; if neither fits, explain
-   the generic columns and stop.
+   `coach import PATH --importer hevy_csv`, `--importer generic_csv` or
+   `--importer generic_runs_csv`; if none fits, explain the generic columns and stop.
+   When the output says `"store": "runs.csv"` it was a run log: report `read`, `added`,
+   `duplicates`, `skipped_future`, `first_day`, `last_day` and `warnings`, then run
+   `coach runs week --week-ending LAST_DAY` and quote its `km`, `runs`, `longest_km`, `spikes`
+   and `notes`; skip steps 3 to 5.
 3. When `duplicates` is above 0, say once that sets already stored keep their first-imported
    values (a correction made in the app since then is not picked up).
    When `conflicts` is above 0, some of those sets differ in load or reps from the stored ones
@@ -71,7 +81,7 @@ Adds an exported workout log to `data/sessions.csv` without duplicates.
 
 ## Writes
 
-- `data/sessions.csv` through `coach import`. Nothing else.
+- `data/sessions.csv` (workouts) or `data/runs.csv` (runs) through `coach import`. Nothing else.
 
 ## Output
 
