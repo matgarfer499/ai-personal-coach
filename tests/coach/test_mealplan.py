@@ -904,3 +904,114 @@ def test_shopping_lists_a_liquid_written_in_ml_in_ml():
         {"name": "leche de prueba", "grams": 100},
         {"name": "leche de prueba", "ml": 300},
     ]
+
+
+# --- warnings: vegetables and fruit, cooking time, past days ---
+
+VEG = ["Comida de prueba=1900", "tomate=250", "manzana=200"]
+
+
+def warnings_of(out, when):
+    return next(d for d in out["days"] if d["date"] == when)["warnings"]
+
+
+def test_a_day_under_400_g_of_vegetables_and_fruit_warns_but_passes(capsys, data_dir):
+    draft = {
+        "days": [
+            meals_day(oct_(26), meal("Comida", ("A", VEG))),
+            meals_day(oct_(27), meal("Comida", ("B", ["Comida de prueba=1960", "tomate=250"]))),
+        ]
+    }
+    code, out = check(capsys, data_dir, draft)
+    assert code == 0 and out["ok"] is True
+    assert [d["totals"]["veg_fruit_g"] for d in out["days"]] == [450, 250]
+    assert warnings_of(out, "2026-10-26") == []
+    [warning] = warnings_of(out, "2026-10-27")
+    assert "250 g" in warning and "400 g" in warning
+    assert out["warnings"] == [f"2026-10-27: {warning}"]
+    assert "products count 0" in out["veg_fruit_note"]
+
+
+def test_menu_targets_warns_under_400_g_of_vegetables_and_fruit(capsys, data_dir):
+    items = ["--item", "Comida de prueba=1960", "--item", "tomate=250"]
+    _, out = run(capsys, data_dir, "menu", *items, "--targets", "--kcal", "2000")
+    assert out["ok"] is True and out["totals"]["veg_fruit_g"] == 250
+    assert len(out["warnings"]) == 1 and "400 g" in out["warnings"][0]
+    assert "products count 0" in out["veg_fruit_note"]
+    _, out = run(capsys, data_dir, "menu", *items, "--item", "manzana=200", "--targets")
+    assert out["warnings"] == []
+
+
+def test_a_dish_longer_than_the_clients_cooking_minutes_warns(capsys, data_dir):
+    with_tastes(data_dir, cooking_minutes=30)
+    draft = {
+        "days": [
+            meals_day(
+                oct_(26),
+                meal("Comida", ("Guiso largo", VEG, {"minutes": 45})),
+                meal("Cena", ("Rápido", ["tomate=10"], {"minutes": 20})),
+            )
+        ]
+    }
+    code, out = check(capsys, data_dir, draft)
+    assert code == 0 and out["ok"] is True
+    [warning] = warnings_of(out, "2026-10-26")
+    assert "Guiso largo" in warning and "45" in warning and "30" in warning
+
+
+def test_a_long_batch_warns_once_and_an_eaten_out_dish_never(capsys, data_dir):
+    with_tastes(data_dir, cooking_minutes=30)
+    batch = {"servings": 2, "minutes": 60}
+    bar = meal("Cena", ("En el bar", ["tomate=10"], {"minutes": 90}), eat_out=True)
+    draft = {
+        "days": [
+            meals_day(oct_(26), meal("Comida", ("Guiso", VEG, batch)), bar),
+            meals_day(oct_(27), meal("Comida", ("Guiso", VEG, batch))),
+        ]
+    }
+    _, out = check(capsys, data_dir, draft)
+    # cooked once, on its first day; the bar dish is not cooked at all
+    assert [w for w in out["warnings"] if "min" in w] == [
+        "2026-10-26: Guiso takes 60 min, over the client's cooking_minutes (30)"
+    ]
+
+
+def test_a_free_meal_day_needs_only_its_share_of_vegetables_and_fruit(capsys, data_dir):
+    day = free_day(600)
+    day["meals"][1]["dishes"][0]["items"].append("tomate=310")  # 310 g, over 75% of 400 g
+    _, out = check(capsys, data_dir, {"days": [day]})
+    assert out["days"][0]["warnings"] == []
+    day["meals"][1]["dishes"][0]["items"][-1] = "tomate=290"
+    _, out = check(capsys, data_dir, {"days": [day]})
+    [warning] = out["days"][0]["warnings"]
+    assert "under the 300 g" in warning
+
+
+def test_minutes_must_be_a_whole_number(data_dir):
+    bad = meals_day(oct_(26), meal("Comida", ("A", VEG, {"minutes": "rápido"})))
+    with pytest.raises(ValueError, match="minutes"):
+        mealplan.load_draft(write(data_dir, {"days": [bad]}))
+
+
+def test_a_day_before_today_warns(capsys, data_dir):
+    draft = {"days": [meals_day(oct_(d), meal("Comida", (f"P{d}", VEG))) for d in (24, 25)]}
+    code, out = check(capsys, data_dir, draft)  # --today 2026-10-25
+    assert code == 0 and out["ok"] is True
+    [warning] = warnings_of(out, "2026-10-24")
+    assert "before today" in warning
+    assert warnings_of(out, "2026-10-25") == []
+
+
+def test_shopping_counts_whole_units_of_countable_foods(capsys, data_dir):
+    dish = ("Tortilla", ["Comida de prueba=1800", "huevo entero, crudo=120", "tomate=250"])
+    shop, _ = shop_for(capsys, data_dir, meal("Comida", dish, people=5))
+    lines = {line["name"]: line for line in shop["chains"]["any"]}
+    # 600 g of egg at 50 g per large egg
+    assert lines["huevo entero, crudo"] == {
+        "name": "huevo entero, crudo",
+        "grams": 600,
+        "units": 12,
+        "unit_name": "large",
+    }
+    assert "units" not in lines["tomate"]  # no unit in the table: grams only
+    assert "whole units" in shop["note"]

@@ -59,7 +59,7 @@ from coach.regioncode import NO_REGION, real_region
 from coach.sessions.importers import base as importers  # the package registers importers
 from coach.sessions.model import ExerciseSet
 from coach.sessions.store import append, read_sets
-from coach.text import fold
+from coach.text import fold, fold_words
 
 # convention: 2 decimals in CLI output, so skills can quote numbers verbatim to a client.
 OUTPUT_DECIMALS = 2
@@ -365,13 +365,31 @@ def menu_check(totals: dict, targets: dict, share: float = 1.0) -> dict:
     }
 
 
+# nutrition.md: "Dietary fibre": at least 400 g/day of vegetables and fruit.
+VEG_FRUIT_MIN_G = 400
+VEG_FRUIT_NOTE = (
+    "veg_fruit_g counts vegetables and fruit from the food tables only: products count 0, and "
+    "potatoes and other starchy roots are left out (a convention)"
+)
+
+
 def _menu_day(totals: foods.MenuTotals, targets: dict, share: float = 1.0) -> dict:
     check = menu_check(dataclasses.asdict(totals), targets, share)
+    warnings = []
+    floor = VEG_FRUIT_MIN_G * share  # a free meal carries its share, as in menu_check
+    if totals.veg_fruit_g < floor:
+        warnings.append(
+            f"{round(totals.veg_fruit_g, OUTPUT_DECIMALS):g} g of vegetables and fruit, under the "
+            f"{round(floor, OUTPUT_DECIMALS):g} g of the {VEG_FRUIT_MIN_G} g "
+            'a day of nutrition.md "Dietary fibre" for the planned meals'
+        )
     return {
         "totals": totals,
         "targets": targets,
         "check": check,
         "ok": not totals.unknown and set(check.values()) == {"ok"},
+        "warnings": warnings,
+        "veg_fruit_note": VEG_FRUIT_NOTE,
     }
 
 
@@ -458,26 +476,43 @@ def cmd_mealplan(profile: Profile, args: argparse.Namespace) -> dict:
         )
     table = _menu_table(profile, args)
     targets = cmd_macros(profile, args)
-    taste_flags = mealplan.taste_flags(
-        days, tastes.load_tastes(args.data_dir / "tastes.yaml"), table
-    )
+    client_tastes = tastes.load_tastes(args.data_dir / "tastes.yaml")
+    taste_flags = mealplan.taste_flags(days, client_tastes, table)
     blocking = [f for f in taste_flags if f["blocking"]]
+    cooking_minutes = client_tastes.cooking_minutes
+    today = args.today or date.today()
     checked = []
+    timed: set[str] = set()  # a batch is cooked once: its time is checked on its first day
     for day in days:
         totals = foods.menu_totals(day.items, table)
         checked.append(_menu_day(totals, targets, day.share))
         if day.free_meals:
             checked[-1]["free_meal"] = _free_meal(day, totals, targets)
+        if day.date < today:
+            checked[-1]["warnings"].append(f"dated before today ({today})")
+        for dish in (d for m in day.meals for d in m.dishes if not d.eat_out):
+            if fold(dish.name) in timed:
+                continue
+            timed.add(fold(dish.name))
+            if cooking_minutes and dish.minutes and dish.minutes > cooking_minutes:
+                checked[-1]["warnings"].append(
+                    f"{dish.name} takes {dish.minutes} min, over the client's cooking_minutes "
+                    f"({cooking_minutes})"
+                )
     repeats = mealplan.repeats(days)
     ok = not repeats and not blocking and all(c["ok"] for c in checked)
     result = {
         "ok": ok,
         "repeats": repeats,
         "taste_flags": taste_flags,
+        "warnings": [
+            f"{d.date}: {w}" for d, c in zip(days, checked, strict=True) for w in c["warnings"]
+        ],
+        "veg_fruit_note": VEG_FRUIT_NOTE,
         "targets": targets,
         "days": [
             {"date": day.date, "dishes": day.dishes, "meals": _meals(day)}
-            | {k: c[k] for k in ("totals", "check", "ok", "free_meal") if k in c}
+            | {k: c[k] for k in ("totals", "check", "ok", "free_meal", "warnings") if k in c}
             | {"taste_flags": [f for f in taste_flags if f["date"] == day.date]}
             for day, c in zip(days, checked, strict=True)
         ],
@@ -538,7 +573,9 @@ def cmd_shopping(profile: Profile, args: argparse.Namespace) -> dict:
         "days": len(days),
         **listed,
         "note": "amounts are for the form each name gives (raw, cooked, drained); a batch is "
-        "bought once at its servings, `left_over` of them are for other days or the freezer",
+        "bought once at its servings, `left_over` of them are for other days or the freezer; "
+        "`units` is about how many of `unit_name` (the source's portion size) the grams make, in "
+        "whole units rounded up",
     }
 
 
@@ -714,16 +751,32 @@ def cmd_tastes(profile: Profile, args: argparse.Namespace) -> dict:
         setattr(current, args.field, tastes.parse_value(args.field, args.value))
         tastes.save_tastes(current, path)  # validates
     elif args.tastes_cmd == "rate":
-        when = args.today or date.today()
-        current.rate(tastes.Rating(args.dish.strip(), args.rating, when, args.source, args.note))
+        today = args.today or date.today()
+        when = args.date or today
+        if when > today:
+            raise ValueError(f"{when} is after today ({today}); rate a dish already eaten")
+        known = (
+            any(fold(r.dish) == fold(args.dish) for r in current.ratings)
+            or recipes.find_in_menus(args.data_dir, args.dish)
+            or any(
+                fold(r["dish"]) == fold(args.dish) for r in recipes.load_all(args.data_dir, current)
+            )
+        )
+        if not known and not args.source.strip():
+            raise ValueError(
+                f"{args.dish!r} is in no saved menu and not in the recipe library: check the "
+                "name, or give its recipe link with --source"
+            )
+        rating = tastes.Rating(args.dish.strip(), args.rating, when, args.source, args.note)
+        current.rate(rating)
         tastes.save_tastes(current, path)
         # a dish the client likes joins the recipe library (data/recipes/)
         saved = (
-            recipes.save(args.data_dir, args.dish, args.source.strip(), when)
+            recipes.save(args.data_dir, args.dish, args.source.strip(), today)
             if args.rating in recipes.SAVED_RATINGS
             else None
         )
-        return _tastes_view(current) | {"recipe_saved": saved}
+        return {"rating": rating, "recipe_saved": saved}
     return _tastes_view(current)
 
 
@@ -816,14 +869,14 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
 def cmd_foods(profile: Profile, args: argparse.Namespace) -> dict:
     region = _region_for(profile, args)
 
-    words = [fold(w) for w in args.words if w.strip()]
+    words = fold_words(*args.words)
     if not words:
         raise ValueError("foods search needs at least one word")
 
     def hit(*names: str) -> bool:
         # Each search word must start a word of the names ("pollo" finds "pechuga de pollo",
         # not "repollo").
-        found = re.findall(r"\w+", fold(" ".join(names)))
+        found = fold_words(*names)
         return all(any(f.startswith(w) for f in found) for w in words)
 
     region = real_region(region)
@@ -1411,6 +1464,9 @@ def build_parser() -> argparse.ArgumentParser:
     rate_cmd.add_argument("rating", choices=tastes.RATINGS)
     rate_cmd.add_argument("--source", default="", help="the recipe or video link")
     rate_cmd.add_argument("--note", default="")
+    rate_cmd.add_argument(
+        "--date", type=date.fromisoformat, default=None, help="when it was eaten; default: today"
+    )
 
     recipes_cmd = add("recipes", cmd_recipes, "the recipe library in data/recipes/ (rated dishes)")
     recipes_sub = recipes_cmd.add_subparsers(dest="recipes_cmd", required=True)

@@ -16,6 +16,7 @@ from pathlib import Path
 
 from coach.macros import KCAL_PER_G
 from coach.regioncode import real_region
+from coach.tastes import matches
 from coach.text import fold
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -33,6 +34,9 @@ FIELDS = [
     "form_note",
     "kcal_exception",
     "g_per_ml",
+    "unit_name",
+    "unit_g",
+    "food_group",
 ]
 NUMBERS = ("kcal", "protein_g", "carbs_g", "fat_g", "fibre_g")
 # nutrition.md: "EU label rules and tolerances": fibre counts 2 kcal/g in label energy.
@@ -41,6 +45,12 @@ FIBRE_KCAL_PER_G = 2
 # against that computed value, or carry a kcal_exception (SR Legacy uses food-specific Atwater
 # factors, so exact agreement is not expected).
 ENERGY_TOLERANCE = 0.10
+# nutrition.md: "Dietary fibre": vegetables and fruit, by the source's food category.
+VEG_FRUIT_GROUPS = ("Vegetables and Vegetable Products", "Fruits and Fruit Juices")
+# convention: potatoes and other starchy roots are not counted as vegetables (the source record
+# for the 400 g rule does not say which foods count; they are the meal's carbohydrate base).
+# Matched as whole words of the English name, as `tastes.matches` does.
+STARCHY_ROOTS = ("potato", "cassava", "yam", "taro")
 
 
 # convention: the two bases a table value can have. Grams and millilitres are never mixed (see
@@ -79,6 +89,9 @@ class Food:
     chain: str = ""  # products: the supermarket, for the shopping list
     per: str = "100 g"  # the basis of the values: "100 g" (all generic foods) or "100 ml"
     g_per_ml: float | None = None  # liquids per 100 g: grams in one millilitre
+    unit_name: str = ""  # countable foods: the source's portion name ("large" for an egg)
+    unit_g: float | None = None  # grams in one such unit
+    food_group: str = ""  # the source's food category; blank for products
 
     @classmethod
     def from_row(cls, row: dict) -> Food:
@@ -86,11 +99,12 @@ class Food:
         for name in NUMBERS:
             text = str(values[name]).strip()
             values[name] = float(text) if text else None
-        text = str(values["g_per_ml"]).strip()
-        values["g_per_ml"] = float(text) if text else None
-        density = values["g_per_ml"]
-        if density is not None and not (math.isfinite(density) and density > 0):
-            raise ValueError(f"{values['name_en']}: g_per_ml must be a positive number")
+        for name in ("g_per_ml", "unit_g"):
+            text = str(values[name]).strip()
+            values[name] = float(text) if text else None
+            number = values[name]
+            if number is not None and not (math.isfinite(number) and number > 0):
+                raise ValueError(f"{values['name_en']}: {name} must be a positive number")
         return cls(**values)
 
     @property
@@ -200,6 +214,7 @@ class MenuTotals:
     carbs_g: float = 0.0
     fat_g: float = 0.0
     fibre_g: float = 0.0
+    veg_fruit_g: float = 0.0  # vegetables and fruit from the food tables; products count 0
     unknown: list[str] = field(default_factory=list)
     # value -> items lacking it; those totals count only the items that have the value
     missing: dict[str, list[str]] = field(default_factory=dict)
@@ -223,6 +238,10 @@ def menu_totals(items: list[tuple[str, float]], table: list[Food]) -> MenuTotals
             if food.unit == "ml":
                 raise ValueError(f"{name} is per 100 ml: write it in millilitres ({name}=NNml)")
             raise ValueError(f"{name} is per 100 g: write it in grams ({name}=NNN), not {unit}")
+        if food.food_group in VEG_FRUIT_GROUPS and not any(
+            matches(root, food.name_en) for root in STARCHY_ROOTS
+        ):
+            totals.veg_fruit_g += grams
         for attr in NUMBERS:
             value = getattr(food, attr)
             if value is None:

@@ -10,6 +10,9 @@ saves an accepted plan to data/menus/<first date>.yaml with each day's totals an
 simple breakfast made again each day): the repeats within its N servings are allowed, the shopping
 list buys it once at N servings, and an appearance beyond N is an accidental repeat again.
 
+`minutes: N` on a dish is its hands-on cooking time: `coach mealplan check` warns when it passes
+the client's tastes `cooking_minutes` (a warning, never a failure).
+
 `base: [PROTEIN, CARB]` on a dish names its main protein and carbohydrate base (one or two plain
 words, e.g. `[pollo, arroz]` or `[garbanzos]`): two different dishes on the same base are a
 repeat too when the two dishes' dates differ by BASE_REPEAT_DAYS (3) days or fewer (day 26 and
@@ -23,6 +26,7 @@ appearances must share `people`). Totals stay per client serving.
 
 from __future__ import annotations
 
+import math
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date
@@ -61,6 +65,7 @@ class Dish:
     base: list[str] = field(default_factory=list)  # main protein, then carb base; may be empty
     people: int = 1  # from the meal: the dish is cooked for this many people
     eat_out: bool = False  # from the meal: eaten out, not bought
+    minutes: int | None = None  # optional: hands-on cooking time, checked against tastes
 
 
 @dataclass
@@ -175,6 +180,12 @@ def parse(data) -> tuple[dict, list[Day]]:
                     f"{when} {name}: `servings:` must be a whole number, 1 or more, not "
                     f"{servings!r}",
                 )
+                minutes = dish.get("minutes")
+                _need(
+                    minutes is None
+                    or (isinstance(minutes, int) and not isinstance(minutes, bool) and minutes > 0),
+                    f"{when} {name}: `minutes:` must be a whole number above 0, not {minutes!r}",
+                )
                 base = dish.get("base")
                 _need(
                     base is None
@@ -196,6 +207,7 @@ def parse(data) -> tuple[dict, list[Day]]:
                         [w.strip() for w in base or []],
                         people,
                         eat_out,
+                        minutes,
                     )
                 )
             meals.append(
@@ -418,8 +430,11 @@ def shopping(
     other dish is bought for each appearance. Grams (`grams`) and millilitres (`ml`) are listed
     apart. A meal's `people` multiplies its items; an `eat_out` meal is not bought, its dishes are
     named in `eaten_out`. Foods that match the client's `pantry` words are left out and named in
-    `pantry_skipped`; names not in the table are listed in `unknown`."""
+    `pantry_skipped`; names not in the table are listed in `unknown`. A food with a unit in the
+    table (`unit_name`, `unit_g`: an egg is "large", 50 g) also gets `units`, the grams in whole
+    units, rounded up."""
     amounts: dict[str, dict[tuple[str, str], float]] = defaultdict(lambda: defaultdict(float))
+    unit_g: dict[tuple[str, str], tuple[str, float]] = {}
     unknown: list[str] = []
     skipped: dict[str, str] = {}
     cooked = []
@@ -448,14 +463,15 @@ def shopping(
             if any(matches(word, food.name_en, food.name_es) for word in pantry or []):
                 skipped[fold(label)] = label
                 continue
-            amounts[food.chain or ANY_CHAIN][(label, getattr(amount, "unit", food.unit))] += (
-                amount * times
-            )
+            key = (label, getattr(amount, "unit", food.unit))
+            amounts[food.chain or ANY_CHAIN][key] += amount * times
+            if food.unit_g and key[1] == "g":
+                unit_g[key] = (food.unit_name, food.unit_g)
     chains = sorted(amounts, key=lambda chain: (chain == ANY_CHAIN, fold(chain)))
     return {
         "chains": {
             chain: [
-                {"name": name, UNIT_KEY[unit]: total}
+                {"name": name, UNIT_KEY[unit]: total} | _units(total, unit_g.get((name, unit)))
                 for (name, unit), total in sorted(amounts[chain].items())
             ]
             for chain in chains
@@ -465,3 +481,13 @@ def shopping(
         "eaten_out": eaten_out,
         "pantry_skipped": [skipped[key] for key in sorted(skipped)],
     }
+
+
+def _units(grams: float, unit: tuple[str, float] | None) -> dict:
+    """`units` and `unit_name` for a countable food, else nothing."""
+    if unit is None:
+        return {}
+    name, weight = unit
+    # convention: whole units, rounded up (one buys whole eggs); 2 decimals first, so 600 g of
+    # 50 g eggs is 12, not 13 from float noise.
+    return {"units": math.ceil(round(grams / weight, 2)), "unit_name": name}

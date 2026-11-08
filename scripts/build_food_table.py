@@ -1,7 +1,7 @@
 """Build a food table from FoodData Central SR Legacy by fdc_id.
 
 Input: one or more tab-separated ID lists (name_en, name_es, fdc_id, fdc_description, form_note,
-and optional liquid and fibre_zero columns).
+and optional liquid, fibre_zero and unit columns).
 Every number comes from the SR Legacy CSV release (April 2018, the final SR Legacy release, so it
 is what FDC serves today), never typed by hand. A row whose fdc_id is unknown, whose description
 does not match the release, or whose energy, protein, fat or carbohydrate is missing stops the
@@ -53,29 +53,48 @@ def load_release(fdc_dir: Path, ids: set[str]) -> tuple[dict[str, str], dict[str
     return descriptions, values
 
 
-def load_densities(fdc_dir: Path, ids: set[str]) -> dict[str, list[tuple[str, float]]]:
-    """fdc_id -> (unit, grams per ml) for each portion given in a unit of UNIT_ML. SR Legacy
-    writes the unit in `modifier`, as "cup" or "cup (8 fl oz)"."""
+def load_groups(fdc_dir: Path, ids: set[str]) -> dict[str, str]:
+    """fdc_id -> the release's food category description (e.g. "Fruits and Fruit Juices")."""
+    with (fdc_dir / "food_category.csv").open(newline="", encoding="utf-8") as handle:
+        categories = {r["id"]: r["description"] for r in csv.DictReader(handle)}
+    with (fdc_dir / "food.csv").open(newline="", encoding="utf-8") as handle:
+        return {
+            r["fdc_id"]: categories[r["food_category_id"]]
+            for r in csv.DictReader(handle)
+            if r["fdc_id"] in ids
+        }
+
+
+def load_portions(fdc_dir: Path, ids: set[str]) -> dict[str, list[tuple[str, float]]]:
+    """fdc_id -> (modifier, grams per one) for every portion, the modifier cut before " ("
+    ("medium (3\" dia)" is "medium", "cup (8 fl oz)" is "cup"). SR Legacy writes the unit in
+    `modifier`."""
     found: dict[str, list[tuple[str, float]]] = {}
     with (fdc_dir / "food_portion.csv").open(newline="", encoding="utf-8") as handle:
         for r in csv.DictReader(handle):
-            unit = r["modifier"].split(" (")[0].strip()
-            if r["fdc_id"] in ids and unit in UNIT_ML and float(r["amount"]) > 0:
-                grams = float(r["gram_weight"]) / (float(r["amount"]) * UNIT_ML[unit])
-                found.setdefault(r["fdc_id"], []).append((unit, grams))
+            if r["fdc_id"] in ids and float(r["amount"]) > 0:
+                grams = float(r["gram_weight"]) / float(r["amount"])
+                found.setdefault(r["fdc_id"], []).append(
+                    (r["modifier"].split(" (")[0].strip(), grams)
+                )
     return found
 
 
-def density(options: list[tuple[str, float]]) -> float | None:
-    for unit in UNIT_ML:
-        for found, grams_per_ml in options:
+def density(portions: list[tuple[str, float]]) -> float | None:
+    """Grams per ml from the first portion in a unit of UNIT_ML, in its order."""
+    for unit, ml in UNIT_ML.items():
+        for found, grams in portions:
             if found == unit:
-                return round(grams_per_ml, 3)
+                return round(grams / ml, 3)
     return None
 
 
 def build_rows(
-    id_rows: list[dict], descriptions: dict, values: dict, densities: dict | None = None
+    id_rows: list[dict],
+    descriptions: dict,
+    values: dict,
+    portions: dict | None = None,
+    groups: dict | None = None,
 ) -> list[dict]:
     rows, errors = [], []
     for item in id_rows:
@@ -97,10 +116,18 @@ def build_rows(
             fibre, zero_note = 0.0, FIBRE_ZERO_NOTE
         g_per_ml = None
         if (item.get("liquid") or "").strip() == "yes":
-            g_per_ml = density((densities or {}).get(fdc_id, []))
+            g_per_ml = density((portions or {}).get(fdc_id, []))
             if g_per_ml is None:
                 errors.append(f"{item['name_en']}: liquid with no cup, fl oz or tbsp portion")
                 continue
+        unit = (item.get("unit") or "").strip()
+        unit_g = None
+        if unit:
+            weights = [g for m, g in (portions or {}).get(fdc_id, []) if m == unit]
+            if len(weights) != 1:
+                errors.append(f"{item['name_en']}: {len(weights)} portions named {unit!r}, not 1")
+                continue
+            unit_g = round(weights[0], 1)
         # FDC "carbohydrate by difference" includes fibre; EU labels and this table give
         # available carbohydrate (nutrition.md: "EU label rules and tolerances"). Without a fibre
         # value, fibre stays blank and carbs_g is the total, which the form note says.
@@ -121,6 +148,9 @@ def build_rows(
             "source_description": descriptions[fdc_id],
             "form_note": note,
             "g_per_ml": "" if g_per_ml is None else g_per_ml,
+            "unit_name": unit,
+            "unit_g": "" if unit_g is None else unit_g,
+            "food_group": (groups or {}).get(fdc_id, ""),
         }
         row["kcal_exception"] = energy_exception(row) or ""
         rows.append(row)
@@ -146,7 +176,13 @@ def main(argv: list[str] | None = None) -> int:
     id_rows = read_ids(args.ids)
     descriptions, values = load_release(args.fdc_dir, {r["fdc_id"].strip() for r in id_rows})
     ids = {r["fdc_id"].strip() for r in id_rows}
-    rows = build_rows(id_rows, descriptions, values, load_densities(args.fdc_dir, ids))
+    rows = build_rows(
+        id_rows,
+        descriptions,
+        values,
+        load_portions(args.fdc_dir, ids),
+        load_groups(args.fdc_dir, ids),
+    )
     with args.out.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=FIELDS)
         writer.writeheader()

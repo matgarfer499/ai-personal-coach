@@ -16,7 +16,7 @@ from pathlib import Path
 from urllib.parse import quote_plus, urlsplit
 from xml.sax.saxutils import escape
 
-from coach.foods import Food, find
+from coach.foods import Amount, Food, find
 
 INSTALL = "PDF export needs the optional reportlab package: run `uv sync --extra pdf`"
 # convention: the look of the printout. A4, 8-9 pt text and 1.8 cm QR codes, to fit a week on a
@@ -54,6 +54,14 @@ LABELS = {
         "daily_target": "Objetivo diario",
         "ingredients": "Ingredientes",
         "one_serving": "1 ración",
+        "people": "para {n} personas",
+        "about_units": "aprox. {n} {unit}",
+        "unit_names": {
+            "large": "ud. grandes",
+            "medium": "ud. medianas",
+            "fruit": "ud.",
+            "clove": "dientes",
+        },
         "method": "Preparación",
         "on_days": "Días",
         "recipes": "Recetas",
@@ -99,6 +107,9 @@ LABELS = {
         "daily_target": "Daily target",
         "ingredients": "Ingredients",
         "one_serving": "1 serving",
+        "people": "for {n} people",
+        "about_units": "about {n} {unit}",
+        "unit_names": {"large": "large", "medium": "medium", "fruit": "whole", "clove": "cloves"},
         "method": "Method",
         "on_days": "Days",
         "recipes": "Recipes",
@@ -196,9 +207,9 @@ def write(
     """Write the PDF; raises ValueError naming the extra to install when reportlab is missing.
 
     Page one is the week at a glance; then each dish once, however many days it is eaten, as a card
-    grouped by meal; then the shopping list with a box to tick per line. A recipe (a dish with
-    steps or a source) gets ingredients, method and link; a dish without one (a sandwich, a
-    yoghurt bowl) gets a short card with its amounts on one line.
+    grouped by meal; then the shopping list with a box to tick per line. Every card lists the
+    ingredients for the meal's `people` (one serving each), then the method and link when the
+    dish has them.
     """
     try:
         from reportlab.graphics.shapes import Drawing, Rect
@@ -445,6 +456,7 @@ def write(
                 key = (
                     dish.name,
                     dish.servings,
+                    dish.people,
                     tuple(dish.items),
                     tuple(dish.seasoning),
                     steps,
@@ -524,22 +536,21 @@ def write(
                 Paragraph(_text(dish.name), card_title),
                 Paragraph(meta, muted),
             ]
+            serves = (
+                words["one_serving"] if dish.people == 1 else words["people"].format(n=dish.people)
+            )
             label = (
                 f'<font color="{hex_code}"><b>{words["ingredients"].upper()}</b></font>'
-                f" &nbsp;{words['one_serving']}"
+                f" &nbsp;{serves}"
             )
             amounts = [
-                f"<b>{_quantity(a, comma)}</b>&nbsp; {_text(_label(n, table, language))}"
+                f"<b>{_quantity(Amount(a * dish.people, getattr(a, 'unit', 'g')), comma)}</b>"
+                f"&nbsp; {_text(_label(n, table, language))}"
                 for n, a in dish.items
             ]
-            if group["steps"] or source:
-                ingredients = [Paragraph(label, tiny), Spacer(1, 3)] + [
-                    Paragraph(amount, cell) for amount in amounts
-                ]
-            else:  # nothing to cook: the amounts on one line keep the card short
-                ingredients = [
-                    Paragraph(f"{label} &nbsp; " + " &nbsp;&middot;&nbsp; ".join(amounts), cell)
-                ]
+            ingredients = [Paragraph(label, tiny), Spacer(1, 3)] + [
+                Paragraph(amount, cell) for amount in amounts
+            ]
             if dish.seasoning:
                 ingredients += [Spacer(1, 3), Paragraph(seasoning(dish), tiny)]
             method = []
@@ -632,13 +643,21 @@ def write(
         )
     )
     story.append(title)
+
+    def units(line: dict) -> str:
+        if "units" not in line:
+            return ""
+        unit = words["unit_names"].get(line["unit_name"], line["unit_name"])
+        text = words["about_units"].format(n=line["units"], unit=unit)
+        return f'<br/><font size="6.5" color="{MUTED}">{_text(text)}</font>'
+
     for chain, lines in shopping["chains"].items():
         story.append(heading(words["any_chain"] if chain == "any" else chain))
         amount = style("amount", alignment=2)
         entries = [
             (
                 tick_box(),
-                Paragraph(_text(line["name"]), cell),
+                Paragraph(_text(line["name"]) + units(line), cell),
                 Paragraph(
                     f"<b>{_number(line.get('grams', line.get('ml')), comma)} "
                     f"{'g' if 'grams' in line else 'ml'}</b>",
