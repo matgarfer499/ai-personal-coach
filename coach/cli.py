@@ -37,6 +37,7 @@ from coach import (
     macros,
     mealplan,
     off,
+    plancheck,
     recipes,
     regions,
     runs,
@@ -1688,6 +1689,30 @@ def _same_number(text: str, value: float) -> bool:
         return False
 
 
+def _run_problems(profile: Profile, args: argparse.Namespace, text: str) -> list[str]:
+    """Planned runs against `coach runs plan` (long-run cap, weekly km), when runs are logged."""
+    km = plancheck.planned_km(text)
+    today = args.today or date.today()
+    logged = [r for r in runs.read_runs(args.data_dir / "runs.csv") if r.date <= today]
+    if not km or not logged:
+        return []
+    limits = _runs_plan(profile, args, today, logged)
+    out = []
+    cap = limits["long_run_cap_km"]
+    if cap is not None and max(km) > cap + 0.05:  # convention: km are written to 1 decimal
+        out.append(
+            f"a planned run of {max(km):g} km is above long_run_cap_km {cap:.1f} from "
+            "`coach runs plan`"
+        )
+    weekly = limits["weekly_km_max"]
+    if weekly is not None and sum(km) > weekly + 0.05:
+        out.append(
+            f"the planned week has {sum(km):g} km, above weekly_km_max {weekly:.1f} from "
+            "`coach runs plan`"
+        )
+    return out
+
+
 def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
     path = args.data_dir / "plan.md"
     if not path.exists():
@@ -1709,17 +1734,18 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
         if flags.no_training
         else None
     )
+    muscle_map = strength.muscle_map_for(args.data_dir)
     if args.plan_cmd == "export":
         if stale:
             raise ValueError(stale)
         out = _in_data_dir(args, args.out)
         text = path.read_text(encoding="utf-8")
-        exercises = export.write_plan(out, text, profile.language, qr=not args.no_qr)
+        exercises = export.write_plan(out, text, profile.language, not args.no_qr, muscle_map)
         return {
             "pdf": _shown(args, out),
             "exercises": exercises,
             # Session parts that name no lift: they are in the PDF's text but get no video link.
-            "unread": export.plan_unread(text),
+            "unread": export.plan_unread(text, muscle_map),
             "qr": not args.no_qr,
         }
     text = path.read_text(encoding="utf-8")
@@ -1727,7 +1753,7 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
     fields = dict(line.split(":", 1) for line in head if ":" in line)
     fields = {k.strip(): v.strip() for k, v in fields.items()}
     problems = [stale] if stale else []
-    unread = export.plan_unread(text)
+    unread = export.plan_unread(text, muscle_map)
     if unread:
         problems.append(
             "training bullets the export cannot read as lifts (write `Name load`, `Name 3x8` "
@@ -1740,7 +1766,7 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
         except yaml.YAMLError:
             week = None
         planned = week.get("sessions") if isinstance(week, dict) else None
-        sessions = export.plan_sessions(text)
+        sessions = export.plan_sessions(text, muscle_map)
         if not isinstance(planned, list):
             problems.append(
                 "plan-week.yaml needs `sessions:`, a list of {name, exercises}: rewrite it, then "
@@ -1752,6 +1778,18 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
                 f"{len(planned)}: write the same week in both, then rerun "
                 "`coach strength plan-sets`"
             )
+        else:
+            names = [
+                str(item["exercise"])
+                for session in planned
+                if isinstance(session, dict) and isinstance(session.get("exercises"), list)
+                for item in session["exercises"]
+                if isinstance(item, dict) and item.get("exercise")
+            ]
+            problems += [
+                f"{line}: write the same lifts in both, then rerun `coach strength plan-sets`"
+                for line in plancheck.lift_mismatch(text, names, muscle_map)
+            ]
     if not any(k in fields for k in PLAN_DATE_KEYS):
         problems.append("line 1 must be `Date: YYYY-MM-DD` (es: `Fecha:`)")
     problems += [
@@ -1783,12 +1821,19 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
                     f"the safety rules change this target: `coach macros --kcal` gives "
                     f"{used['kcal']:g} kcal, in_deficit {str(used['in_deficit']).lower()}"
                 )
-            elif not _same_number(fields["target_kcal"], fresh["kcal"]):
-                # A target agreed at /review (--tdee, --current-kcal) or kept from the last plan.
-                notes.append(
-                    f"target_kcal differs from a fresh estimate ({fresh['kcal']:g} kcal): fine "
-                    "when it was agreed at /review or kept from the previous plan"
-                )
+            else:
+                problems += plancheck.nutrition_problems(text, used)
+                if not _same_number(fields["target_kcal"], fresh["kcal"]):
+                    # A target agreed at /review (--tdee, --current-kcal) or kept from the last
+                    # plan.
+                    notes.append(
+                        f"target_kcal differs from a fresh estimate ({fresh['kcal']:g} kcal): "
+                        "fine when it was agreed at /review or kept from the previous plan"
+                    )
+    logged = read_sets(args.data_dir / "sessions.csv")
+    problems += plancheck.veto_problems(text, flags)
+    problems += plancheck.load_problems(text, logged, muscle_map)
+    problems += _run_problems(profile, args, text)
     return {
         "ok": not problems,
         "problems": problems,

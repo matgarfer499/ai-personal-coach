@@ -211,7 +211,8 @@ Knowledge, by situation: run only the lines that apply.
      use anything from about 6 to 30 reps ("Load range for hypertrophy"). Keep the range the
      client already uses, from `data/plan.md` or their log, unless they ask for a change. Write
      the client's usual range once as the `rep_range:` header line (step 6) and each lift with
-     another range as `LIFT: LOW-HIGH reps` in the training week, with the logged name, so
+     another range as its own bullet `- LIFT: LOW-HIGH reps` after the session bullets in the
+     training week, with the logged name, so
      `/review` can pass them to `coach strength progress --rep-range`; after changing a lift's range, rerun
      that command for it before quoting a load.
    - Reps and effort: from the rules loaded above; with `hold_progression`, no harder than the
@@ -287,9 +288,11 @@ Knowledge, by situation: run only the lines that apply.
    to run `/review`, and the deferral line last when `refer_gp` is set.
 7. Run `coach plan check` (with the same `--pal`, `--tdee` or `--current-kcal` you gave
    `coach energy`). If `ok` is false, fix each line in `problems` and run it again: `unread`
-   lists session parts the export cannot read as lifts (rewrite them as `Name 3x8 40 kg`), and
-   a session count that differs from `plan-week.yaml` means the two files describe different
-   weeks. A line in
+   lists session parts the export cannot read as lifts (rewrite them as `Name 3x8 40 kg`; a bare
+   name counts only when it is a known exercise), and a session count or lift that differs from
+   `plan-week.yaml` means the two files describe different weeks. It also reads the Nutrition
+   section against `coach macros`, loads against the logged e1RM, runs against `coach runs
+   plan`, and formats `coach safety` rules out; fix the plan, never the numbers the CLI gave. A line in
    `notes` (the target differs from a fresh estimate) needs no change when the target was agreed
    at /review or kept from the previous plan; never replace an agreed target because of it.
 

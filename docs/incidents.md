@@ -90,3 +90,7 @@ One line per bug that reached main: what broke, and which review layer should ha
   cleared it with no clinician. Layer: plan review (a stop shipped without its exit).
 - 2026-11-08 (beta3 p1-lucia-N8, p4-sara-N12): CLI errors and menu warnings stayed English
   with language es. Layer: code review against the profile-language rule.
+- 2026-11-08 (beta3 p5-elena-N1, p5-elena-N2, p5-elena-N4, p2-marcus-N2, p6-james-N15): `plan
+  check` compared session counts and kcal only, so content errors passed. Layer: code review
+  (a check named for the plan that read only its header).
+- 2026-11-08 (beta3 p6-james-N13): Push-up unmapped. Layer: tests.
