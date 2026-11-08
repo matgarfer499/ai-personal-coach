@@ -211,7 +211,8 @@ Ask about one step per message. Store each answer as soon as you have it with
 
 One message in the profile language:
 1. What you stored, in one short list (no screening answers repeated back, only outcomes).
-2. Starting targets quoted from the CLI: calorie target (and, unless `no_weight_targets` is set,
+2. Starting targets quoted from the CLI (say the estimate's spread once: `coach energy` prints
+   `tdee_range`): calorie target (and, unless `no_weight_targets` is set,
    that it is a starting estimate to be corrected from their trend after 2-4 weeks), protein, fat, carbohydrate and fibre, and the
    intensity zones with their talk-test cues.
 3. Every reason from `coach safety` and every note from `coach energy` that changes what they

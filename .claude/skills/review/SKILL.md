@@ -89,7 +89,8 @@ Knowledge, by situation: run only the lines that apply.
 2. If `coach knowledge stale` lists files, add one reminder line suggesting `/research stale`.
 3. Weight: report `status`. With `ok`, quote `rate_kg_week` and `rate_pct_week` (a loss prints
    negative) and say whether its size falls inside the rate the loaded rule gives for the goal;
-   if the rule's population does not fit the client, say so. With `insufficient_data`, say
+   if the rule's population does not fit the client, say so, and relay every trend `notes`
+   line (the fast-loss note). With `insufficient_data`, say
    what is missing; draw no conclusion. With `disabled`, say nothing about weight.
 4. Calories: if `recalibrated_tdee` is a number, record it (step 8). Propose a calorie change
    only when the rate from step 3 is outside the goal's range (for `maintenance` and

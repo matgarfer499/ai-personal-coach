@@ -131,6 +131,37 @@ def section(file: str, heading: str, knowledge_dir: Path = KNOWLEDGE_DIR) -> str
     raise SectionNotFound(f"{path.name}: no '## ' or '### ' heading {wanted!r}")
 
 
+def audit(file: str, heading: str, knowledge_dir: Path = KNOWLEDGE_DIR) -> dict:
+    """One rule's text and grade, and each cited source's citation and Supports line, so a
+    reviewer can trace a number to its rule, grade and sources without reading code."""
+    text = section(file, heading, knowledge_dir)
+    if not text.startswith("### "):
+        # a `## ` section holds several rules; their fields would overwrite each other
+        raise SectionNotFound(f"{file}: {heading.strip()!r} is a section, not a '### ' rule")
+    field_of = {
+        m.group(1): m.group(2) for m in re.finditer(r"^\*\*([^*]+):\*\*\s*(.*)$", text, re.M)
+    }
+    sources = read(Path(knowledge_dir) / "sources.md")
+    cited = []
+    for sid in dict.fromkeys(CITE_RE.findall(field_of.get("Sources", ""))):
+        match = re.search(rf"^### {sid}\n(.*?)(?=^### |\Z)", sources, re.M | re.S)
+        lines = match.group(1).strip().splitlines() if match else []
+        supports = next((x for x in lines if x.startswith("Supports:")), "")
+        cited.append(
+            {
+                "id": sid,
+                "citation": lines[0].strip() if lines else "",
+                "supports": supports.removeprefix("Supports:").strip(),
+            }
+        )
+    return {
+        "heading": heading,
+        "grade": field_of.get("Grade"),
+        "rule": field_of.get("Rule", ""),
+        "sources": cited,
+    }
+
+
 def _add_months(day: date, months: int) -> date:
     month_index = day.month - 1 + months
     year, month = day.year + month_index // 12, month_index % 12 + 1
