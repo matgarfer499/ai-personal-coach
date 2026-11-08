@@ -2116,3 +2116,12 @@ def test_plan_check_compares_sessions_with_plan_week(capsys, data_dir):
     )
     _, out = run(capsys, data_dir, "plan", "check")
     assert out["ok"] is False and any("plan-week.yaml" in p for p in out["problems"])
+
+
+def test_plan_check_reports_a_broken_plan_week(capsys, data_dir):
+    _, macros = run(capsys, data_dir, "macros")
+    _plan_md(data_dir, macros["kcal"])
+    (data_dir / "plan-week.yaml").write_text("sessions: [a\n", encoding="utf-8")
+    code, out = run(capsys, data_dir, "plan", "check")
+    assert code == 0 and out["ok"] is False
+    assert any("plan-week.yaml" in p for p in out["problems"])

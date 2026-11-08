@@ -1411,11 +1411,18 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
         )
     week_file = args.data_dir / "plan-week.yaml"
     if week_file.exists():
-        planned = (yaml.safe_load(week_file.read_text(encoding="utf-8")) or {}).get(
-            "sessions"
-        ) or []
+        try:
+            week = yaml.safe_load(week_file.read_text(encoding="utf-8")) or {}
+        except yaml.YAMLError:
+            week = None
+        planned = week.get("sessions") if isinstance(week, dict) else None
         sessions = export.plan_sessions(text)
-        if sessions != len(planned):
+        if not isinstance(planned, list):
+            problems.append(
+                "plan-week.yaml needs `sessions:`, a list of {name, exercises}: rewrite it, then "
+                "rerun `coach strength plan-sets`"
+            )
+        elif sessions != len(planned):
             problems.append(
                 f"plan.md lists {sessions} sessions with lifts but plan-week.yaml has "
                 f"{len(planned)}: write the same week in both, then rerun "

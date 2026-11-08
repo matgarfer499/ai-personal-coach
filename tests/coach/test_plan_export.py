@@ -7,7 +7,7 @@ from datetime import date
 import pytest
 
 from coach.cli import main
-from coach.export import plan_exercises, plan_unread
+from coach.export import plan_exercises, plan_sessions, plan_unread
 from coach.profile import Profile, save_profile
 
 PLAN = """Fecha: 2026-11-02
@@ -186,3 +186,13 @@ def test_parts_that_are_not_read_are_listed():
 
 def test_rep_range_lines_and_rest_labels_are_not_unread():
     assert plan_unread(PLAN) == []
+
+
+def test_prose_and_rest_bullets_with_a_colon_are_neither_unread_nor_sessions():
+    text = (
+        "## Training week\n"
+        "- A (lunes): Sentadilla 51,0 kg; Press banca 34 kg\n"
+        "- Progresión: cuando completes 12 repeticiones, sube el peso\n"
+        "- Miércoles: descanso\n"
+    )
+    assert plan_unread(text) == [] and plan_sessions(text) == 1
