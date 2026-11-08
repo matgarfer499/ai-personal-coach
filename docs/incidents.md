@@ -18,3 +18,7 @@ One line per bug that reached main: what broke, and which review layer should ha
   and /setup read as if `pregnant` were a profile field. Layer: skill dry run (docs/examples/setup.md).
 - 2026-11-08 (beta p3-antonio-I6): `emergency_number` was listed as missing although the region
   supplies it. Layer: tests (PR #27 added the field without a region case).
+- 2026-11-08 (beta p2-marcus-I4/I5): a re-export in other units was counted as plain duplicates
+  and `coach import` ignored `--today`. Layer: tests.
+- 2026-11-08 (beta p2-marcus-I1): `strength progress` judged a 5-rep lifter against 8-12
+  without asking. Layer: skill dry run (docs/examples/plan.md uses only 8-12 lifters).

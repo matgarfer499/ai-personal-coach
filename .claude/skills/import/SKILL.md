@@ -54,6 +54,9 @@ Adds an exported workout log to `data/sessions.csv` without duplicates.
    the generic columns and stop.
 3. When `duplicates` is above 0, say once that sets already stored keep their first-imported
    values (a correction made in the app since then is not picked up).
+   When `conflicts` is above 0, some of those sets differ in load or reps from the stored ones
+   (an edit in the app, or an export in other units): say so and that the stored values were
+   kept. `skipped_future`: sets dated after today were not stored.
    Report `read`, `added`, `duplicates`, `skipped_empty`, `first_day` and `last_day`, and every
    line of `warnings` (a session already logged from another source would be counted twice;
    sets with no reps, weight, duration or distance are template leftovers and are not stored).

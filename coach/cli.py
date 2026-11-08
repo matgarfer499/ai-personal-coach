@@ -16,11 +16,14 @@ import json
 import os
 import re
 import sys
+import types
 from collections import Counter
 from datetime import date, timedelta
 from pathlib import Path
-from statistics import fmean
+from statistics import fmean, median
 from typing import Any, NoReturn
+
+import yaml
 
 from coach import (
     catalogue,
@@ -152,6 +155,8 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
     if args.strength_cmd == "deload":
         signs = {s.strip() for s in args.signs.split(",") if s.strip()}
         return {"deload": strength.deload(signs)}
+    if args.strength_cmd == "plan-sets":
+        return _plan_sets(args.data_dir / args.file)
     today = args.today or date.today()
     logged = [s for s in read_sets(args.data_dir / "sessions.csv") if s.date <= today]
     muscle_map = strength.load_muscle_map()
@@ -185,6 +190,28 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
         )
         for name in names
     }
+    # `*` gives a range to every lift, so none of them is on the default.
+    star = any(n == strength.STAR for n, _ in ranges)
+    recent_cutoff = today - timedelta(days=PROGRESS_LOOKBACK_DAYS)
+    given = {
+        name: star or any(strength.rep_range_matches(name, n, muscle_map) for n, _ in ranges)
+        for name in names
+    }
+    notes = {}
+    for name in names:
+        reps = [
+            s.reps
+            for s in logged
+            if s.exercise == name and strength.hard_set(s) and s.date > recent_cutoff
+        ]
+        if not given[name] and reps:
+            mid = median(reps)
+            low, high = strength.REP_RANGE
+            if not low <= mid <= high:
+                notes[name] = (
+                    f"logged reps (median {mid:g}) are outside the default {low}-{high}: ask "
+                    "the client's usual range and pass it with --rep-range"
+                )
     # Every logged lift, not just the ones shown: --exercise and the lookback only filter output.
     every = {s.exercise for s in logged}
     unmatched = strength.unmatched_rep_ranges(ranges, every, muscle_map)
@@ -193,8 +220,54 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
     outside = [] if args.exercise else strength.unmatched_rep_ranges(ranges, set(names), muscle_map)
     return {
         "lifts": lifts,
+        "rep_range_source": {n: "given" if given[n] else "default" for n in names},
+        "rep_range_notes": notes,
         "unmatched_rep_ranges": unmatched,
         "rep_ranges_outside_lookback": [n for n in outside if n not in unmatched],
+    }
+
+
+def _plan_sets(path: Path) -> dict:
+    """Weekly hard sets per muscle for a planned week (each listed session happens once)."""
+    try:
+        plan = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError as err:
+        raise ValueError(f"{path} is not valid YAML: {err}") from err
+    sessions = plan.get("sessions") if isinstance(plan, dict) else None
+    if not isinstance(sessions, list) or not all(isinstance(x, dict) for x in sessions):
+        raise ValueError("the plan needs `sessions:`, a list of {name, exercises}")
+    planned = []
+    for session in sessions:
+        for item in session.get("exercises") or []:
+            sets = item.get("sets") if isinstance(item, dict) else None
+            if (
+                not isinstance(sets, int)
+                or isinstance(sets, bool)
+                or sets < 1
+                or not item.get("exercise")
+            ):
+                raise ValueError(
+                    f"each planned exercise needs `exercise` and whole `sets`: {item!r}"
+                )
+            planned += [
+                types.SimpleNamespace(
+                    exercise=str(item["exercise"]), set_type="normal", reps=1, rir=None, rpe=None
+                )
+            ] * sets
+    if not planned:
+        raise ValueError("the plan lists no sessions with exercises")
+    muscle_map = strength.load_muscle_map()
+    totals = strength.weekly_hard_sets(planned, muscle_map)
+    return {
+        "sets": totals,
+        # Every muscle the map credits, so one the plan never trains is listed too.
+        "below_reference": sorted(
+            m
+            for m in {m for entry in muscle_map.values() for m in entry["muscles"]}
+            if totals.get(m, 0) < strength.WEEKLY_SETS_REFERENCE
+        ),
+        "unmapped": strength.unmapped_exercises(planned, muscle_map),
+        "reference_sets_per_week": strength.WEEKLY_SETS_REFERENCE,
     }
 
 
@@ -214,7 +287,9 @@ def cmd_import(profile: Profile, args: argparse.Namespace) -> dict:
     # carry nothing any calculator reads (no reps, so not a working set), so storing them would
     # only inflate `added`; they are skipped and reported instead.
     leftovers = [s for s in read if s.is_empty]
-    sets = [s for s in read if not s.is_empty]
+    today = args.today or date.today()
+    future = [s for s in read if not s.is_empty and s.date > today]
+    sets = [s for s in read if not s.is_empty and s.date <= today]
     store = args.data_dir / "sessions.csv"
     # The same workout imported through two importers is stored twice (the key includes the
     # source) and would double-count weekly sets, so say so.
@@ -228,11 +303,20 @@ def cmd_import(profile: Profile, args: argparse.Namespace) -> dict:
     ]
     if leftovers:
         warnings.append(_leftover_warning(leftovers))
+    if future:
+        warnings.append(f"{len(future)} sets dated after today ({today}) were not stored")
+    if result.conflicts:
+        warnings.append(
+            f"{result.conflicts} sets match stored ones but differ in load or reps (an edited "
+            "or re-exported log, or another unit): kept the stored rows"
+        )
     return {
         "importer": importer.name,
         "read": len(read),
         "added": result.added,
         "duplicates": result.duplicates,
+        "conflicts": result.conflicts,
+        "skipped_future": len(future),
         "skipped_empty": len(leftovers),
         "first_day": days[0] if days else None,
         "last_day": days[-1] if days else None,
@@ -1036,6 +1120,66 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
     return {"added": product, "missing": product.missing(), "warnings": warnings}
 
 
+# The header lines /plan writes at the top of data/plan.md (.claude/skills/plan/SKILL.md step 5).
+PLAN_DATE_KEYS = ("Date", "Fecha")
+
+
+def _same_number(text: str, value: float) -> bool:
+    try:
+        return float(text) == value
+    except ValueError:
+        return False
+
+
+def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
+    path = args.data_dir / "plan.md"
+    if not path.exists():
+        raise ValueError(f"no plan at {path}: /plan writes it")
+    head = path.read_text(encoding="utf-8").splitlines()[:3]
+    fields = dict(line.split(":", 1) for line in head if ":" in line)
+    fields = {k.strip(): v.strip() for k, v in fields.items()}
+    problems = []
+    if not any(k in fields for k in PLAN_DATE_KEYS):
+        problems.append("line 1 must be `Date: YYYY-MM-DD` (es: `Fecha:`)")
+    problems += [
+        f"missing header line `{key}:` in the first three lines"
+        for key in ("target_kcal", "in_deficit")
+        if key not in fields
+    ]
+    notes = []
+    args.kcal, args.in_deficit = None, False
+    fresh = cmd_macros(profile, args)
+    if "target_kcal" in fields and "in_deficit" in fields:
+        try:
+            kcal = float(fields["target_kcal"].replace(",", "."))
+        except ValueError:
+            kcal = None
+            problems.append(f"target_kcal must be a number, not {fields['target_kcal']!r}")
+        if kcal is not None:
+            # The stored target as /menu will use it: the safety rules raise or lower it here.
+            args.kcal, args.in_deficit = kcal, fields["in_deficit"].lower() == "true"
+            used = cmd_macros(profile, args)
+            if not _same_number(fields["target_kcal"], used["kcal"]) or (
+                used["in_deficit"] != args.in_deficit
+            ):
+                problems.append(
+                    f"the safety rules change this target: `coach macros --kcal` gives "
+                    f"{used['kcal']:g} kcal, in_deficit {str(used['in_deficit']).lower()}"
+                )
+            elif not _same_number(fields["target_kcal"], fresh["kcal"]):
+                # A target agreed at /review (--tdee, --current-kcal) or kept from the last plan.
+                notes.append(
+                    f"target_kcal differs from a fresh estimate ({fresh['kcal']:g} kcal): fine "
+                    "when it was agreed at /review or kept from the previous plan"
+                )
+    return {
+        "ok": not problems,
+        "problems": problems,
+        "notes": notes,
+        "fresh_estimate": {"target_kcal": fresh["kcal"], "in_deficit": fresh["in_deficit"]},
+    }
+
+
 def cmd_knowledge(profile: Profile, args: argparse.Namespace) -> dict | str:
     if args.knowledge_cmd == "section":
         return knowledge.section(args.file, args.heading)
@@ -1107,6 +1251,10 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help=", ".join(sorted(strength.DELOAD_SIGNS | strength.OVERREACHING_SIGNS)),
     )
+    plan_sets_cmd = strength_sub.add_parser(
+        "plan-sets", parents=[json_flag], help="weekly hard sets of a planned week (YAML)"
+    )
+    plan_sets_cmd.add_argument("file", type=Path, help="relative to the data dir")
     sets_cmd = strength_sub.add_parser("sets", parents=[json_flag], help="weekly hard sets")
     sets_cmd.add_argument("--week-ending", type=date.fromisoformat, default=None)
     progress_cmd = strength_sub.add_parser("progress", parents=[json_flag], help="next session")
@@ -1271,6 +1419,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--symptoms", default="", help=f"comma-separated: {', '.join(safety.SYMPTOMS)}"
     )
 
+    plan_cmd = add("plan", cmd_plan, "check data/plan.md's header against the CLI")
+    plan_sub = plan_cmd.add_subparsers(dest="plan_cmd", required=True)
+    check_plan = plan_sub.add_parser("check", parents=[json_flag])
+    check_plan.add_argument("--goal", default=None, choices=GOALS)
+    check_plan.add_argument("--pal", type=float, default=None, help="as given to /plan")
+    check_plan.add_argument("--tdee", type=float, default=None, help="as given to /plan")
+    check_plan.add_argument("--current-kcal", type=float, default=None, help="as given to /plan")
     knowledge_cmd = add("knowledge", cmd_knowledge, "knowledge staleness and sections")
     knowledge_sub = knowledge_cmd.add_subparsers(dest="knowledge_cmd", required=True)
     stale_cmd = knowledge_sub.add_parser("stale", parents=[json_flag])
