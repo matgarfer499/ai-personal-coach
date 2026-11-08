@@ -69,6 +69,9 @@ a person to review and merge. It never merges and never changes the coach's code
    index and runs the offline checks plus the online ones for the new IDs. Fix every error. For
    each warning (a decimal not in the abstract), confirm the number is in the full text you
    opened, or remove it.
+   Then `uv run python scripts/check_knowledge.py --knowledge-dir W/knowledge --claims`: for each
+   line about a strong rule you added or changed, add the passage that states the number to a
+   cited Supports line, or label the number in the rule (convention, heuristic, inference).
 6. **Log.** Fill every section of W's log file: what was searched; new, changed and retired
    rules with grades and IDs; dropped claims and why; the check output.
 7. **Finish.** `uv run python scripts/research.py finish --worktree W --message

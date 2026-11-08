@@ -115,3 +115,11 @@ def test_research_forbids_personal_data_instead_of_banning_coaching_use():
     assert "Not while coaching" not in text
     assert "never put personal or\n  client data" in text
     assert "branch" in text and "commit message" in text
+
+
+@pytest.mark.parametrize("name", COACH_SKILLS)
+def test_ground_rules_point_to_the_glossary(name):
+    """Beginners met RIR, RPE and bpm unexplained: the first use is explained from the glossary."""
+    rules = ground_rules((SKILLS / name / "SKILL.md").read_text(encoding="utf-8"))
+    assert "docs/glossary.md" in rules
+    assert (ROOT / "docs" / "glossary.md").exists()

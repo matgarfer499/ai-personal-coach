@@ -28,6 +28,9 @@ def row(**kw):
         form_note="",
         kcal_exception="",
         g_per_ml="",
+        unit_name="",
+        unit_g="",
+        food_group="",
     )
     return base | kw
 
@@ -175,3 +178,18 @@ def test_ml_for_a_food_without_density_is_still_an_error():
 def test_from_row_rejects_a_bad_density(bad):
     with pytest.raises(ValueError, match="g_per_ml"):
         Food.from_row(row(g_per_ml=bad))
+
+
+def test_menu_totals_count_vegetables_and_fruit_but_not_potatoes_or_products():
+    table = load_foods() + [
+        Food.from_row(row(name_en="veg product", name_es="verdura de marca", source="label:X"))
+    ]
+    items = [
+        ("tomato", 200.0),
+        ("manzana", 150.0),
+        ("potato, boiled", 300.0),  # a starchy root: not counted (a convention)
+        ("sweet potato, baked", 100.0),
+        ("chicken breast, raw", 150.0),
+        ("verdura de marca", 100.0),  # a product has no food group
+    ]
+    assert menu_totals(items, table).veg_fruit_g == 350

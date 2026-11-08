@@ -18,7 +18,7 @@ import yaml
 
 from coach import mealplan
 from coach.tastes import Tastes
-from coach.text import fold
+from coach.text import fold, fold_words
 
 RECIPES_DIR = "recipes"
 # convention: file names keep at most 80 characters of the dish name (readable, well under any
@@ -118,14 +118,14 @@ def _text(recipe: dict) -> str:
 def search(recipes: list[dict], words: list[str]) -> list[dict]:
     """Recipes whose dish, ingredients or seasoning have a word starting with each search word
     (accents and case ignored, as in `coach foods search`); never_again dishes are left out."""
-    wanted = [fold(w) for w in words if w.strip()]
+    wanted = fold_words(*words)
     if not wanted:
         raise ValueError("recipes search needs at least one word")
     found = []
     for recipe in recipes:
         if recipe["rating"] == "never_again":
             continue
-        have = re.findall(r"\w+", fold(_text(recipe)))
+        have = fold_words(_text(recipe))
         if all(any(h.startswith(w) for h in have) for w in wanted):
             found.append(recipe)
     return found

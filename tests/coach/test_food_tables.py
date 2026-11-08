@@ -129,3 +129,32 @@ def test_bread_rows_have_ordinary_fibre():
     table = load_foods()
     for name in ("pan blanco", "pan de molde"):
         assert find(name, table).fibre_g <= 4, name
+
+
+def test_countable_foods_carry_a_unit_from_the_source_portions():
+    """`unit` in the ids file names an SR Legacy portion; the build writes its name and grams."""
+    built = {r["name_en"]: r for r in rows(ROOT / "foods" / "base.csv")}
+    assert (built["egg, whole, raw"]["unit_name"], built["egg, whole, raw"]["unit_g"]) == (
+        "large",
+        "50.0",
+    )
+    assert (built["apple"]["unit_name"], built["apple"]["unit_g"]) == ("medium", "182.0")
+    assert (built["banana"]["unit_name"], built["banana"]["unit_g"]) == ("medium", "118.0")
+    marked = {r["name_en"] for r in id_rows(ROOT / "foods" / "base_ids.tsv") if r["unit"]}
+    for path in TABLES:
+        for r in rows(path):
+            assert bool(r["unit_name"]) == bool(r["unit_g"]), r["name_en"]
+            if r["unit_g"]:
+                assert float(r["unit_g"]) > 0, r["name_en"]
+    assert {n for n, r in built.items() if r["unit_name"]} == marked
+    assert built["olive oil"]["unit_name"] == ""
+
+
+def test_food_group_is_the_source_category():
+    for path in TABLES:
+        for r in rows(path):
+            assert r["food_group"], r["name_en"]
+    built = {r["name_en"]: r for r in rows(ROOT / "foods" / "base.csv")}
+    assert built["apple"]["food_group"] == "Fruits and Fruit Juices"
+    assert built["tomato"]["food_group"] == "Vegetables and Vegetable Products"
+    assert built["chicken breast, raw"]["food_group"] == "Poultry Products"

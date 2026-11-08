@@ -779,6 +779,15 @@ def test_foods_search(capsys, data_dir):
     assert out["products"][0]["protein_g"] > 0
 
 
+def test_foods_search_splits_a_quoted_phrase_into_words(capsys, data_dir):
+    _, quoted = run(capsys, data_dir, "foods", "search", "pechuga pollo", "--region", "es")
+    _, words = run(capsys, data_dir, "foods", "search", "pechuga", "pollo", "--region", "es")
+    assert quoted == words and quoted["foods"]
+    # an exact table name, comma included, finds its food
+    _, named = run(capsys, data_dir, "foods", "search", "pechuga de pollo, cruda", "--region", "es")
+    assert "pechuga de pollo, cruda" in [f["name_es"] for f in named["foods"]]
+
+
 LABEL = (
     "products", "add", "--label", "--name", "Proteina chocolate", "--chain", "Mercadona",
     "--per", "100 g", "--kcal", "380", "--protein", "30", "--carbs", "40", "--fat", "9.5",
