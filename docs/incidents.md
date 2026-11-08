@@ -85,3 +85,6 @@ One line per bug that reached main: what broke, and which review layer should ha
   Layer: skill dry run (PDF read with pdftotext, never looked at).
 - 2026-11-08 (beta3 p1-lucia-N9, p5-elena-N12, p4-sara-N11): skill text drifted from the code
   (notes "replace", protein "at least the target", hidden `--today`). Layer: docs tests.
+- 2026-11-08 (beta3 p3-antonio-N6, p6-james-N11, p1-lucia-N10, p1-lucia-N11): a symptom stop had
+  no documented exit; `medically_cleared` did not lift it and an undocumented `profile set`
+  cleared it with no clinician. Layer: plan review (a stop shipped without its exit).

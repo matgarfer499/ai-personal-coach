@@ -121,7 +121,7 @@ def test_pal_override_reaches_energy_and_macros(capsys, data_dir):
     assert shown["profile"]["pal_override"] == energy.DESK_PAL
     assert "pal_override" not in shown["missing"]
     # The flag clears: the stored choice is ignored, never silently kept in force.
-    run(capsys, data_dir, "profile", "set", "screening.cardiac_symptoms", "false")
+    run(capsys, data_dir, "clearance", "add", "--by", "GP", "--note", "ok")
     _, out = run(capsys, data_dir, "energy")
     assert out["tdee"] == pytest.approx(_rmr(data_dir) * energy.band_midpoint("active"))
     run(capsys, data_dir, "profile", "set", "pal_override", "none")
@@ -136,7 +136,7 @@ def test_profile_set_pal_override_warns_when_it_has_no_effect(capsys, data_dir):
     assert any("no effect" in w for w in warnings())  # activity level is desk
     _stopped_active(data_dir)
     assert warnings() == []
-    run(capsys, data_dir, "profile", "set", "screening.cardiac_symptoms", "false")
+    run(capsys, data_dir, "clearance", "add", "--by", "GP", "--note", "ok")
     assert any("inactive until a training hold applies" in w for w in warnings())
 
 
@@ -1880,7 +1880,7 @@ def test_unknown_acsm_tokens_are_refused(capsys, data_dir):
 
 def test_changing_known_disease_drops_an_old_medical_clearance(capsys, data_dir):
     run(capsys, data_dir, "profile", "set", "screening.known_disease", "metabolic")
-    run(capsys, data_dir, "profile", "set", "screening.medically_cleared", "true")
+    run(capsys, data_dir, "clearance", "add", "--by", "GP", "--note", "ok")
     run(capsys, data_dir, "profile", "set", "screening.known_disease", "metabolic, renal")
     screening = run(capsys, data_dir, "profile", "show")[1]["profile"]["screening"]
     assert "medically_cleared" not in screening
@@ -1902,7 +1902,7 @@ def test_taper_refusal_names_the_acsm_clearance_stop(capsys, data_dir):
 
 def test_changing_symptoms_drops_an_old_medical_clearance(capsys, data_dir):
     run(capsys, data_dir, "profile", "set", "screening.known_disease", "metabolic")
-    run(capsys, data_dir, "profile", "set", "screening.medically_cleared", "true")
+    run(capsys, data_dir, "clearance", "add", "--by", "GP", "--note", "ok")
     run(capsys, data_dir, "profile", "set", "screening.symptoms", "dizzy")
     screening = run(capsys, data_dir, "profile", "show")[1]["profile"]["screening"]
     assert "medically_cleared" not in screening
@@ -1910,7 +1910,7 @@ def test_changing_symptoms_drops_an_old_medical_clearance(capsys, data_dir):
 
 def test_symptoms_at_checkin_drop_an_old_medical_clearance(capsys, data_dir):
     run(capsys, data_dir, "profile", "set", "screening.known_disease", "metabolic")
-    run(capsys, data_dir, "profile", "set", "screening.medically_cleared", "true")
+    run(capsys, data_dir, "clearance", "add", "--by", "GP", "--note", "ok")
     run(capsys, data_dir, "checkin", "add", "--symptoms", "dizzy")
     screening = run(capsys, data_dir, "profile", "show")[1]["profile"]["screening"]
     assert "medically_cleared" not in screening

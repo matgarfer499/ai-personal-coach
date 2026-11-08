@@ -131,3 +131,15 @@ def test_skill_text_matches_the_checkin_and_menu_code():
     assert "notes are added after that day's earlier notes" in checkin
     menu = (SKILLS / "menu" / "SKILL.md").read_text(encoding="utf-8")
     assert "protein at least\n   `protein_min_g`" in menu
+
+
+# Beta 3 p1-lucia-N10: a clearance is recorded only with `coach clearance add`.
+@pytest.mark.parametrize("name", COACH_SKILLS)
+def test_skills_never_write_a_clearance_with_profile_set(name):
+    text = (SKILLS / name / "SKILL.md").read_text(encoding="utf-8")
+    assert not re.search(r"profile set screening\.(medically_cleared|cardiac_symptoms) ", text)
+
+
+def test_the_clearance_path_is_documented_where_a_stop_happens():
+    for name in ("checkin", "plan"):
+        assert "coach clearance add" in (SKILLS / name / "SKILL.md").read_text(encoding="utf-8")

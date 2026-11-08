@@ -87,8 +87,12 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
      `--exercises` when running hurts it) and follow
      `coach knowledge section recovery-habits "Knee injury: signs of ligament or meniscus damage"`
      for a knee.
-   - After a training stop, `coach plan check` says the plan is stale and `coach plan export`
-     refuses: tell the client to set the old plan aside until a clinician clears them.
+   - After a training stop, `coach plan check` says the plan is stale, `coach plan export`
+     refuses and plan.md gains a "Plan suspendido" section: tell the client to set the old plan
+     aside until a clinician clears them. When they say a doctor has cleared them, ask who, when
+     and what they said, record it with `coach clearance add --by WHO --date YYYY-MM-DD --note
+     "..."` (the only way to lift a symptom stop; `profile set` and `--symptoms no` refuse), and
+     offer /plan for the light-to-moderate restart `coach safety` then gives.
    - Fever, aches all over, or feeling unwell below the neck: no training until better
      (`coach knowledge section recovery-habits "Fever and systemic illness: do not train"`).
      A head cold only: light training is optional (`coach knowledge section recovery-habits

@@ -88,15 +88,23 @@ SCREENING_KEYS = {
     "regular_exercise": bool,
     "known_disease": list,  # DISEASE_TOKENS diagnosed by a doctor; an empty list is none
     "symptoms": list,  # SYMPTOM_TOKENS reported at screening; an empty list is none
-    "medically_cleared": bool,  # a clinician cleared exercise for the known disease
+    "medically_cleared": bool,  # a clinician cleared exercise (`coach clearance add`)
+    # recovery-habits.md: "Cardiac warning symptoms: stop and refer": training resumes only once a
+    # clinician clears it; `coach clearance add` records who, when and what they said.
+    "cleared_on": date,
+    "cleared_by": str,
+    "clearance_note": str,
+    "symptoms_on": date,  # the latest day a warning symptom was reported
     "menstrual": str,  # one of MENSTRUAL_STATES
     "bp_systolic": int,  # latest seated resting reading, mmHg
     "bp_diastolic": int,
 }
 # The PAR-Q+ answers a vigorous-work review covers; changing one drops `vigorous_reviewed`.
 PARQ_ANSWERS = ("parq_any_yes", "parq_followup_yes")
-# The answers a medical clearance covers; changing one drops `medically_cleared`.
+# The answers a medical clearance covers; changing one drops the clearance record.
 CLEARANCE_ANSWERS = ("known_disease", "symptoms", "cardiac_symptoms")
+# The clearance record: written only by `coach clearance add`, never by `profile set`.
+CLEARANCE_RECORD = ("medically_cleared", "cleared_on", "cleared_by", "clearance_note")
 # recovery-habits.md: "ACSM 2015 screening algorithm": the diseases that change the cell.
 # Hypertension is not one of them (ACSM 2015 dropped risk-factor counting).
 DISEASE_TOKENS = ("cardiovascular", "metabolic", "renal")
