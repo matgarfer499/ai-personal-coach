@@ -72,8 +72,7 @@ case:
 3. When they need a new conversation, add or adapt a skill in `.claude/skills/`.
 
 After four simulated betas (3.5, 3.7, 4.1 and 4.1 out of 5) the core is stable and active
-development has stopped. [`docs/roadmap.md`](docs/roadmap.md) lists what the betas asked for and
-was left out on purpose, as examples of extensions rather than a backlog.
+development has stopped.
 
 ## First 10 minutes
 
@@ -319,14 +318,6 @@ How the original evidence base was built, and its limits:
 - **Known gaps** (tracked as issues): with `no_training` the energy estimate is fixed for
   `desk_training` (desk band); for `active` it adds a note and the client stores `pal_override` if
   the activity comes from exercise (a job-plus-exercise mix cannot be modelled yet).
-
-## Roadmap
-
-There is no planned work: the coach is meant to be extended per case (see
-[Scope](#scope-a-base-to-build-on)). [docs/roadmap.md](docs/roadmap.md) lists the gaps the betas
-found and why each was left out (most lack a rule in `knowledge/`): run-by-run running schedules,
-sodium-aware menus, portions per eater, a few grades and wordings for the next research pass, and
-the rest of the CLI in Spanish.
 
 ## What is inside
 
