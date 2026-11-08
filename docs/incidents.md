@@ -22,3 +22,10 @@ One line per bug that reached main: what broke, and which review layer should ha
   and `coach import` ignored `--today`. Layer: tests.
 - 2026-11-08 (beta p2-marcus-I1): `strength progress` judged a 5-rep lifter against 8-12
   without asking. Layer: skill dry run (docs/examples/plan.md uses only 8-12 lifters).
+- 2026-11-08 (beta p5-elena-I11): `coach foods search "pan integral"` (one quoted argument)
+  found nothing; only separate words worked. Layer: tests (no case passed a phrase).
+- 2026-11-08 (beta p4-sara-I6): `coach tastes rate` recorded a dish that was in no saved menu,
+  no recipe and had no link. Layer: tests (the rate cases never named an unknown dish).
+- 2026-11-08 (beta p4-sara-I8): menu PDF recipe cards said "1 ración" for meals cooked for
+  several people, and breakfasts got only a one-line card. Layer: visual review of the PDF in
+  PR #32.

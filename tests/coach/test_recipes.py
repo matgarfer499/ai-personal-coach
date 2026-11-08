@@ -107,8 +107,17 @@ def test_a_rated_dish_outside_the_menus_keeps_its_source_only(capsys, data_dir):
         "source": "https://example.org/g",
         "saved_on": date(2026, 10, 25),
     }
-    _, out = run(capsys, data_dir, "tastes", "rate", "Sin enlace ni menú", "loved")
-    assert out["recipe_saved"] is None
+    # in no menu, no recipe and no link: refused, nothing to find the dish by later
+    code, out = run(capsys, data_dir, "tastes", "rate", "Sin enlace ni menú", "loved")
+    assert code == 2 and "--source" in out["message"]
+
+
+def test_a_dish_already_in_the_library_is_rated_without_a_source(capsys, data_dir):
+    source = ["--source", "https://example.org/g"]
+    run(capsys, data_dir, "tastes", "rate", "Gazpacho", "liked", *source)
+    code, out = run(capsys, data_dir, "tastes", "rate", "gazpacho", "loved")
+    assert code == 0 and out["rating"]["rating"] == "loved"
+    assert out["recipe_saved"] == "recipes/gazpacho.yaml"
 
 
 def test_list_and_search_show_the_rating_and_hide_never_again(capsys, data_dir):

@@ -105,18 +105,17 @@ def test_cli_set_rejects_bad_values(capsys, tmp_path, field, value, message):
 
 
 def test_cli_rate_replaces_an_earlier_rating_of_the_same_dish(capsys, tmp_path):
-    run(capsys, tmp_path, "tastes", "rate", "Bowl de pollo al limón", "liked")
-    run(capsys, tmp_path, "tastes", "rate", "Revuelto de setas", "never_again", "--note", "seco")
-    _, out = run(
-        capsys,
-        tmp_path,
-        "tastes",
-        "rate",
-        "bowl de pollo al limon",
-        "loved",
-        "--source",
-        "https://example.org/bowl",
-    )
+    bowl = ["--source", "https://example.org/bowl"]
+    run(capsys, tmp_path, "tastes", "rate", "Bowl de pollo al limón", "liked", *bowl)
+    run(
+        capsys, tmp_path, "tastes", "rate", "Revuelto de setas", "never_again", "--note", "seco",
+        "--source", "https://example.org/revuelto",
+    )  # fmt: skip
+    _, rated = run(capsys, tmp_path, "tastes", "rate", "bowl de pollo al limon", "loved", *bowl)
+    # only the changed rating is printed, not the whole profile
+    assert set(rated) == {"rating", "recipe_saved"}
+    assert rated["rating"]["dish"] == "bowl de pollo al limon"
+    _, out = run(capsys, tmp_path, "tastes", "show")
     ratings = out["tastes"]["ratings"]
     assert [r["dish"] for r in ratings] == ["Revuelto de setas", "bowl de pollo al limon"]
     assert ratings[1] == {
@@ -128,6 +127,28 @@ def test_cli_rate_replaces_an_earlier_rating_of_the_same_dish(capsys, tmp_path):
     }
     assert out["favoured"] == ["bowl de pollo al limon"]
     assert out["excluded"] == ["Revuelto de setas"]
+
+
+def test_cli_rate_refuses_a_dish_in_no_menu_and_no_recipe_without_a_source(capsys, tmp_path):
+    code, out = run(capsys, tmp_path, "tastes", "rate", "Plato fantasma", "liked")
+    assert code == 2 and "--source" in out["message"]
+    assert not (tmp_path / "tastes.yaml").exists()  # nothing recorded
+
+
+def test_cli_rate_takes_a_past_date_but_not_a_future_one(capsys, tmp_path):
+    source = ["--source", "https://example.org/bowl"]
+    _, out = run(
+        capsys, tmp_path, "tastes", "rate", "Bowl", "liked", *source, "--date", "2026-10-20"
+    )
+    assert out["rating"]["date"] == "2026-10-20"
+    code, out = run(
+        capsys, tmp_path, "tastes", "rate", "Bowl", "loved", *source, "--date", "2026-10-26"
+    )
+    assert code == 2 and "after today" in out["message"]
+    _, shown = run(capsys, tmp_path, "tastes", "show")
+    assert [(r["rating"], r["date"]) for r in shown["tastes"]["ratings"]] == [
+        ("liked", "2026-10-20")
+    ]
 
 
 def test_cli_rate_rejects_an_unknown_rating(capsys, tmp_path):

@@ -262,3 +262,44 @@ def test_a_dish_without_a_recipe_still_prints_its_amounts(capsys, data_dir):
     data = export(capsys, data_dir)
     assert data.count(b"Bocadillo de prueba") == 2  # the week table and its card
     assert data.count(b"(150 g)") == 2  # the card and the shopping list
+
+
+def test_a_breakfast_without_a_recipe_gets_a_full_card(capsys, data_dir):
+    data = export(capsys, data_dir)
+    # the label stands on its own line in every card, the stew's and the breakfast's, with each
+    # amount on a line of its own below it (not run together on one line)
+    assert data.count(rb"(1 raci\363n) Tj") == 2  # the PDF writes ó as \363
+
+
+def test_a_meal_for_several_people_scales_its_card(capsys, data_dir):
+    pytest.importorskip("reportlab")
+    draft = yaml.safe_load((data_dir / "menu-draft.yaml").read_text(encoding="utf-8"))
+    for day in draft["days"]:
+        for meal in day["meals"]:
+            if meal["meal"] == "Comida":
+                meal["people"] = 2
+    (data_dir / "menu-draft.yaml").write_text(
+        yaml.safe_dump(draft, allow_unicode=True), encoding="utf-8"
+    )
+    data = export(capsys, data_dir)
+    assert b"(para 2 personas) Tj" in data
+    assert b"(3600 g) Tj" in data  # 1,800 g a serving, for 2 people
+    assert b"7200" in data or b"7.200" in data  # bought: 2 servings for 2 people
+    run(capsys, data_dir, "profile", "set", "language", "en")
+    run(capsys, data_dir, "mealplan", "export")
+    assert b"(for 2 people) Tj" in (data_dir / "menus" / "2026-10-26.pdf").read_bytes()
+
+
+def test_the_shopping_list_counts_whole_units_of_countable_foods(capsys, data_dir):
+    pytest.importorskip("reportlab")
+    draft = yaml.safe_load((data_dir / "menu-draft.yaml").read_text(encoding="utf-8"))
+    breakfast = draft["days"][1]["meals"][0]["dishes"][0]
+    breakfast["items"] = ["8400000000024=100", "huevo entero, crudo=100"]
+    (data_dir / "menu-draft.yaml").write_text(
+        yaml.safe_dump(draft, allow_unicode=True), encoding="utf-8"
+    )
+    data = export(capsys, data_dir)
+    assert b"(aprox. 2 ud. grandes) Tj" in data  # 100 g of 50 g large eggs
+    run(capsys, data_dir, "profile", "set", "language", "en")
+    run(capsys, data_dir, "mealplan", "export")
+    assert b"(about 2 large) Tj" in (data_dir / "menus" / "2026-10-26.pdf").read_bytes()

@@ -289,7 +289,7 @@ $ coach mealplan export
 
 (El extra `pdf` está instalado en esta ejecución (`uv sync --extra pdf`), así que el export funciona. Sin el extra, el CLI avisa de que falta y la skill dice `uv sync --extra pdf` y enseña la lista de `coach shopping` como tabla.)
 
-**Coach:** Guardado y exportado. El PDF está en `DATA/menus/2026-11-02.pdf`: lleva las recetas y la lista de la compra. Dos avisos de la lista: la cena del primer día es para dos personas, así que sus cantidades van multiplicadas en la compra (400,0 g de la mezcla de verduras y 180,0 g de huevo entero cuentan los dos platos, y las páginas por día del PDF muestran lo de una ración); y el solomillo de cerdo con patata y ensalada del día 2026-11-04 no se compra, porque lo tomas en un bar.
+**Coach:** Guardado y exportado. El PDF está en `DATA/menus/2026-11-02.pdf`: lleva las recetas y la lista de la compra. Dos avisos de la lista: la cena del primer día es para dos personas, así que sus cantidades van multiplicadas en la compra (400,0 g de la mezcla de verduras y 180,0 g de huevo entero cuentan los dos platos, y la ficha de esa receta en el PDF da las cantidades para 2 personas); y el solomillo de cerdo con patata y ensalada del día 2026-11-04 no se compra, porque lo tomas en un bar.
 
 **Cliente:** El primer plato de la comida me encantó; el de la cena del segundo día no lo repetiría.
 
@@ -297,10 +297,10 @@ $ coach mealplan export
 
 ```
 $ coach tastes rate "Bowl mexicano de pollo con judías negras y aguacate" loved
-... "ratings": [{"dish": "Bowl mexicano de pollo con judías negras y aguacate", "rating": "loved", "date": "2026-11-02", "source": "", "note": ""}]}, "missing": [], "favoured": ["Bowl mexicano de pollo con judías negras y aguacate"], "disliked": [], "excluded": [], "recipe_saved": "recipes/bowl-mexicano-de-pollo-con-judias-negras-y-aguacate.yaml"}
+{"rating": {"dish": "Bowl mexicano de pollo con judías negras y aguacate", "rating": "loved", "date": "2026-11-02", "source": "", "note": ""}, "recipe_saved": "recipes/bowl-mexicano-de-pollo-con-judias-negras-y-aguacate.yaml"}
 
 $ coach tastes rate "Tacos de ternera magra con aguacate y pico de gallo" never_again
-... "ratings": [{"dish": "Bowl mexicano de pollo con judías negras y aguacate", "rating": "loved", "date": "2026-11-02", "source": "", "note": ""}, {"dish": "Tacos de ternera magra con aguacate y pico de gallo", "rating": "never_again", "date": "2026-11-02", "source": "", "note": ""}]}, "missing": [], "favoured": ["Bowl mexicano de pollo con judías negras y aguacate"], "disliked": [], "excluded": ["Tacos de ternera magra con aguacate y pico de gallo"], "recipe_saved": null}
+{"rating": {"dish": "Tacos de ternera magra con aguacate y pico de gallo", "rating": "never_again", "date": "2026-11-02", "source": "", "note": ""}, "recipe_saved": null}
 
 $ coach recipes list
 {"recipes": [{"dish": "Bowl mexicano de pollo con judías negras y aguacate", "rating": "loved", "source": null, "servings": null, "file": "recipes/bowl-mexicano-de-pollo-con-judias-negras-y-aguacate.yaml", "has_steps": true}]}
