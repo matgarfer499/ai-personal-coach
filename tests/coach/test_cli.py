@@ -451,6 +451,7 @@ def test_import_hevy_twice(capsys, data_dir):
         "first_day": "2025-07-24",
         "last_day": "2025-07-26",
         "skipped_empty": 0,
+        "unmapped": [],
         "conflicts": 0,
         "skipped_future": 0,
         "warnings": [],
@@ -2055,3 +2056,40 @@ def test_a_managed_running_injury_holds_the_cap_and_allows_a_taper(capsys, data_
     assert week["paused"] and week["long_run_cap_km"] == 8
     code, _ = run(capsys, data_dir, "runs", "taper", "--race-date", "2026-05-01")
     assert code == 0
+
+
+def test_import_reports_unmapped_names(capsys, data_dir, tmp_path):
+    csv = tmp_path / "log.csv"
+    csv.write_text(
+        "date,exercise,weight_kg,reps\n2026-03-30 10:00,Barbell Row,60,8\n"
+        "2026-03-30 10:10,Zercher Carry Thing,40,8\n",
+        encoding="utf-8",
+    )
+    _, out = run(capsys, data_dir, "import", str(csv))
+    assert out["unmapped"] == ["Zercher Carry Thing"]
+
+
+def test_strength_alias_add_stores_a_personal_alias(capsys, data_dir):
+    code, out = run(capsys, data_dir, "strength", "alias", "add", "Zercher Carry Thing", "squat")
+    assert code == 0 and out["aliases"] == {"Zercher Carry Thing": "squat"}
+    code, out = run(capsys, data_dir, "strength", "alias", "add", "Otra", "no such lift")
+    assert code == 2 and "no such lift" in out["message"]
+    code, out = run(capsys, data_dir, "strength", "alias", "add", "  ", "squat")
+    assert code == 2
+    # "Fly" already names the chest fly: a personal alias for it would never be used.
+    code, out = run(capsys, data_dir, "strength", "alias", "add", "Fly", "rear delt fly")
+    assert code == 2 and "chest fly" in out["message"]
+    assert not (data_dir / "muscle_aliases.yaml").read_text(encoding="utf-8").count("Fly")
+    # "Plank" names a lift later in the map: an alias for squat would take every plank set.
+    code, out = run(capsys, data_dir, "strength", "alias", "add", "Plank", "squat")
+    assert code == 2 and "plank" in out["message"]
+    # Pointing one of the client's own names at another lift is allowed.
+    code, out = run(capsys, data_dir, "strength", "alias", "add", "Zercher Carry Thing", "plank")
+    assert code == 0 and out["aliases"] == {"Zercher Carry Thing": "plank"}
+
+
+def test_a_broken_alias_file_never_blocks_recording_an_injury(capsys, data_dir):
+    (data_dir / "muscle_aliases.yaml").write_text("Mi remo: no such lift\n", encoding="utf-8")
+    code, out = run(capsys, data_dir, "injury", "add", "rodilla", "--exercises", "squat")
+    assert code == 0 and out["warnings"]
+    assert load_profile(data_dir / "profile.yaml").injuries[0]["area"] == "rodilla"

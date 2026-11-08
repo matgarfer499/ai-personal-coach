@@ -51,3 +51,6 @@ One line per bug that reached main: what broke, and which review layer should ha
 - 2026-11-08 (beta2 p6-james-I4, p3-antonio-I1): check-in notes missed "unusually tired" and
   `--symptoms chest_tightness` was refused. Layer: tests (the word list was never checked
   against every token in the rule's symptom list).
+- 2026-11-08 (beta2 p2-marcus-I2, p7-nuevo-I4): Hevy names ("Hack Squat (Machine)"), dumbbell
+  and goblet variants were unmapped, so weekly sets were undercounted. Layer: tests (no fixture
+  used equipment-prefixed or Hevy names in plan-sets).

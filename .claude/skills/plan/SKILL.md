@@ -184,7 +184,9 @@ Knowledge, by situation: run only the lines that apply.
      and `exercises:` of `{exercise: NAME, sets: N}`, one entry per session in the week) to
      `data/plan-week.yaml` and run `coach strength plan-sets plan-week.yaml`: say which muscles
      fall in `below_reference` and either add sets or say why not ("Weekly sets per muscle");
-     ask about any `unmapped` names.
+     handle `unmapped` names as /import does: propose the closest known lift, and after the
+     client confirms store it with `coach strength alias add "NAME" "MAP LIFT"`; or use a
+     name the map knows in the plan.
    - Rep range per lift: 8-12 by default ("Double progression", "Starting point for novices");
      main lifts of a client who wants strength move to heavier work in 3-8 reps once technique is
      solid, within Safety below ("Load range for maximal strength"); a hypertrophy client may
