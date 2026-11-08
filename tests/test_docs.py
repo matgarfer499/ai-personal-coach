@@ -84,3 +84,18 @@ def test_every_rule_cited_in_the_code_exists():
                 missing.append(f"{path.name}: {name} {heading!r}")
     assert len(headings) >= 3
     assert not missing, missing
+
+
+def test_glossary_cli_notes_name_notes_the_cli_prints():
+    """Each row of docs/glossary.md "CLI notes" starts with text the coach package prints."""
+    import re
+
+    root = Path(__file__).parent.parent
+    glossary = (root / "docs" / "glossary.md").read_text(encoding="utf-8")
+    table = glossary.split("## CLI notes / Notas del CLI", 1)[1]
+    source = "".join(p.read_text(encoding="utf-8") for p in (root / "coach").glob("*.py"))
+    source = re.sub(r"[\"']\s*\n\s*f?[\"']", "", source)  # join concatenated strings
+    for cell in re.findall(r"^\| `([^`]+)`", table, re.M):
+        # The longest stretch without a number or a placeholder (A, B, F, N, X, Y).
+        words = max(re.split(r"\d+|\b[ABFNXY]\b", cell), key=len).strip()
+        assert len(words) >= 8 and words in source, cell

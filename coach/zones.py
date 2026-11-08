@@ -53,6 +53,14 @@ TALK_TEST = {
     "vigorous": "only a few words without pausing for breath",
     "near_maximal": "cannot speak",
 }
+# The same cardio-health.md: "0-10 effort scale and talk-test anchors" wording, in Spanish.
+TALK_TEST_ES = {
+    "very_light": "puedes hablar y cantar sin esfuerzo",
+    "light": "puedes hablar y cantar",
+    "moderate": "puedes hablar, pero no cantar",
+    "vigorous": "solo unas palabras sin parar a respirar",
+    "near_maximal": "no puedes hablar",
+}
 # recovery-habits.md: "Gauge intensity by talk test and RPE, not a heart-rate cap": moderate is
 # RPE 13-14 in pregnancy (the source's number). "Vigorous work: avoid near-maximal efforts":
 # never RPE 18 or more. convention: light runs up to that moderate band (9-12) and vigorous
@@ -197,4 +205,7 @@ def hr_zones(
     if rules and result.zones:
         result.zones = [z for z in result.zones if z.name not in ABOVE_MODERATE]
         result.notes += [r for r in flags.reasons if r.startswith(rules)]
+    if profile.language == "es":  # the talk test is shown to the client as is
+        for zone in result.zones:
+            zone.talk_test = TALK_TEST_ES[zone.name]
     return result
