@@ -78,6 +78,9 @@ Run these, all with the ground-rule flags:
   lift it is only when the client says they logged it under another name, then rerun with that
   name. `rep_ranges_outside_lookback` lists names that match a lift logged only before the
   lookback window (absent from `lifts`): ask whether that lift is back in the plan.
+  `rep_range_notes` names lifts whose logged reps sit outside the default 8-12 while no range
+  was given: ask the client's usual range for each, then rerun with `--rep-range`. Never judge a
+  heavy lift against 8-12 because the range was not asked.
 
 Knowledge, by situation: run only the lines that apply.
 - Always:
@@ -154,6 +157,11 @@ Knowledge, by situation: run only the lines that apply.
    - Volume: keep each muscle near its weekly sets in `coach strength sets`. With goal
      muscle_gain and recovery holding, add sets gradually toward `reference_sets_per_week`.
      With no log, 2-3 working sets per exercise (convention).
+     Before writing the plan, write the training week as YAML (`sessions:`, each with `name`
+     and `exercises:` of `{exercise: NAME, sets: N}`, one entry per session in the week) to
+     `data/plan-week.yaml` and run `coach strength plan-sets plan-week.yaml`: say which muscles
+     fall in `below_reference` and either add sets or say why not ("Weekly sets per muscle");
+     ask about any `unmapped` names.
    - Rep range per lift: 8-12 by default ("Double progression", "Starting point for novices");
      main lifts of a client who wants strength move to heavier work in 3-8 reps once technique is
      solid, within Safety below ("Load range for maximal strength"); a hypertrophy client may
@@ -201,10 +209,12 @@ Knowledge, by situation: run only the lines that apply.
    Training week, Cardio, Nutrition, Safety notes, Rules used). Rule names stay as the knowledge
    headings, in brackets. Then a line on when to run `/review`, and the deferral line last
    when `refer_gp` is set.
+6. Run `coach plan check` (with the same `--pal`, `--tdee` or `--current-kcal` you gave
+   `coach macros`). If `ok` is false, fix each line in `problems` and run it again.
 
 ## Writes
 
-- `data/plan.md` (replace the previous plan; keep the date at the top).
+- `data/plan.md`, and `data/plan-week.yaml` for `coach strength plan-sets` (replace the previous plan; keep the date at the top).
 
 ## Output
 

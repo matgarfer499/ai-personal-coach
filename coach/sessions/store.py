@@ -27,6 +27,7 @@ class StoreError(ValueError):
 class AppendResult:
     added: int
     duplicates: int
+    conflicts: int = 0  # duplicates whose load or reps differ from the stored row
 
 
 def _parse(row: dict[str, str]) -> ExerciseSet:
@@ -85,12 +86,14 @@ def read_sets(path: Path) -> list[ExerciseSet]:
 def append(sets: list[ExerciseSet], path: Path) -> AppendResult:
     path = Path(path)
     stored = read_sets(path)
-    seen = {s.key for s in stored}
-    added = []
+    seen = {s.key: s for s in stored}
+    added, conflicts = [], 0
     for s in sets:
         if s.key not in seen:
-            seen.add(s.key)
+            seen[s.key] = s
             added.append(s)
+        elif (seen[s.key].weight_kg, seen[s.key].reps) != (s.weight_kg, s.reps):
+            conflicts += 1
     rows = sorted(stored + added, key=sort_key)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".csv.tmp")
@@ -99,4 +102,4 @@ def append(sets: list[ExerciseSet], path: Path) -> AppendResult:
         writer.writerow(FIELDS)
         writer.writerows(_format(s) for s in rows)
     os.replace(tmp, path)
-    return AppendResult(added=len(added), duplicates=len(sets) - len(added))
+    return AppendResult(added=len(added), duplicates=len(sets) - len(added), conflicts=conflicts)

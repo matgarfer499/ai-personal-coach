@@ -58,6 +58,8 @@ say when a stored value is in use.
   is only when they say they logged it under another name, then rerun with that name. Names in
   `rep_ranges_outside_lookback` match only a lift logged before the lookback window: just note
   that their range was not applied.
+  `rep_range_notes`: the log sits outside 8-12 with no range given; ask the client's range and
+  rerun before quoting a load.
 - `data/checkins.csv` rows of the week (sleep, notes), and `data/plan.md` if it exists.
 
 Knowledge, by situation: run only the lines that apply.

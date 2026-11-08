@@ -430,6 +430,8 @@ def test_import_hevy_twice(capsys, data_dir):
         "first_day": "2025-07-24",
         "last_day": "2025-07-26",
         "skipped_empty": 0,
+        "conflicts": 0,
+        "skipped_future": 0,
         "warnings": [],
     }
     _, out = run(capsys, data_dir, "import", str(HEVY_EXPORT))
@@ -1527,3 +1529,121 @@ def test_future_date_error_says_symptoms_were_recorded(capsys, data_dir):
         capsys, data_dir, "checkin", "add", "--date", "2026-04-02", "--symptoms", "chest_pain"
     )
     assert code == 2 and "symptoms recorded" in out["message"]
+
+
+# Beta p2-marcus-I1: a heavy lifter's log far from the 8-12 default is flagged, so the skill
+# asks for the range instead of judging 5-rep sets against 12.
+def _deadlifts(data_dir, reps=5):
+    sets = [
+        ExerciseSet(
+            "hevy_csv",
+            datetime(2026, 3, d, 18, 0),
+            "Deadlift (Barbell)",
+            0,
+            i,
+            weight_kg=120.0,
+            reps=reps,
+        )
+        for d in (18, 25)
+        for i in range(3)
+    ]
+    append(sets, data_dir / "sessions.csv")
+
+
+def test_progress_flags_a_log_outside_the_default_rep_range(capsys, data_dir):
+    _deadlifts(data_dir)
+    _, out = run(capsys, data_dir, "strength", "progress")
+    assert out["rep_range_source"]["Deadlift (Barbell)"] == "default"
+    assert "median 5" in out["rep_range_notes"]["Deadlift (Barbell)"]
+    _, given = run(capsys, data_dir, "strength", "progress", "--rep-range", "deadlift=3-6")
+    assert given["rep_range_source"]["Deadlift (Barbell)"] == "given"
+    assert given["rep_range_notes"] == {}
+
+
+def test_progress_no_note_when_the_log_fits_the_default(capsys, data_dir):
+    _deadlifts(data_dir, reps=10)
+    _, out = run(capsys, data_dir, "strength", "progress")
+    assert out["rep_range_notes"] == {}
+
+
+# Beta p2-marcus-I6/I7: a planned week is checked before it is prescribed.
+def test_plan_sets_counts_a_planned_week(capsys, data_dir):
+    plan = data_dir / "week.yaml"
+    plan.write_text(
+        "sessions:\n"
+        "  - name: Push\n"
+        "    exercises:\n"
+        "      - {exercise: Bench Press (Barbell), sets: 3}\n"
+        "      - {exercise: Overhead Press (Barbell), sets: 3}\n"
+        "  - name: Pull\n"
+        "    exercises:\n"
+        "      - {exercise: Lat Pulldown (Cable), sets: 4}\n"
+        "      - {exercise: Made Up Lift, sets: 2}\n",
+        encoding="utf-8",
+    )
+    code, out = run(capsys, data_dir, "strength", "plan-sets", str(plan))
+    assert code == 0 and out["sets"]["chest"] == 3
+    assert "chest" in out["below_reference"] and out["reference_sets_per_week"] == 10
+    assert out["unmapped"] == ["Made Up Lift"]
+
+
+def test_plan_sets_rejects_a_malformed_plan(capsys, data_dir):
+    plan = data_dir / "week.yaml"
+    plan.write_text(
+        "sessions:\n  - name: Push\n    exercises:\n      - {exercise: Bench}\n", encoding="utf-8"
+    )
+    code, out = run(capsys, data_dir, "strength", "plan-sets", str(plan))
+    assert code == 2 and "sets" in out["message"]
+
+
+# Beta p2-marcus-I4/I5.
+def test_import_reports_conflicting_reexports(capsys, data_dir, tmp_path):
+    first = tmp_path / "a.csv"
+    first.write_text(
+        "date,exercise,weight_kg,reps\n2025-07-24 11:25,Bench Press,62.5,8\n", encoding="utf-8"
+    )
+    run(capsys, data_dir, "import", str(first))
+    lbs = tmp_path / "b.csv"
+    lbs.write_text(
+        "date,exercise,weight_lbs,reps\n2025-07-24 11:25,Bench Press,140,8\n", encoding="utf-8"
+    )
+    _, out = run(capsys, data_dir, "import", str(lbs))
+    assert out["duplicates"] == 1 and out["conflicts"] == 1
+    assert any("kept the stored" in w for w in out["warnings"])
+
+
+def test_import_skips_sets_after_today(capsys, data_dir, tmp_path):
+    export = tmp_path / "future.csv"
+    export.write_text(
+        "date,exercise,weight_kg,reps\n"
+        "2026-03-30 10:00,Squat,80,5\n"
+        "2026-04-05 10:00,Squat,82.5,5\n",
+        encoding="utf-8",
+    )
+    _, out = run(capsys, data_dir, "import", str(export))
+    assert out["added"] == 1 and out["skipped_future"] == 1
+    assert any("after today" in w for w in out["warnings"])
+
+
+# Beta p1-lucia-I10, p5-elena-I13: plan.md's header is checked against the CLI.
+def _plan_md(data_dir, kcal, in_deficit="true"):
+    (data_dir / "plan.md").write_text(
+        f"Date: 2026-04-01\ntarget_kcal: {kcal}\nin_deficit: {in_deficit}\n\n## Training week\n",
+        encoding="utf-8",
+    )
+
+
+def test_plan_check_matches_the_cli(capsys, data_dir):
+    _, macros = run(capsys, data_dir, "macros")
+    _plan_md(data_dir, macros["kcal"])
+    code, out = run(capsys, data_dir, "plan", "check")
+    assert code == 0 and out["ok"] is True and out["problems"] == []
+    _plan_md(data_dir, macros["kcal"] + 300)
+    _, out = run(capsys, data_dir, "plan", "check")
+    assert out["ok"] is False and any("target_kcal" in p for p in out["problems"])
+
+
+def test_plan_check_reports_a_missing_header(capsys, data_dir):
+    (data_dir / "plan.md").write_text("# My plan\n", encoding="utf-8")
+    _, out = run(capsys, data_dir, "plan", "check")
+    assert out["ok"] is False and any("Date" in p for p in out["problems"])
