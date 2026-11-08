@@ -10,6 +10,7 @@ the record and ignored by the code.
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import asdict, dataclass, field, fields
 from datetime import date
@@ -53,7 +54,10 @@ HR_MAX_RANGE = (100, 230)
 BETA_BLOCKER = "beta_blocker"  # cardio-health.md: "Beta-blockers: no formula-based HR zones"
 # GLP-1 agonist or tirzepatide; nutrition.md: "GLP-1 users: protein, training and red flags"
 GLP1 = "glp1"
-MEDICATION_TOKENS = (BETA_BLOCKER, GLP1)
+# cardio-health.md: "Blood pressure medicines and exercise": any blood-pressure medicine; the coach
+# never changes it, and it counts as known hypertension for the BP bands.
+BP_MEDICATION = "bp_medication"
+MEDICATION_TOKENS = (BETA_BLOCKER, GLP1, BP_MEDICATION)
 PREGNANT = "pregnant"
 PLANNING_PREGNANCY = "planning_pregnancy"
 HYPERTENSION = "hypertension"  # read by skills (recovery-habits.md BP bands), not calculators
@@ -79,12 +83,37 @@ SCREENING_KEYS = {
     # clinician has reviewed vigorous or maximal work for this client.
     "vigorous_reviewed": bool,
     "cardiac_symptoms": bool,  # any symptom from "Cardiac warning symptoms: stop and refer"
+    # recovery-habits.md: "ACSM 2015 screening algorithm" (the default entry screen): planned,
+    # structured exercise of 30+ min at moderate intensity, 3+ days a week, for the last 3 months.
+    "regular_exercise": bool,
+    "known_disease": list,  # DISEASE_TOKENS diagnosed by a doctor; an empty list is none
+    "symptoms": list,  # SYMPTOM_TOKENS reported at screening; an empty list is none
+    "medically_cleared": bool,  # a clinician cleared exercise for the known disease
     "menstrual": str,  # one of MENSTRUAL_STATES
     "bp_systolic": int,  # latest seated resting reading, mmHg
     "bp_diastolic": int,
 }
 # The PAR-Q+ answers a vigorous-work review covers; changing one drops `vigorous_reviewed`.
 PARQ_ANSWERS = ("parq_any_yes", "parq_followup_yes")
+# The answers a medical clearance covers; changing one drops `medically_cleared`.
+CLEARANCE_ANSWERS = ("known_disease", "symptoms", "cardiac_symptoms")
+# recovery-habits.md: "ACSM 2015 screening algorithm": the diseases that change the cell.
+# Hypertension is not one of them (ACSM 2015 dropped risk-factor counting).
+DISEASE_TOKENS = ("cardiovascular", "metabolic", "renal")
+# recovery-habits.md: "Cardiac warning symptoms: stop and refer": the symptom tokens /setup and
+# /checkin record, from the rule's list.
+SYMPTOM_TOKENS = (
+    "chest_pain",
+    "neck_jaw_arm_pain",
+    "breathless",
+    "dizzy",
+    "faint",
+    "palpitations",
+    "ankle_swelling",
+    "calf_pain",
+    "unusual_fatigue",
+)
+SCREENING_TOKENS = {"known_disease": DISEASE_TOKENS, "symptoms": SYMPTOM_TOKENS}
 MENSTRUAL_STATES = ("normal", "irregular_new", "absent", "not_applicable")
 # nutrition.md: "Eating-disorder screening: brief questions as a prompt": the five SCOFF questions.
 SCOFF_ITEMS = 5
@@ -133,9 +162,10 @@ def check_pal(value: float, label: str = "PAL") -> None:
         )
 
 
-NUMBERS = ("height_cm", "weight_kg", "pal_override")
+NUMBERS = ("height_cm", "weight_kg", "pal_override", "race_km")
 TYPES = {
     "birth_date": date,
+    "race_date": date,
     "research_reminder_months": int,
     "hr_max": int,
     "hr_rest": int,
@@ -170,6 +200,10 @@ class Profile:
     # measured morning resting HR, used by `coach zones` instead of the formula.
     hr_max: int | None = None
     hr_rest: int | None = None
+    # A goal race (cardio-health.md: "Taper before a goal race"): `coach runs taper` and
+    # `coach runs plan` read it.
+    race_date: date | None = None
+    race_km: float | None = None
     language: str | None = None
     region: str | None = None
     emergency_number: str | None = None  # the client's own; else their region's (coach safety)
@@ -212,7 +246,8 @@ def _validate(data: dict) -> None:
         raise ValueError(f"unknown profile keys: {', '.join(unknown)}")
     for name in NUMBERS:
         value = data.get(name)
-        if value is not None and (isinstance(value, bool) or not isinstance(value, int | float)):
+        bad = isinstance(value, bool) or not isinstance(value, int | float)
+        if value is not None and (bad or not math.isfinite(value)):
             raise ValueError(f"{name} must be a number, not {value!r}")
     pal = data.get("pal_override")
     if pal is not None:
@@ -222,6 +257,8 @@ def _validate(data: dict) -> None:
         if value is not None and (isinstance(value, bool) or not isinstance(value, kind)):
             hint = "a date YYYY-MM-DD, unquoted" if kind is date else kind.__name__
             raise ValueError(f"{name} must be {hint}, not {value!r}")
+    if data.get("race_km") is not None and not data["race_km"] > 0:
+        raise ValueError(f"race_km must be above 0, not {data['race_km']!r}")
     for name, limits in (("hr_max", HR_MAX_RANGE), ("hr_rest", HR_REST_RANGE)):
         value = data.get(name)
         if value is not None and not limits[0] <= value <= limits[1]:
@@ -239,6 +276,12 @@ def _validate(data: dict) -> None:
         expected = SCREENING_KEYS[key]
         if not isinstance(value, expected) or (expected is int and isinstance(value, bool)):
             raise ValueError(f"screening.{key} must be {expected.__name__}")
+        bad = [v for v in value if v not in SCREENING_TOKENS[key]] if expected is list else []
+        if bad:
+            raise ValueError(
+                f"screening.{key}: unknown {', '.join(map(str, bad))}; use "
+                f"{', '.join(SCREENING_TOKENS[key])} (no for none)"
+            )
     if not 0 <= screening.get("scoff_yes_count", 0) <= SCOFF_ITEMS:
         raise ValueError(f"screening.scoff_yes_count must be 0 to {SCOFF_ITEMS}")
     if screening.get("menstrual", "normal") not in MENSTRUAL_STATES:

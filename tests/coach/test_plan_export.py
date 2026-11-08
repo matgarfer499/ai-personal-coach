@@ -7,7 +7,7 @@ from datetime import date
 import pytest
 
 from coach.cli import main
-from coach.export import plan_exercises
+from coach.export import plan_exercises, plan_sessions, plan_unread
 from coach.profile import Profile, save_profile
 
 PLAN = """Fecha: 2026-11-02
@@ -153,3 +153,59 @@ def test_prose_bullets_are_not_exercises():
         "- Descanso martes y jueves\n"
     )
     assert plan_exercises(text) == ["Sentadilla", "Press banca"]
+
+
+# PR 4 (beta 2): the three bullet shapes the panel lost, and the parts the parser cannot read.
+@pytest.mark.parametrize(
+    "bullet,names",
+    [
+        (
+            "- A (lunes): Sentadilla; Press de pecho en máquina; Plancha",
+            ["Sentadilla", "Press de pecho en máquina", "Plancha"],
+        ),
+        (
+            "- Push: Bench Press (Barbell) 106.59 kg; Pull Up; Squat (Barbell) 137.5 kg",
+            ["Bench Press (Barbell)", "Pull Up", "Squat (Barbell)"],
+        ),
+        (
+            "- Day 1: Romanian Deadlift, 3 sets of 8-12; Leg Curl 3x10",
+            ["Romanian Deadlift", "Leg Curl"],
+        ),
+    ],
+)
+def test_plan_bullets_the_beta_lost_are_read(bullet, names):
+    text = f"## Training week\n{bullet}\n"
+    assert plan_exercises(text) == names
+    assert plan_unread(text) == []
+
+
+def test_parts_that_are_not_read_are_listed():
+    text = "## Training week\n- A: Squat 40 kg; do whatever feels right today; Sentadilla: 6-8\n"
+    assert plan_unread(text) == ["do whatever feels right today"]
+
+
+def test_rep_range_lines_and_rest_labels_are_not_unread():
+    assert plan_unread(PLAN) == []
+
+
+def test_prose_and_rest_bullets_with_a_colon_are_neither_unread_nor_sessions():
+    text = (
+        "## Training week\n"
+        "- A (lunes): Sentadilla 51,0 kg; Press banca 34 kg\n"
+        "- Progresión: cuando completes 12 repeticiones, sube el peso\n"
+        "- Miércoles: descanso\n"
+    )
+    assert plan_unread(text) == [] and plan_sessions(text) == 1
+
+
+def test_a_session_whose_lifts_are_all_unread_is_still_a_session():
+    text = (
+        "## Training week\n"
+        "- A (lunes): Press militar con mancuernas sentado en banco 3x10\n"
+        "- B: sentadilla 3x8\n"
+    )
+    assert plan_unread(text) == [
+        "Press militar con mancuernas sentado en banco 3x10",
+        "sentadilla 3x8",
+    ]
+    assert plan_sessions(text) == 2

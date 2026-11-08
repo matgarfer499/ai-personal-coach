@@ -2,6 +2,7 @@
 
 import json
 import sys
+from dataclasses import replace
 from datetime import date
 
 import pytest
@@ -282,12 +283,13 @@ def test_a_meal_for_several_people_scales_its_card(capsys, data_dir):
         yaml.safe_dump(draft, allow_unicode=True), encoding="utf-8"
     )
     data = export(capsys, data_dir)
-    assert b"(para 2 personas) Tj" in data
+    # the label says the amounts are 2 x the client's own portion (the PDF writes x as \327)
+    assert rb"(para 2 personas \(2 \327 tu) Tj" in data
     assert b"(3600 g) Tj" in data  # 1,800 g a serving, for 2 people
     assert b"7200" in data or b"7.200" in data  # bought: 2 servings for 2 people
     run(capsys, data_dir, "profile", "set", "language", "en")
     run(capsys, data_dir, "mealplan", "export")
-    assert b"(for 2 people) Tj" in (data_dir / "menus" / "2026-10-26.pdf").read_bytes()
+    assert rb"for 2 people \(2 \327 your" in (data_dir / "menus" / "2026-10-26.pdf").read_bytes()
 
 
 def test_the_shopping_list_counts_whole_units_of_countable_foods(capsys, data_dir):
@@ -303,3 +305,22 @@ def test_the_shopping_list_counts_whole_units_of_countable_foods(capsys, data_di
     run(capsys, data_dir, "profile", "set", "language", "en")
     run(capsys, data_dir, "mealplan", "export")
     assert b"(about 2 large) Tj" in (data_dir / "menus" / "2026-10-26.pdf").read_bytes()
+
+
+def test_the_shopping_list_counts_whole_packs(capsys, data_dir):
+    pytest.importorskip("reportlab")
+    products = catalogue.load(data_dir)
+    catalogue.save(
+        [replace(p, pack_size=60) if p.barcode == "8400000000024" else p for p in products],
+        data_dir,
+    )
+    draft = yaml.safe_load((data_dir / "menu-draft.yaml").read_text(encoding="utf-8"))
+    draft["days"][1]["meals"][0]["dishes"][0]["items"] = [
+        "8400000000024=100",
+        "huevo entero, crudo=100",
+    ]
+    (data_dir / "menu-draft.yaml").write_text(
+        yaml.safe_dump(draft, allow_unicode=True), encoding="utf-8"
+    )
+    data = export(capsys, data_dir)
+    assert b"(2 envases de 60 g) Tj" in data

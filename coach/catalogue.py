@@ -12,6 +12,7 @@ or `NAME=15ml`) and never converted, because the coach has no densities.
 from __future__ import annotations
 
 import csv
+import math
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -32,6 +33,8 @@ FIELDS = [
     "url",
     "fetched_on",
     "source",
+    "pack_size",
+    "replaces",
 ]
 
 
@@ -51,6 +54,10 @@ class CatalogueProduct:
     url: str
     fetched_on: date
     source: str = SOURCE
+    pack_size: float | None = (
+        None  # one pack, in the unit of `per` (g or ml); shopping counts packs
+    )
+    replaces: str = ""  # a generic food's name_en: shopping buys this product for it
 
     @classmethod
     def from_row(cls, row: dict) -> CatalogueProduct:
@@ -66,6 +73,9 @@ class CatalogueProduct:
             url=row["url"],
             fetched_on=date.fromisoformat(row["fetched_on"]),
             source=row["source"],
+            # files written before these columns lack them
+            pack_size=_pack_size(row),
+            replaces=row.get("replaces") or "",
         )
 
     def to_row(self) -> dict:
@@ -84,6 +94,8 @@ class CatalogueProduct:
             "url": self.url,
             "fetched_on": self.fetched_on.isoformat(),
             "source": self.source,
+            "pack_size": number(self.pack_size),
+            "replaces": self.replaces,
         }
 
     def missing(self) -> list[str]:
@@ -99,7 +111,19 @@ class CatalogueProduct:
             barcode=self.barcode,
             chain=self.chain,
             per=self.per,
+            pack_size=self.pack_size,
+            replaces=self.replaces,
         )
+
+
+def _pack_size(row: dict) -> float | None:
+    text = (row.get("pack_size") or "").strip()
+    if not text:
+        return None
+    size = float(text)
+    if not (math.isfinite(size) and size > 0):  # a hand edit; shopping divides by it
+        raise ValueError(f"{row['barcode']}: pack_size must be a positive number")
+    return size
 
 
 def load(data_dir: Path) -> list[CatalogueProduct]:

@@ -54,8 +54,9 @@ LABELS = {
         "daily_target": "Objetivo diario",
         "ingredients": "Ingredientes",
         "one_serving": "1 ración",
-        "people": "para {n} personas",
+        "people": "para {n} personas ({n} × tu ración)",
         "about_units": "aprox. {n} {unit}",
+        "packs": "{n} envases de {size}",
         "unit_names": {
             "large": "ud. grandes",
             "medium": "ud. medianas",
@@ -107,8 +108,9 @@ LABELS = {
         "daily_target": "Daily target",
         "ingredients": "Ingredients",
         "one_serving": "1 serving",
-        "people": "for {n} people",
+        "people": "for {n} people ({n} × your portion)",
         "about_units": "about {n} {unit}",
+        "packs": "{n} packs of {size}",
         "unit_names": {"large": "large", "medium": "medium", "fruit": "whole", "clove": "cloves"},
         "method": "Method",
         "on_days": "Days",
@@ -645,10 +647,14 @@ def write(
     story.append(title)
 
     def units(line: dict) -> str:
-        if "units" not in line:
+        if "packs" in line:
+            size = _quantity(Amount(line["pack_size"], "g" if "grams" in line else "ml"), comma)
+            text = words["packs"].format(n=line["packs"], size=size)
+        elif "units" in line:
+            unit = words["unit_names"].get(line["unit_name"], line["unit_name"])
+            text = words["about_units"].format(n=line["units"], unit=unit)
+        else:
             return ""
-        unit = words["unit_names"].get(line["unit_name"], line["unit_name"])
-        text = words["about_units"].format(n=line["units"], unit=unit)
         return f'<br/><font size="6.5" color="{MUTED}">{_text(text)}</font>'
 
     for chain, lines in shopping["chains"].items():
@@ -743,26 +749,25 @@ def _plan_sections(text: str) -> list[tuple[str, list[str]]]:
     return sections
 
 
-# A plan part that names a lift: up to 6 words, then a number (its load, sets or reps).
-BARE_LIFT = re.compile(r"^((?:[^\W\d_][\w()'/-]*\s+){0,3}[^\W\d_][\w()'/-]*)$")
-LIFT_PART = re.compile(r"^((?:[^\W\d_][\w()'/-]*\s+){0,5}[^\W\d_][\w()'/-]*)\s+\d")
+# convention: a plan part that names a lift is up to 6 words (a word may be "(Barbell)" or
+# "(Máquina)"), then a number (its load, sets or reps), optionally after a comma or colon
+# ("Romanian Deadlift, 3 sets").
+_WORD = r"\(?[^\W\d_][\w()'/.-]*"
+BARE_LIFT = re.compile(rf"^((?:{_WORD}\s+){{0,5}}{_WORD})$")
+LIFT_PART = re.compile(rf"^((?:{_WORD}\s+){{0,5}}{_WORD})\s*[,:]?\s+\d")
 
 
-def plan_exercises(text: str) -> list[str]:
-    """Exercise names from the training week's bullets, once each, in the order they appear.
-
-    shortcut: reads only bullets shaped like `- A (lunes): Sentadilla 51,0 kg; Press banca 34 kg`
-    (the shape /plan step 5 asks for): the name is each `;` part up to its first digit, prose lines
-    are skipped. Upgrade to a structured plan file if exercises go missing.
-    """
-    names: list[str] = []
-    seen: set[str] = set()
+def _plan_parts(text: str):
+    """(bullet number, part, name or "", in_session) for each `;` part of the training week's
+    bullets."""
+    bullet = 0
     for heading, lines in _plan_sections(text):
         if heading.casefold() not in TRAINING_WEEK:
             continue
         for line in lines:
             if not line.startswith(("- ", "* ")):
                 continue
+            bullet += 1
             bare = RULE_NAME.sub("", line[2:]).replace("**", "")  # `**A (lunes):**` is a label
             label, _, lifts = bare.partition(": ")  # not 18:30
             for part in (lifts or label).split(";"):
@@ -772,10 +777,55 @@ def plan_exercises(text: str) -> list[str]:
                 part = part.strip(" .")
                 match = LIFT_PART.match(part) or (lifts and BARE_LIFT.match(part))
                 name = match.group(1).strip(" .,:-") if match else ""
-                if name and name[0].isupper() and name.casefold() not in seen:
-                    seen.add(name.casefold())
-                    names.append(name)
+                yield bullet, part, name if name and name[0].isupper() else "", bool(lifts)
+
+
+def plan_exercises(text: str) -> list[str]:
+    """Exercise names from the training week's bullets, once each, in the order they appear.
+
+    shortcut: reads only bullets shaped like `- A (lunes): Sentadilla 51,0 kg; Press banca 34 kg`
+    (the shape /plan step 5 asks for): the name is each `;` part up to its first digit, prose lines
+    are skipped. `plan_unread` lists the session parts it could not read, so nothing is dropped
+    silently. Upgrade to a structured plan file if that list keeps filling.
+    """
+    names: list[str] = []
+    seen: set[str] = set()
+    for _, _, name, _ in _plan_parts(text):
+        if name and name.casefold() not in seen:
+            seen.add(name.casefold())
+            names.append(name)
     return names
+
+
+SETS_X_REPS = re.compile(r"\d\s*[x×]\s*\d")
+
+
+def _session_bullets(parts: list) -> set[int]:
+    """Bullets that list a lift, or a part with sets x reps, after a label (`- A: Squat 3x8`): the
+    sessions, so a session whose lifts are all unread is still checked. A prose or rest bullet
+    with a colon ("Progresión: cuando completes...") has neither."""
+    return {
+        bullet
+        for bullet, part, name, in_session in parts
+        if in_session and (name or SETS_X_REPS.search(part))
+    }
+
+
+def plan_unread(text: str) -> list[str]:
+    """Parts of a session's list (`- A: x; y`) that name no lift; a part that starts with a
+    number ("6-8 reps" after a lift's label) is a detail, not an unread lift."""
+    parts = list(_plan_parts(text))
+    sessions = _session_bullets(parts)
+    return [
+        part
+        for bullet, part, name, _ in parts
+        if bullet in sessions and not name and part and not part[0].isdigit()
+    ]
+
+
+def plan_sessions(text: str) -> int:
+    """Session bullets in the training week: those that list lifts after a label."""
+    return len(_session_bullets(list(_plan_parts(text))))
 
 
 def video_link(exercise: str, language: str) -> str:

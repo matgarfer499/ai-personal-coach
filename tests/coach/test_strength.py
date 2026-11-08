@@ -11,6 +11,7 @@ from coach.strength import (
     hard_set,
     load_muscle_map,
     lookup,
+    muscle_map_for,
     named_in,
     parse_rep_range,
     progression,
@@ -227,13 +228,32 @@ def test_aliases_are_unique_and_do_not_shadow_names():
             seen.add(alias)
 
 
-# recovery-habits.md "PAR-Q+ 2023 as the default entry screen": pause any progression of
+# recovery-habits.md "PAR-Q+ 2023 as an optional extra screen": pause any progression of
 # intensity; "Resting BP thresholds to defer or refer": GP review before progressing.
 def test_progression_holds_when_safety_says_so():
     held = SafetyFlags(hold_progression=True, reasons=["PAR-Q+ follow-up YES"])
     suggestion = progression(session(D0, 60, 13), today=D0 + timedelta(3), flags=held)
     assert suggestion.action == "hold" and suggestion.load_kg == 60
     assert "PAR-Q+ follow-up YES" in suggestion.reasons
+
+
+def test_a_held_lift_does_not_list_the_sprint_only_reason():
+    """The PAR-Q+ "no all-out sprints" line is about sprint formats, not about a lift."""
+    sprint = (
+        'recovery-habits.md: "PAR-Q+ specific thresholds": PAR-Q+ not answered, so no all-out '
+        "sprint formats (SIT, REHIT); they need every answer NO"
+    )
+    held = SafetyFlags(hold_progression=True, reasons=["PAR-Q+ follow-up YES", sprint])
+    suggestion = progression(session(D0, 60, 13), today=D0 + timedelta(3), flags=held)
+    assert suggestion.action == "hold" and sprint not in suggestion.reasons
+    assert "PAR-Q+ follow-up YES" in suggestion.reasons
+
+
+def test_a_lift_under_no_training_does_not_list_the_sprint_only_reason():
+    sprint = "PAR-Q+ not answered, so no all-out sprint formats (SIT, REHIT); they need every NO"
+    stop = SafetyFlags(no_training=True, reasons=["chest pain", sprint])
+    suggestion = progression(session(D0, 60, 13), today=D0 + timedelta(3), flags=stop)
+    assert suggestion.reasons == ["chest pain"]
 
 
 def test_progression_still_restarts_lower_when_held():
@@ -477,3 +497,71 @@ def test_injury_pause_matches_a_spanish_name():
     assert find_pause("Leg Press (Machine)", paused, mm) is not None
     assert find_pause("Prensa de Piernas (Máquina)", paused, mm) is not None
     assert find_pause("Squat (Barbell)", paused, mm) is None
+
+
+# PR 3 (beta 2): common names in English, Spanish and Hevy's "Name (Equipment)" form map, with
+# equipment and one-arm words ignored on both sides.
+@pytest.mark.parametrize(
+    "logged,expected",
+    [
+        ("Barbell Row", "bent over row"),
+        ("One-arm dumbbell row", "bent over row"),
+        ("Seated Row (Cable)", "seated cable row"),
+        ("Dumbbell bench press", "bench press"),
+        ("Incline Dumbbell Press", "incline bench press"),
+        ("Hack Squat (Machine)", "hack squat"),
+        ("Goblet squat", "squat"),
+        ("Sentadilla goblet", "squat"),
+        ("Sentadilla en copa", "squat"),
+        ("Press militar con mancuernas", "overhead press"),
+        ("Puente de glúteo", "hip thrust"),
+        ("Glute Bridge (Barbell)", "hip thrust"),
+        ("Smith Machine Squat", "squat"),
+        ("Cable Fly", "chest fly"),
+        ("Walking Lunge (Dumbbell)", "lunge"),
+        ("Dips", "dip"),
+        ("Fondos en paralelas", "dip"),
+        ("Rear Delt Reverse Fly (Dumbbell)", "rear delt fly"),
+        ("Pájaros con mancuernas", "rear delt fly"),
+        ("Curl de bíceps con mancuernas", "bicep curl"),
+        ("Remo polea", "seated cable row"),
+        ("Remo mancuerna", "dumbbell row"),
+        ("Sentadilla en Smith", "squat"),
+        ("Curl con cable", "bicep curl"),
+        ("Press de hombro con máquina", "shoulder press"),
+        ("Press inclinado mancuernas", "incline bench press"),
+    ],
+)
+def test_common_exercise_names_map(logged, expected):
+    muscle_map = load_muscle_map()
+    assert lookup(logged, muscle_map) is muscle_map[expected]
+
+
+@pytest.mark.parametrize("name", ["Plank", "Plancha", "Side Plank", "Crunch", "Abdominales"])
+def test_core_work_is_known_but_credits_no_muscle(name):
+    muscle_map = load_muscle_map()
+    entry = lookup(name, muscle_map)
+    assert entry is not None and entry["muscles"] == {}
+
+
+def test_personal_aliases_extend_the_map(tmp_path):
+    (tmp_path / "muscle_aliases.yaml").write_text("Mi remo raro: bent over row\n", encoding="utf-8")
+    muscle_map = muscle_map_for(tmp_path)
+    assert lookup("mi remo raro", muscle_map) is muscle_map["bent over row"]
+    assert lookup("mi remo raro", load_muscle_map()) is None  # the built-in map is untouched
+
+
+@pytest.mark.parametrize(
+    "text", ["Mi remo: renamed lift\n", "Mi remo: [\n", "- a list\n", "Mi remo: [squat]\n"]
+)
+def test_a_broken_personal_alias_file_is_a_clear_error(tmp_path, text):
+    (tmp_path / "muscle_aliases.yaml").write_text(text, encoding="utf-8")
+    with pytest.raises(ValueError, match="muscle_aliases.yaml"):
+        muscle_map_for(tmp_path)
+
+
+def test_cardio_kinds_are_not_one_lift():
+    # A running injury must not pause cycling or walking logged in a lifting app.
+    mm = load_muscle_map()
+    assert not named_in("Cycling", ["running"], mm)
+    assert not named_in("Walking", ["Running"], mm)

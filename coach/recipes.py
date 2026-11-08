@@ -47,6 +47,20 @@ def _read(path: Path) -> dict:
     return data
 
 
+def menu_dates(data_dir: Path, dish: str) -> list[date]:
+    """Every day a saved menu schedules the dish on (case and accents ignored)."""
+    found = []
+    for path in mealplan.saved(data_dir):
+        document = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        for day in document.get("days") or []:
+            dishes = [e for m in day.get("meals") or [] for e in m.get("dishes") or []]
+            if any(fold(str(e.get("dish", ""))) == fold(dish) for e in dishes):
+                when = day.get("date")
+                if isinstance(when, date):
+                    found.append(when)
+    return sorted(found)
+
+
 def find_in_menus(data_dir: Path, dish: str) -> dict | None:
     """The dish as written in the newest saved menu that has it (case and accents ignored)."""
     for path in reversed(mealplan.saved(data_dir)):

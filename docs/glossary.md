@@ -95,3 +95,22 @@ primera vez que aparece, en el idioma del cliente.
   how you compare with other people.
 - **Rep range:** the lowest and highest number of reps per set, for example 8-12. Example: with 8-12,
   when you beat 12 on every set, it is time to add a little weight [Double progression].
+
+## CLI notes / Notas del CLI
+
+How the skills say the CLI's English notes to a client, so the same note always reads the same.
+Keep every number exactly as the CLI prints it (N, D, X below). Rule citations (`file.md:
+"Heading"`) are not said: they go in the Fuentes / Rules used line.
+
+| CLI note starts with | Español | English |
+|---|---|---|
+| `need at least 7 weigh-ins covering 14 days: X more weigh-ins and Y more days` | Aún no hay datos para ver la tendencia: faltan X pesajes más y Y días más. | Not enough data for a trend yet: X more weigh-ins and Y more days to go. |
+| `starting estimate, recalibrate after 2-4 weeks of weigh-ins` | Es una estimación de partida; la ajustamos tras 2-4 semanas de pesajes. | This is a starting estimate; we adjust it after 2-4 weeks of weigh-ins. |
+| `range A-B g/kg/day; the coach uses X g/kg/day` | La regla da de A a B g de proteína por kg al día; usamos X. | The rule gives A to B g of protein per kg a day; we use X. |
+| `zones are approximate; check them against RPE and the talk test` | Las zonas son aproximadas: compruébalas con lo que sientes y con la prueba de hablar. | The zones are approximate: check them against how hard it feels and the talk test. |
+| `N g of vegetables and fruit, under the F g` | Ese día las comidas planificadas suman N g de verdura y fruta, por debajo de los F g (con comida libre, su parte de los 400 g al día). | That day the planned meals have N g of vegetables and fruit, under the F g (with a free meal, their share of the 400 g a day). |
+| `veg_fruit_g counts vegetables and fruit from the food tables only` | Solo cuento verdura y fruta de las tablas de alimentos; los productos de marca y las patatas no suman. | Only vegetables and fruit from the food tables count; branded products and potatoes do not. |
+| `amounts are for the form each name gives` | Las cantidades son para la forma que dice cada nombre (cocido, crudo...). | Amounts are for the form each name says (cooked, raw...). |
+| `the plan is stale: safety now stops training` | El plan anterior ya no vale: hay que parar el entrenamiento hasta que te vea un médico. | The old plan no longer applies: training stops until a doctor sees you. |
+| `recorded as given; no calculation depends on these items` | Lo apunto tal cual; ningún cálculo depende de ello. | Noted as you said it; no calculation depends on it. |
+

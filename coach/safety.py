@@ -14,11 +14,13 @@ from datetime import date
 
 from coach.profile import (
     BETA_BLOCKER,
+    BP_MEDICATION,
     GLP1,
     HYPERTENSION,
     NO_NUMBER,
     PLANNING_PREGNANCY,
     PREGNANT,
+    SYMPTOM_TOKENS,
     Profile,
 )
 from coach.text import fold
@@ -32,12 +34,19 @@ PREGNANCY_INTENSITY = (
     'recovery-habits.md: "Gauge intensity by talk test and RPE, not a heart-rate cap"'
 )
 MENSTRUAL = 'nutrition.md: "Menstrual dysfunction: stop and refer"'
-PARQ = 'recovery-habits.md: "PAR-Q+ 2023 as the default entry screen"'
+PARQ = 'recovery-habits.md: "PAR-Q+ 2023 as an optional extra screen"'
+ACSM = 'recovery-habits.md: "ACSM 2015 screening algorithm"'
 PARQ_THRESHOLDS = 'recovery-habits.md: "PAR-Q+ specific thresholds"'
 INJURY = 'recovery-habits.md: "Some pain during exercise is acceptable in chronic, assessed pain"'
 CARDIAC = 'recovery-habits.md: "Cardiac warning symptoms: stop and refer"'
 BP = 'recovery-habits.md: "Resting BP thresholds to defer or refer"'
 UNDER_18 = 'nutrition.md: "Under-18s"'
+# The "clearance before any exercise" cell: not exercising regularly, or not answered.
+ACSM_STOP = (f"{ACSM}: not exercising regularly", f"{ACSM}: regular exercise not answered")
+# The rules whose reasons explain `review_before_vigorous`.
+VIGOROUS_CAPS = (PARQ_THRESHOLDS, ACSM)
+# Marks the reason that only concerns sprint formats, so a lift's hold leaves it out.
+SPRINT_FORMATS = "so no all-out sprint formats (SIT, REHIT)"
 
 # nutrition.md: "Under-18s" and recovery-habits.md "Adolescents: no deficits": under-18s are
 # out of scope (no calorie targets, deficits or weigh-ins).
@@ -76,19 +85,7 @@ EMERGENCY_LINE = {
 }
 NO_EMERGENCY_NUMBER = {"es": "número de emergencias local", "en": "local emergency number"}
 
-# recovery-habits.md: "Cardiac warning symptoms: stop and refer": the symptom tokens /checkin
-# records (`checkin add --symptoms`), from the rule's list.
-SYMPTOMS = (
-    "chest_pain",
-    "neck_jaw_arm_pain",
-    "breathless",
-    "dizzy",
-    "faint",
-    "palpitations",
-    "ankle_swelling",
-    "calf_pain",
-    "unusual_fatigue",
-)
+SYMPTOMS = SYMPTOM_TOKENS  # the tokens `checkin add --symptoms` accepts
 # convention: words that suggest a token in free-text check-in notes (es and en, accents
 # ignored). A hit is only reported for the skill to ask about; it never sets a flag.
 SYMPTOM_WORDS = {
@@ -108,11 +105,57 @@ SYMPTOM_WORDS = {
     "palpitations": ("palpitaciones", "palpitations", "heart racing", "corazon acelerado"),
     "ankle_swelling": ("tobillos hinchados", "swollen ankles", "ankle swelling"),
     "calf_pain": ("dolor de gemelo al caminar", "calf pain when walking"),
+    "unusual_fatigue": (
+        "unusually tired",
+        "unusual tiredness",
+        "unusual fatigue",
+        "cansancio inusual",
+        "cansancio raro",
+        "agotamiento inusual",
+        "agotada sin motivo",
+        "agotado sin motivo",
+    ),
 }
+# convention: other words clients use for a token, accepted by `checkin add --symptoms` (folded,
+# spaces as underscores).
+SYMPTOM_SYNONYMS = {
+    "chest_tightness": "chest_pain",
+    "chest_pressure": "chest_pain",
+    "tight_chest": "chest_pain",
+    "short_of_breath": "breathless",
+    "shortness_of_breath": "breathless",
+    "breathlessness": "breathless",
+    "dizziness": "dizzy",
+    "lightheaded": "dizzy",
+    "fainted": "faint",
+    "fainting": "faint",
+    "heart_racing": "palpitations",
+    "swollen_ankles": "ankle_swelling",
+}
+# convention: words for a swollen joint in free-text notes (es and en). A hit is a prompt to ask
+# about an injury (recovery-habits.md: "Knee injury: signs of ligament or meniscus damage":
+# swelling after a knee injury means stop loading and get it assessed),
+# never a cardiac token: ankle swelling without an injury is the cardiac one.
+INJURY_WORDS = (
+    "swollen",
+    "swelling",
+    "hinchada",
+    "hinchado",
+    "hinchadas",
+    "hinchados",
+    "hinchazon",
+    "inflamada",
+    "inflamado",
+    "inflamadas",
+    "inflamados",
+)
+# convention: the names under an injury's `exercises` that pause running (es and en).
+RUN_NAMES = ("running", "run", "runs", "correr", "carrera", "carreras", "trotar")
 
 # convention: reasons are listed most urgent first; `instruction` is the first. The order: stop
-# training (any reason ending in NO_TRAINING_NO_DEFICIT), out-of-scope and eating-disorder blocks,
-# medical hand-offs, referrals, then intensity caps (listed in docs/conventions.md).
+# training (`_is_stop`: cardiac, BP 180+, the ACSM clearance cell), out-of-scope and
+# eating-disorder blocks, medical hand-offs, referrals, then intensity caps (listed in
+# docs/conventions.md).
 PRIORITY = (
     CARDIAC,
     UNDER_18,
@@ -122,6 +165,7 @@ PRIORITY = (
     PREGNANCY_ACTIVITY,
     GLP1_RULE,
     BP,
+    ACSM,
     PARQ,
     INJURY,
     PARQ_THRESHOLDS,
@@ -152,7 +196,10 @@ class SafetyFlags:
     use_rpe_not_hr: bool = False
     prescriber_owns_weight: bool = False
     refer_gp: bool = False
-    no_training: bool = False  # resting BP too high to train until a doctor reviews it
+    no_training: bool = False  # no training until a clinician clears it (symptoms, BP, ACSM)
+    # ACSM 2015: inactive with known disease, so medical clearance before any exercise. It sets
+    # no_training too, but not no_deficit: calories follow the normal rules.
+    clearance_before_exercise: bool = False
     cap_moderate: bool = False  # light-to-moderate intensity only
     no_calorie_targets: bool = False  # under-18s: no calorie or macro targets at all
     hold_progression: bool = False  # no added load, reps or intensity until a clinician reviews
@@ -233,8 +280,9 @@ def flags(profile: Profile, today: date | None = None) -> SafetyFlags:
     _vigorous_work(profile, out, today)
     _injuries(profile, out)
     _blood_pressure(profile, out)
+    _acsm(profile, out)
 
-    if screening.get("cardiac_symptoms"):
+    if symptomatic(profile):
         out.refer_gp = out.no_training = True
         out.reasons.append(
             f"{CARDIAC}: stop exercising and seek medical evaluation; no training until a "
@@ -242,11 +290,26 @@ def flags(profile: Profile, today: date | None = None) -> SafetyFlags:
         )
 
     if out.no_training:
-        out.hold_progression = out.no_deficit = True
-        # "light-to-moderate work only" contradicts "no training": keep it out of the reasons.
-        moot = [r for r in out.reasons if r.startswith(PARQ_THRESHOLDS)]
+        out.hold_progression = True
+        # Only a stop for symptoms or a very high BP holds the deficit (the convention says why).
+        out.no_deficit = out.no_deficit or any(NO_TRAINING_NO_DEFICIT in r for r in out.reasons)
+        # "light-to-moderate" or "moderate" work contradicts "no training": keep it out.
+        moot = [
+            r
+            for r in out.reasons
+            if r.startswith(PARQ_THRESHOLDS) or (r.startswith(ACSM) and not r.startswith(ACSM_STOP))
+        ]
         if out.cap_moderate:
             moot += [r for r in out.reasons if r.startswith(BP)]
+            # The cap is moot, the GP check is not: ask for it at the same visit.
+            reading = (
+                f"{screening.get('bp_systolic', '?')}/{screening.get('bp_diastolic', '?')}"
+                if "bp_systolic" in screening or "bp_diastolic" in screening
+                else "unknown, with known hypertension"
+            )
+            out.reasons.append(
+                f"{BP}: blood pressure {reading}: ask the clinician to check it at the same visit"
+            )
         out.superseded = moot
         out.reasons = [r for r in out.reasons if r not in moot]
     out.reasons.sort(key=_priority)
@@ -254,26 +317,80 @@ def flags(profile: Profile, today: date | None = None) -> SafetyFlags:
     language = profile.language or "en"
     if out.refer_gp:
         out.deferral_line = DEFERRAL_LINE[language]
-    if screening.get("cardiac_symptoms"):
+    if symptomatic(profile):
         number = out.emergency_number or NO_EMERGENCY_NUMBER[language]
         out.emergency_line = EMERGENCY_LINE[language].format(number=number)
     return out
 
 
+def _is_stop(reason: str) -> bool:
+    """A reason that stops training: cardiac, BP 180+ or the ACSM clearance cell."""
+    return NO_TRAINING_NO_DEFICIT in reason or reason.startswith(ACSM_STOP)
+
+
+def stop_reasons(out: SafetyFlags) -> list[str]:
+    """The reasons behind `no_training` (not the BP check asked for at the same visit)."""
+    return [r for r in out.reasons if _is_stop(r)]
+
+
 def _priority(reason: str) -> tuple[bool, int]:
-    # A training stop (cardiac, or BP 180+) goes first whatever rule set it.
+    # A training stop goes first whatever rule set it.
     rank = next((i for i, rule in enumerate(PRIORITY) if reason.startswith(rule)), len(PRIORITY))
-    return NO_TRAINING_NO_DEFICIT not in reason, rank
+    return not _is_stop(reason), rank
+
+
+def _has_word(folded: str, words) -> bool:
+    return any(re.search(rf"\b{re.escape(w)}\b", folded) for w in words)
 
 
 def red_flag_words(text: str) -> list[str]:
     """Symptom tokens whose words appear in free text (a prompt to ask, never a flag)."""
     folded = fold(text)
+    return [token for token, words in SYMPTOM_WORDS.items() if _has_word(folded, words)]
+
+
+def injury_words(text: str) -> list[str]:
+    """Swollen-joint words in free text, outside the cardiac ankle-swelling phrases."""
+    folded = fold(text)
+    for phrase in SYMPTOM_WORDS["ankle_swelling"]:
+        folded = folded.replace(phrase, " ")
+    return [w for w in INJURY_WORDS if _has_word(folded, [w])]
+
+
+def symptom_token(said: str) -> str | None:
+    """A symptom token for what the client said: the token itself or a known synonym."""
+    key = fold(said).strip().replace(" ", "_").replace("-", "_")
+    return key if key in SYMPTOMS else SYMPTOM_SYNONYMS.get(key)
+
+
+def _running_injuries(profile: Profile) -> list[dict]:
     return [
-        token
-        for token, words in SYMPTOM_WORDS.items()
-        if any(re.search(rf"\b{re.escape(w)}\b", folded) for w in words)
+        i
+        for i in profile.active_injuries()
+        if any(fold(e) in RUN_NAMES for e in i.get("exercises", []))
     ]
+
+
+def running_unassessed(profile: Profile) -> bool:
+    """An injury that lists running and no professional has assessed: no running at all."""
+    return any(not i.get("professional") for i in _running_injuries(profile))
+
+
+def running_paused(profile: Profile) -> list[str]:
+    """Reasons from active injuries that list running among their exercises."""
+    out = []
+    for injury in profile.active_injuries():
+        if any(fold(e) in RUN_NAMES for e in injury.get("exercises", [])):
+            who = injury.get("professional")
+            out.append(
+                f"{INJURY}: {injury['area']} injury"
+                + (
+                    f", managed by {who}: running only within the limits {who} set"
+                    if who
+                    else ": no running until a GP or physiotherapist assesses it"
+                )
+            )
+    return out
 
 
 def _regional_emergency_number(profile: Profile) -> str | None:
@@ -307,19 +424,20 @@ def _vigorous_work(profile: Profile, out: SafetyFlags, today: date | None) -> No
     # Follow-up questions are reached only through a YES on the first seven.
     any_yes = bool(screening.get("parq_any_yes") or screening.get("parq_followup_yes"))
     unanswered = "parq_any_yes" not in screening and not any_yes
+    # A complete ACSM screen is the default entry screen: an unanswered PAR-Q+ no longer caps
+    # intensity, but all-out sprints still need every PAR-Q+ answer NO ("PAR-Q+ specific
+    # thresholds", a conservative product choice).
     over_age = profile.birth_date is not None and profile.age(today) >= VIGOROUS_REVIEW_AGE
     if any_yes or unanswered:
         out.no_all_out_sprints = True
         why = "a PAR-Q+ YES" if any_yes else "PAR-Q+ not answered"
-        out.reasons.append(
-            f"{PARQ_THRESHOLDS}: {why}, so no all-out sprint formats (SIT, REHIT); they need "
-            "every answer NO"
-        )
-    if unanswered:
+        out.reasons.append(f"{PARQ_THRESHOLDS}: {why}, {SPRINT_FORMATS}; they need every answer NO")
+    if unanswered and not acsm_complete(profile):
         # "Choosing HIIT vs MICT vs SIT": an unscreened client starts with moderate work.
         out.review_before_vigorous = True
         out.reasons.append(
-            f"{PARQ_THRESHOLDS}: PAR-Q+ not answered, so light-to-moderate work only until it is"
+            f"{PARQ_THRESHOLDS}: no entry screen answered, so light-to-moderate work only "
+            "until it is"
         )
     elif (any_yes or over_age) and not screening.get("vigorous_reviewed"):
         out.review_before_vigorous = True
@@ -328,6 +446,50 @@ def _vigorous_work(profile: Profile, out: SafetyFlags, today: date | None) -> No
             f"{PARQ_THRESHOLDS}: {why}, so a qualified exercise professional or clinician "
             "reviews vigorous or maximal work (HIIT, 1RM tests, all-out sprints) before it "
             "starts; light-to-moderate work until then"
+        )
+
+
+def symptomatic(profile: Profile) -> bool:
+    """Any warning symptom: stored at /setup (`symptoms`) or at /checkin (`cardiac_symptoms`)."""
+    screening = profile.screening
+    return bool(screening.get("cardiac_symptoms") or screening.get("symptoms"))
+
+
+ACSM_ANSWERS = ("regular_exercise", "known_disease", "symptoms")
+
+
+def acsm_complete(profile: Profile) -> bool:
+    """All three ACSM 2015 inputs answered (an empty list is an answer: none)."""
+    return all(key in profile.screening for key in ACSM_ANSWERS)
+
+
+def _acsm(profile: Profile, out: SafetyFlags) -> None:
+    # recovery-habits.md: "ACSM 2015 screening algorithm". Symptoms (either cell) are handled with
+    # the cardiac rule in `flags`; here only the known-disease cells without symptoms.
+    screening = profile.screening
+    disease = screening.get("known_disease") or []
+    if not disease or symptomatic(profile):
+        return
+    named = ", ".join(disease)
+    active = screening.get("regular_exercise")
+    cleared = screening.get("medically_cleared")
+    if active and not cleared:
+        out.review_before_vigorous = out.refer_gp = True
+        out.reasons.append(
+            f"{ACSM}: exercising regularly with known {named} disease: continue moderate work; "
+            "medical clearance before vigorous work"
+        )
+    elif not active and not cleared:  # convention: unanswered takes the cautious cell
+        out.clearance_before_exercise = out.no_training = out.refer_gp = True
+        out.reasons.append(
+            f"{ACSM_STOP[active is None]}, with known {named} disease: medical clearance "
+            "before any exercise, then start at light-to-moderate intensity"
+        )
+    elif not active and not screening.get("vigorous_reviewed"):
+        out.review_before_vigorous = True
+        out.reasons.append(
+            f"{ACSM}: cleared after known {named} disease: start at light-to-moderate intensity "
+            "and build up; vigorous work after a review"
         )
 
 
@@ -359,7 +521,7 @@ def _blood_pressure(profile: Profile, out: SafetyFlags) -> None:
     systolic = profile.screening.get("bp_systolic")
     diastolic = profile.screening.get("bp_diastolic")
     if systolic is None and diastolic is None:
-        if profile.has_condition(HYPERTENSION):
+        if profile.has_condition(HYPERTENSION) or profile.has_medication(BP_MEDICATION):
             out.cap_moderate = out.refer_gp = out.hold_progression = True
             out.reasons.append(
                 f"{BP}: BP unknown with known hypertension, so a GP review before starting or "

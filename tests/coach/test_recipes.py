@@ -40,7 +40,7 @@ def save_menu(data_dir):
         "saved_on": date(2026, 10, 25),
         "days": [
             {
-                "date": date(2026, 10, 26),
+                "date": date(2026, 10, 25),
                 "meals": [
                     {
                         "meal": "Comida",
@@ -65,7 +65,7 @@ def save_menu(data_dir):
             }
         ],
     }
-    path = data_dir / "menus" / "2026-10-26.yaml"
+    path = data_dir / "menus" / "2026-10-25.yaml"
     path.parent.mkdir(parents=True)
     path.write_text(yaml.safe_dump(document, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
@@ -204,9 +204,9 @@ def test_saved_recipe_keeps_its_base(capsys, data_dir):
     }
     document = {
         "saved_on": date(2026, 10, 25),
-        "days": [{"date": date(2026, 10, 26), "meals": [{"meal": "Cena", "dishes": [dish]}]}],
+        "days": [{"date": date(2026, 10, 25), "meals": [{"meal": "Cena", "dishes": [dish]}]}],
     }
-    path = data_dir / "menus" / "2026-10-26.yaml"
+    path = data_dir / "menus" / "2026-10-25.yaml"
     path.parent.mkdir(parents=True)
     path.write_text(yaml.safe_dump(document, allow_unicode=True, sort_keys=False), encoding="utf-8")
     _, out = run(capsys, data_dir, "tastes", "rate", "Merluza en salsa verde", "liked")

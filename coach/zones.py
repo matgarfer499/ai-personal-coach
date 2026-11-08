@@ -53,6 +53,14 @@ TALK_TEST = {
     "vigorous": "only a few words without pausing for breath",
     "near_maximal": "cannot speak",
 }
+# The same cardio-health.md: "0-10 effort scale and talk-test anchors" wording, in Spanish.
+TALK_TEST_ES = {
+    "very_light": "puedes hablar y cantar sin esfuerzo",
+    "light": "puedes hablar y cantar",
+    "moderate": "puedes hablar, pero no cantar",
+    "vigorous": "solo unas palabras sin parar a respirar",
+    "near_maximal": "no puedes hablar",
+}
 # recovery-habits.md: "Gauge intensity by talk test and RPE, not a heart-rate cap": moderate is
 # RPE 13-14 in pregnancy (the source's number). "Vigorous work: avoid near-maximal efforts":
 # never RPE 18 or more. convention: light runs up to that moderate band (9-12) and vigorous
@@ -111,7 +119,7 @@ def all_zones(
         return Zones(
             method="no_training",
             zones=[],
-            notes=[r for r in flags.reasons if r.startswith((safety.CARDIAC, safety.BP))],
+            notes=safety.stop_reasons(flags),
         )
 
     if profile.has_condition(HEART_DISEASE):
@@ -164,6 +172,10 @@ def all_zones(
         # %HRmax has no floor for very light: print only its top ("under 107"), not "0 bpm".
         floor = None if low == 0 else round(low)
         zones.append(Zone(name, band["rpe"], TALK_TEST[name], (floor, round(high))))
+    # convention: printed bands are whole bpm, so each zone runs up to one below the next one's
+    # floor; rounding the rule's percentages separately left a 1-2 bpm gap between bands.
+    for zone, above in zip(zones, zones[1:], strict=False):
+        zone.bpm = (zone.bpm[0], above.bpm[0] - 1)
     return Zones(
         method="hrr" if hr_rest is not None else "hrmax",
         zones=zones,
@@ -175,9 +187,9 @@ def all_zones(
 
 
 def zone_for(zones: list[Zone], hr: float) -> Zone | None:
-    """The bpm zone a heart rate falls in: the highest zone starting at or below it, so the
-    1 bpm gaps rounding leaves between bands, and rates above HRmax, still land in one. The
-    lowest zone has no floor here: an average under resting HR is still very light."""
+    """The bpm zone a heart rate falls in: the highest zone starting at or below it, so rates
+    above HRmax still land in one. The lowest zone has no floor here: an average under resting
+    HR is still very light."""
     bpm = [z for z in zones if z.bpm]
     return next((z for z in reversed(bpm[1:]) if z.bpm[0] <= hr), bpm[0] if bpm else None)
 
@@ -191,9 +203,13 @@ def hr_zones(
 ) -> Zones:
     result = all_zones(profile, flags, hr_rest, hr_max, today)
     # Each cap removes the vigorous and near-maximal zones and says which rule did it.
-    caps = {safety.BP: flags.cap_moderate, safety.PARQ_THRESHOLDS: flags.review_before_vigorous}
-    rules = tuple(rule for rule, on in caps.items() if on)
+    rules = ((safety.BP,) if flags.cap_moderate else ()) + (
+        safety.VIGOROUS_CAPS if flags.review_before_vigorous else ()
+    )
     if rules and result.zones:
         result.zones = [z for z in result.zones if z.name not in ABOVE_MODERATE]
         result.notes += [r for r in flags.reasons if r.startswith(rules)]
+    if profile.language == "es":  # the talk test is shown to the client as is
+        for zone in result.zones:
+            zone.talk_test = TALK_TEST_ES[zone.name]
     return result

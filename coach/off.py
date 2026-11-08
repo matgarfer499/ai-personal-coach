@@ -16,6 +16,7 @@ crowd-sourced data: it is shown and stored as data, never followed as an instruc
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 import urllib.error
@@ -118,6 +119,11 @@ def _product(raw: dict) -> dict:
         for name, key in NUTRIMENTS.items()
     }
     barcode = str(raw.get("code", ""))
+    per = BASES.get(raw.get("nutrition_data_per")) or UNITS.get(raw.get("product_quantity_unit"))
+    # The pack's net quantity, kept only in the unit the values are per (a 1000 ml pack of a
+    # per-100 g product is no pack size in grams).
+    quantity = _number(raw.get("product_quantity"), math.inf)
+    same_unit = per is not None and UNITS.get(raw.get("product_quantity_unit")) == per
     return {
         "barcode": barcode,
         "name": _text(raw.get("product_name_es")) or _text(raw.get("product_name")),
@@ -128,8 +134,8 @@ def _product(raw: dict) -> dict:
         # pack unit (UNITS), because cli.py skips the --per guard when per is None: "serving" and
         # a missing field behave as before (pre-existing limit; improving it needs cli.py, a
         # risk path).
-        "per": BASES.get(raw.get("nutrition_data_per"))
-        or UNITS.get(raw.get("product_quantity_unit")),
+        "per": per,
+        "pack_size": quantity if quantity and math.isfinite(quantity) and same_unit else None,
         "values": values,
         "missing": [name for name, value in values.items() if value is None],
         "allergens": list(dict.fromkeys(filter(None, map(_text, raw.get("allergens_tags") or [])))),

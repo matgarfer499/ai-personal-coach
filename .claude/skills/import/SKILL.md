@@ -26,9 +26,10 @@ Adds an exported workout log to `data/sessions.csv` without duplicates.
   it is set, in the language the client writes in. Keep it short and plain.
 - Plain words: the first time the client meets a term listed in `docs/glossary.md` (RIR, RPE,
   bpm or ppm, talk test, zones, deficit, TDEE and the others), explain it in one plain sentence
-  from the glossary, in the client's language; translate CLI text such as `talk_test` rather
-  than quoting it in English. Rule names in brackets, wherever these steps ask for them, go in one
-  short line at the end of the message, just before the deferral line when there is one
+  from the glossary, in the client's language; `talk_test` and the protein-basis note come in
+  the profile language already; say any other CLI note with its wording in `docs/glossary.md`
+  "CLI notes" (same numbers), never quoting it in English. Rule names in brackets, wherever
+  these steps ask for them, go in one short line at the end of the message, just before the deferral line when there is one
   (`Fuentes: [...]`, en: `Rules used: [...]`), not inline, unless the client asks for them inline.
   Still cite every rule you use.
 - Load knowledge only with `coach knowledge section FILE "HEADING"`; cite the rule when you give
@@ -80,8 +81,14 @@ Adds an exported workout log to `data/sessions.csv` without duplicates.
 4. Skip this step when `added` is 0 (nothing new to count). Otherwise
    `coach strength sets --week-ending LAST_DAY` (LAST_DAY is `last_day` from step 2): weekly
    hard sets per muscle for the 7 days ending that day; say the dates (`week` in the output).
-   Indirect work counts as half a set, so values like 4.5 are expected. List `unmapped` exercises and say they do not count toward
-   weekly sets until someone adds them to the alias list in `coach/muscle_map.yaml` (the fix).
+   Indirect work counts as half a set, so values like 4.5 are expected.
+   The import output's `unmapped` lists names the muscle map does not know: their sets count
+   toward no muscle. For each, propose the closest lift the map knows in plain words (what it
+   trains, e.g. "a kind of row: back and biceps") and ask the client to confirm; never guess a
+   muscle they have not confirmed. Store each confirmed one with
+   `coach strength alias add "LOGGED NAME" "MAP LIFT"` (it refuses a lift the map does not know,
+   and a name the map already gives another lift: then that lift is what the name counts as),
+   then rerun `coach strength sets`. A name with no close lift stays unmapped: say so.
 5. Run `coach injury list`. If `unmatched` lists names, show the logged names from this import's
    lifts and ask which one each listed lift is. Then run `coach injury add AREA --exercises "..."`
    again with that logged name. A Spanish or English name the map knows needs no change.

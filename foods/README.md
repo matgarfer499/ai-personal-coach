@@ -18,6 +18,7 @@ too. A blank value is missing: menu totals list the items that lack it and never
 | `kcal_exception` | set when stated energy is more than 10% from the 4/4/9 (+2 for fibre) energy, measured against that computed value |
 | `g_per_ml` | liquids only: grams in one millilitre, so `NAME=300ml` works for a per 100 g row |
 | `unit_name`, `unit_g` | countable foods only: the source's portion name (`large` for an egg, `medium` for an apple) and its grams, so `coach shopping` can add about how many units the grams make |
+| `buy_as` | a cooked form bought raw (`egg, whole, boiled` -> `egg, whole, raw`): `coach shopping` lists it as that food by unit weight, so both rows need `unit_name`, `unit_g`. Only forms with a unit weight; cooked meat, rice, pasta and legumes need yield factors the knowledge base does not have for these rows |
 | `food_group` | the source's food category (`Fruits and Fruit Juices`, `Vegetables and Vegetable Products`, ...); menu checks count the day's vegetables and fruit from it |
 
 ## Where the numbers come from

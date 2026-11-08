@@ -51,8 +51,9 @@ class GenericRunsCsv:
                     f"line {line}: date {row.get('date')!r} is not YYYY-MM-DD[ HH:MM]"
                 ) from None
             km = metric(row, "distance_km", "distance_miles", KM_PER_MILE, line)
+            # Unrounded: Run.key rounds minutes to 1 decimal, and rounding twice can move the key.
             minutes = metric(
-                row, "duration_minutes", "duration_seconds", 1 / SECONDS_PER_MINUTE, line
+                row, "duration_minutes", "duration_seconds", 1 / SECONDS_PER_MINUTE, line, None
             )
             if km is None or minutes is None:
                 raise ImporterError(f"line {line}: every run needs a distance and a duration")

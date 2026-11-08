@@ -146,7 +146,7 @@ def test_taper_inside_the_window():
     assert (result["weeks"], result["max_weeks"]) == (2, 3)
     assert result["distance_cut"] == (0.41, 0.60)
     assert result["starts_on"] == date(2026, 3, 29)
-    assert result["reference_week_km"] == 10.0  # the 7 days before the taper starts
+    assert result["reference_week_km"] == 10.0  # one logged week before the taper starts
     assert result["taper_week_km"] == (pytest.approx(4.0), pytest.approx(5.9))
 
 
@@ -200,6 +200,15 @@ def test_no_longer_long_run_while_progression_is_on_hold():
     assert any("on hold" in n for n in result["notes"])
 
 
+# docs/safety.md: an injury that lists running pauses it, so there is no next run to cap.
+def test_a_running_pause_gives_no_cap_and_no_hold_note():
+    profile, f = zones_for()
+    shown = hr_zones(profile, f, today=TODAY)
+    result = week([Run(TODAY, 10.0, 60)], TODAY, shown, [], hold_progression=True, paused=True)
+    assert result["long_run_cap_km"] is None
+    assert not any("on hold" in n for n in result["notes"])
+
+
 # Two identical runs in one log (a morning and an evening 5 km) are two runs; re-importing the
 # same log adds neither again.
 def test_identical_runs_in_one_batch_are_both_stored(tmp_path):
@@ -216,3 +225,38 @@ def test_an_average_below_the_resting_floor_is_very_light_not_no_hr():
     result = week([Run(TODAY, 3.0, 30, avg_hr=58)], TODAY, shown, shown.zones)
     assert result["zone_minutes"]["very_light"] == 30
     assert result["zone_minutes"]["no_hr"] == 0
+
+
+# PR 7 (beta 2): RPE-aware zone minutes, a stable taper reference, a race in the profile.
+def _hrr_zones():
+    profile = Profile(birth_date=date(1992, 1, 1), hr_rest=48, hr_max=191)
+    shown = hr_zones(profile, flags(profile), 48, 191)
+    return shown, runs.zones_to_describe(profile, flags(profile), 48, 191, TODAY)
+
+
+def test_a_run_with_rpe_counts_in_its_rpe_zone_and_a_disagreement_is_flagged():
+    shown, every = _hrr_zones()
+    easy = Run(TODAY, 10.0, 60.0, avg_hr=150, rpe=12)  # HR says vigorous, RPE says moderate
+    out = week([easy], TODAY, shown, every)
+    assert out["zone_minutes"]["moderate"] == 60.0 and out["zone_minutes"]["vigorous"] == 0.0
+    assert out["hr_rpe_disagree"] == [
+        {"date": TODAY, "hr_zone": "vigorous", "rpe_zone": "moderate"}
+    ]
+
+
+def test_taper_reference_is_the_mean_of_the_four_weeks_before_it():
+    race = date(2026, 5, 3)
+    logged = [Run(race - timedelta(days=d), km, 60.0) for d, km in
+              ((20, 40.0), (27, 30.0), (34, 30.0), (41, 20.0))]  # fmt: skip
+    out = taper(race, race - timedelta(days=16), logged)
+    assert out["reference_week_km"] == 30.0  # (40 + 30 + 30 + 20) / 4
+    moved = taper(race + timedelta(days=7), race - timedelta(days=9), logged)
+    assert moved["reference_week_km"] != 40.0  # never one week alone
+
+
+def test_taper_reference_does_not_count_a_one_day_oldest_week_as_a_whole_week():
+    # first run 7 days before the reference ends: 8 days of data are one week, not two
+    logged = [Run(date(2026, 3, 21), 5.0, 30), Run(date(2026, 3, 24), 15.0, 90),
+              Run(date(2026, 3, 27), 20.0, 120)]  # fmt: skip
+    out = taper(date(2026, 4, 12), TODAY, logged)
+    assert out["reference_week_km"] == 35.0

@@ -28,9 +28,10 @@ list. Every number comes from the CLI.
   it is set, in the language the client writes in. Keep it short and plain.
 - Plain words: the first time the client meets a term listed in `docs/glossary.md` (RIR, RPE,
   bpm or ppm, talk test, zones, deficit, TDEE and the others), explain it in one plain sentence
-  from the glossary, in the client's language; translate CLI text such as `talk_test` rather
-  than quoting it in English. Rule names in brackets, wherever these steps ask for them, go in one
-  short line at the end of the message, just before the deferral line when there is one
+  from the glossary, in the client's language; `talk_test` and the protein-basis note come in
+  the profile language already; say any other CLI note with its wording in `docs/glossary.md`
+  "CLI notes" (same numbers), never quoting it in English. Rule names in brackets, wherever
+  these steps ask for them, go in one short line at the end of the message, just before the deferral line when there is one
   (`Fuentes: [...]`, en: `Rules used: [...]`), not inline, unless the client asks for them inline.
   Still cite every rule you use.
 - Load knowledge only with `coach knowledge section FILE "HEADING"`; cite the rule when you give
@@ -178,8 +179,15 @@ Every lunch and dinner dish, whatever its source:
      never estimate one, and leave `--fibre` out when the label has none. Read the allergen
      declaration on the pack too: `--allergens` is required, `"a, b"` for the declared ones,
      `none` only if the pack declares none, `unknown` if the client cannot read it (the CLI then
-     warns). Say the product is "values from the label". If the CLI warns that kcal and macros
+     warns). Say the product is "values from the label". A kcal more than 50% (and 20 kcal) off its
+     macros is refused: read the label again with the client (per serving? kJ?); add `--confirm-kcal`
+     only if the label really says so. If the CLI warns that kcal and macros
      disagree, read the label again and fix the entry with `--replace`.
+   - Shopping in packs: `--pack-size N` is one pack's g or ml (Open Food Facts' is kept when it
+     gives one in the label's unit); the shopping list then says how many packs. When the product
+     is what the client buys for a generic food in the menus (their milk for `leche
+     semidesnatada`), add `--replaces "leche semidesnatada"`: the list puts both on one line. To
+     switch brands, clear the old product first (`--replace --replaces ""`).
    - Exit code 2 naming `COACH_OFF_CONTACT`: use `--label` as above, and tell the person running
      the coach that Open Food Facts lookups need a contact email in that variable (set it under
      `env` in `.claude/settings.local.json`, see the README, then restart Claude Code).
@@ -249,7 +257,8 @@ Every lunch and dinner dish, whatever its source:
     `coach tastes rate "DISH" RATING --source URL`: `loved` ("me encantó"), `liked` ("estaba
     bien"), `disliked` ("no me gustó"), `never_again` ("no lo repetiría"). Ask when unclear.
     Write DISH exactly as the saved menu or the library names it; the CLI refuses a dish in
-    neither unless `--source` gives its link (ask for the link, or fix the name). Add
+    neither unless `--source` gives its link (ask for the link, or fix the name), and a dish whose
+    saved menus schedule it only after the rating day (rate it once it has been eaten). Add
     `--date YYYY-MM-DD` when the client ate it on an earlier day (never after today). The CLI
     prints only the new `rating` and `recipe_saved`.
     A loved or liked dish joins the library on its own (`recipe_saved`: its steps and items
@@ -308,7 +317,9 @@ says what to do without the `pdf` extra).
 ## Protein range
 
 `coach macros` prints `protein_g` (the target to plan towards) and `protein_min_g` to
-`protein_max_g` (the rule's range). `mealplan check` passes a day from `protein_min_g`, so for a
+`protein_max_g` (the rule's range). `mealplan check` passes a day from `protein_min_g`; above
+`protein_max_g` its protein check says `over` (the day still passes): lower the protein items or
+say in one line that the day is above the rule's range. For a
 tight budget plan cheaper dishes near the low end instead of egg whites and cottage cheese to hit
 `protein_g` exactly; say so in one line.
 

@@ -84,6 +84,8 @@ def test_add_writes_a_catalogue_row(capsys, data_dir, off_returns):
         "url": "https://world.openfoodfacts.org/product/8400000000017",
         "fetched_on": TODAY,
         "source": "Open Food Facts (unverified)",
+        "pack_size": "",
+        "replaces": "",
     }
 
 
@@ -338,3 +340,101 @@ def test_off_energy_gap_does_not_say_label(capsys, data_dir, monkeypatch):
     warning = out["warnings"][0]
     assert warning.startswith("kcal is ") and "label" not in warning
     assert warning.endswith("(source uses food-specific factors); check the pack")
+
+
+def test_add_keeps_the_pack_size_open_food_facts_gives(capsys, data_dir, off_returns):
+    """A 1000 ml pack of a per-100 ml product: its pack size is 1000."""
+    code, out = add(capsys, data_dir, off_returns, "product_liquid.json", "8400000000031")
+    assert code == 0 and out["added"]["pack_size"] == 1000
+    assert catalogue.load(data_dir)[0].pack_size == 1000
+
+
+def test_add_ignores_a_pack_in_another_unit(capsys, data_dir, off_returns):
+    """Values per 100 g on a pack sold in ml: the ml count is no pack size in grams."""
+    code, out = add(
+        capsys, data_dir, off_returns, "product_label_g_sold_ml.json", "8400000000086",
+        "--per", "100 g", "--confirm-per",
+    )  # fmt: skip
+    assert code == 0 and out["added"]["pack_size"] is None
+
+
+def test_pack_size_and_replaces_are_typed_and_checked(capsys, data_dir, off_returns):
+    code, out = add(
+        capsys, data_dir, off_returns, "product_liquid.json", "8400000000031",
+        "--pack-size", "500", "--replaces", "leche semidesnatada",
+    )  # fmt: skip
+    assert code == 0 and out["added"]["pack_size"] == 500
+    assert out["added"]["replaces"] == "semi-skimmed milk"
+    # --replace without the flags keeps both
+    code, out = add(
+        capsys, data_dir, off_returns, "product_liquid.json", "8400000000031", "--replace"
+    )
+    assert code == 0 and out["added"]["pack_size"] == 500
+    assert out["added"]["replaces"] == "semi-skimmed milk"
+
+
+@pytest.mark.parametrize(
+    "flags, message",
+    [
+        (["--pack-size", "0"], "--pack-size"),
+        (["--pack-size", "nan"], "--pack-size"),
+        (["--pack-size", "1.000"], "thousands"),  # a Spanish "1.000 ml" is not 1 ml
+        (["--replaces", "huevo cocido"], "bought as"),  # shopping buys it as a raw egg
+        (["--replaces", "leche de unicornio"], "not a food"),
+        (["--replaces", "Salteado campestre"], "not a food"),
+    ],
+)
+def test_bad_pack_size_or_replaces_is_refused(capsys, data_dir, off_returns, flags, message):
+    add(capsys, data_dir, off_returns, "product_found.json", "8400000000017")
+    code, out = add(capsys, data_dir, off_returns, "product_liquid.json", "8400000000031", *flags)
+    assert code != 0 and message in out["message"]
+
+
+def test_two_products_cannot_replace_the_same_food(capsys, data_dir, off_returns):
+    add(capsys, data_dir, off_returns, "product_liquid.json", "8400000000031",
+        "--replaces", "semi-skimmed milk")  # fmt: skip
+    code, out = add(
+        capsys, data_dir, off_returns, "product_label_ml_sold_ml.json", "8400000000079",
+        "--replaces", "leche semidesnatada",
+    )  # fmt: skip
+    assert code != 0 and "already replaces" in out["message"]
+    # an empty --replaces frees the food for the new product
+    add(capsys, data_dir, off_returns, "product_liquid.json", "8400000000031",
+        "--replace", "--replaces", "")  # fmt: skip
+    code, out = add(
+        capsys, data_dir, off_returns, "product_label_ml_sold_ml.json", "8400000000079",
+        "--replaces", "leche semidesnatada",
+    )  # fmt: skip
+    assert code == 0 and out["added"]["replaces"] == "semi-skimmed milk"
+
+
+def test_a_pack_size_in_another_unit_than_per_is_dropped(capsys, data_dir, off_returns):
+    """OFF's 1000 ml pack, but the label read says per 100 g: 1000 is no pack size in grams."""
+    code, out = add(capsys, data_dir, off_returns, "product_liquid.json", "8400000000031",
+                    "--per", "100 g", "--confirm-per")  # fmt: skip
+    assert code == 0 and out["added"]["pack_size"] is None
+
+
+def test_replaces_needs_a_unit_the_product_can_take(capsys, data_dir, off_returns):
+    """A per-100 g product can stand for any generic food (all are per 100 g); a per-100 ml
+    product only for one with a density to turn its grams into ml."""
+    code, out = add(capsys, data_dir, off_returns, "product_found.json", "8400000000017",
+                    "--replaces", "lentejas, cocidas")  # fmt: skip
+    assert code == 0 and out["added"]["replaces"] == "lentils, cooked"
+    code, out = add(capsys, data_dir, off_returns, "product_liquid.json", "8400000000031",
+                    "--replaces", "garbanzos, cocidos")  # fmt: skip
+    assert code != 0 and "no density" in out["message"]
+
+
+@pytest.mark.parametrize("size", ["0", "-1", "nan"])
+def test_a_hand_edited_pack_size_must_be_positive(capsys, data_dir, off_returns, size):
+    add(capsys, data_dir, off_returns, "product_liquid.json", "8400000000031")
+    path = data_dir / "catalogue.csv"
+    rows = list(csv.DictReader(path.open(encoding="utf-8")))
+    rows[0]["pack_size"] = size
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=catalogue.FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
+    with pytest.raises(ValueError, match="pack_size"):
+        catalogue.load(data_dir)

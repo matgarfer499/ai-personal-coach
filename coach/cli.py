@@ -28,6 +28,7 @@ import yaml
 
 from coach import (
     catalogue,
+    doctor,
     energy,
     export,
     foods,
@@ -46,8 +47,11 @@ from coach import (
 )
 from coach.checkins import Checkin, append_checkin, read_checkins, weigh_ins, weight_jump
 from coach.profile import (
+    BP_MEDICATION,
+    CLEARANCE_ANSWERS,
     CONDITION_TOKENS,
     GOALS,
+    HEART_DISEASE,
     MEDICATION_TOKENS,
     NO_NUMBER,
     PARQ_ANSWERS,
@@ -63,6 +67,10 @@ from coach.sessions.model import ExerciseSet
 from coach.sessions.store import append, read_sets
 from coach.text import fold, fold_words
 
+# convention: generic-name endings of common blood-pressure medicines (ACE inhibitors -pril, ARBs
+# -sartan, dihydropyridine calcium channel blockers -dipine), the classes cardio-health.md "Blood
+# pressure medicines and exercise" names; a hit only suggests the bp_medication token.
+BP_DRUG_ENDINGS = ("pril", "sartan", "dipine")
 # convention: 2 decimals in CLI output, so skills can quote numbers verbatim to a client.
 OUTPUT_DECIMALS = 2
 # convention: `strength progress` with no exercise covers lifts trained in the last 4 weeks.
@@ -162,6 +170,10 @@ def cmd_zones(profile: Profile, args: argparse.Namespace) -> zones.Zones:
     return zones.hr_zones(profile, safety.flags(profile, args.today), hr_rest, hr_max, args.today)
 
 
+def cmd_doctor(profile: Profile, args: argparse.Namespace) -> dict:
+    return doctor.run(args.data_dir)
+
+
 def cmd_safety(profile: Profile, args: argparse.Namespace) -> safety.SafetyFlags:
     return safety.flags(profile, args.today)
 
@@ -172,11 +184,13 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
     if args.strength_cmd == "deload":
         signs = {s.strip() for s in args.signs.split(",") if s.strip()}
         return {"deload": strength.deload(signs)}
+    if args.strength_cmd == "alias":
+        return _strength_alias(args)
     if args.strength_cmd == "plan-sets":
-        return _plan_sets(args.data_dir / args.file)
+        return _plan_sets(args.data_dir / args.file, args.data_dir)
     today = args.today or date.today()
     logged = [s for s in read_sets(args.data_dir / "sessions.csv") if s.date <= today]
-    muscle_map = strength.load_muscle_map()
+    muscle_map = strength.muscle_map_for(args.data_dir)
     if args.strength_cmd == "sets":
         # Default: the 7 days ending on the last logged session, the latest week with data.
         end = args.week_ending or max((s.date for s in logged), default=today)
@@ -244,7 +258,7 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
     }
 
 
-def _plan_sets(path: Path) -> dict:
+def _plan_sets(path: Path, data_dir: Path) -> dict:
     """Weekly hard sets per muscle for a planned week (each listed session happens once)."""
     try:
         plan = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
@@ -276,7 +290,7 @@ def _plan_sets(path: Path) -> dict:
             ] * sets
     if not planned:
         raise ValueError("the plan lists no sessions with exercises")
-    muscle_map = strength.load_muscle_map()
+    muscle_map = strength.muscle_map_for(data_dir)
     totals = strength.weekly_hard_sets(planned, muscle_map)
     return {
         "sets": totals,
@@ -323,6 +337,39 @@ def _import_runs(importer: importers.Importer, args: argparse.Namespace) -> dict
     }
 
 
+def _strength_alias(args: argparse.Namespace) -> dict:
+    aliases = strength.personal_aliases(args.data_dir)
+    if args.alias_cmd == "add":
+        muscle_map = strength.load_muscle_map()
+        entry = strength.lookup(args.exercise, muscle_map)
+        if entry is None:
+            raise ValueError(
+                f"{args.exercise!r} is not in the muscle map: give a lift it knows, e.g. "
+                + ", ".join(list(muscle_map)[:6])
+            )
+        name = args.name.strip()
+        if not name:
+            raise ValueError("give the name as the client logs it")
+        key = next(k for k, v in muscle_map.items() if v is entry)
+        # A name the map already gives to another lift keeps that lift: the alias would be dead
+        # (that lift comes first in the map) or take every set logged under it (it comes later).
+        rest = strength.with_aliases({k: v for k, v in aliases.items() if k != name})
+        other = next(
+            (
+                k
+                for k, e in rest.items()
+                if k != key and fold(name) in {fold(n) for n in (k, *e.get("aliases", []))}
+            ),
+            None,
+        )
+        if other is not None:
+            raise ValueError(f"{name!r} already names {other!r} in the muscle map")
+        aliases[name] = key
+        path = args.data_dir / strength.PERSONAL_ALIASES
+        path.write_text(yaml.safe_dump(aliases, allow_unicode=True), encoding="utf-8")
+    return {"aliases": aliases}
+
+
 def cmd_import(profile: Profile, args: argparse.Namespace) -> dict:
     importer = importers.get(args.importer) if args.importer else importers.detect(args.path)
     if getattr(importer, "target", "sessions") == "runs":
@@ -336,6 +383,7 @@ def cmd_import(profile: Profile, args: argparse.Namespace) -> dict:
     future = [s for s in read if not s.is_empty and s.date > today]
     sets = [s for s in read if not s.is_empty and s.date <= today]
     store = args.data_dir / "sessions.csv"
+    muscle_map = strength.muscle_map_for(args.data_dir)  # before storing: a bad file stops here
     # The same workout imported through two importers is stored twice (the key includes the
     # source) and would double-count weekly sets, so say so.
     other_starts = {s.start_time for s in read_sets(store) if s.source != importer.name}
@@ -363,6 +411,8 @@ def cmd_import(profile: Profile, args: argparse.Namespace) -> dict:
         "conflicts": result.conflicts,
         "skipped_future": len(future),
         "skipped_empty": len(leftovers),
+        # Names the muscle map does not know: their sets count towards no muscle until mapped.
+        "unmapped": strength.unmapped_exercises(sets, muscle_map),
         "first_day": days[0] if days else None,
         "last_day": days[-1] if days else None,
         "warnings": warnings,
@@ -374,11 +424,12 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
     today = args.today or date.today()
     logged = [r for r in runs.read_runs(path) if r.date <= today]
     if args.runs_cmd == "taper":
-        flags = safety.flags(profile, args.today)
-        if flags.no_training:
-            stops = [r for r in flags.reasons if r.startswith((safety.CARDIAC, safety.BP))]
-            raise ValueError("no taper while training is on hold: " + "; ".join(stops))
-        return runs.taper(args.race_date, today, logged)
+        refusal = _taper_refusal(profile, args)
+        if refusal:
+            raise ValueError(refusal)
+        return runs.taper(_race_date(profile, args), today, logged)
+    if args.runs_cmd == "plan":
+        return _runs_plan(profile, args, today, logged)
     if args.runs_cmd == "add":
         when = args.date or today
         if when > today:
@@ -391,22 +442,87 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
             "run": run,
             "added": result.added,
             "duplicates": result.duplicates,
+            "paused": safety.running_paused(profile),
             "warnings": ["the same run (date, km, minutes) is already stored; not added again"]
             if result.duplicates
             else [],
         }
     # Default: the 7 days ending on the last logged run, the latest week with data.
     end = args.week_ending or max((r.date for r in logged), default=today)
+    return _runs_week(profile, args, today, logged, end)
+
+
+def _runs_week(
+    profile: Profile, args: argparse.Namespace, today: date, logged: list, end: date
+) -> dict:
     flags = safety.flags(profile, args.today)
     hr_rest, hr_max = _heart_rates(profile, args)
     shown = zones.hr_zones(profile, flags, hr_rest, hr_max, args.today)
     every = runs.zones_to_describe(profile, flags, hr_rest, hr_max, args.today)
-    return runs.week(logged, end, shown, every, today, flags.hold_progression)
+    paused = safety.running_paused(profile)
+    # Unassessed: no next run at all. Managed by a professional: no progression, the cap stays
+    # at the longest run and the professional's limits decide the rest (as for a paused lift).
+    hold = flags.hold_progression or bool(paused)
+    week = runs.week(logged, end, shown, every, today, hold, safety.running_unassessed(profile))
+    return week | {"paused": paused}
+
+
+def _race_date(profile: Profile, args: argparse.Namespace) -> date:
+    race = getattr(args, "race_date", None) or profile.race_date
+    if race is None:
+        raise ValueError("no race date: give --race-date or `coach profile set race_date D`")
+    return race
+
+
+def _taper_refusal(profile: Profile, args: argparse.Namespace) -> str | None:
+    flags = safety.flags(profile, args.today)
+    if flags.no_training:
+        return "no taper while training is on hold: " + "; ".join(safety.stop_reasons(flags))
+    if safety.running_unassessed(profile):
+        return "no taper while running is paused: " + "; ".join(safety.running_paused(profile))
+    return None
+
+
+def _runs_plan(profile: Profile, args: argparse.Namespace, today: date, logged: list) -> dict:
+    """Next week's limits from the rules that exist; a full build-up plan has no rule
+    (docs/dropped-claims.md D268), so the skill writes the runs within these limits."""
+    week = _runs_week(profile, args, today, logged, max((r.date for r in logged), default=today))
+    # Safety hold or a running injury: no added load, so weekly km stay where they are.
+    hold = safety.flags(profile, args.today).hold_progression or bool(week["paused"])
+    novice = profile.experience == "novice"
+    out = {
+        "race": {"date": profile.race_date, "km": profile.race_km} if profile.race_date else None,
+        "last_week_km": week["km"],
+        "long_run_cap_km": week["long_run_cap_km"],
+        # novices (the rule gives experienced runners no weekly cap), or anyone on a hold: no rise
+        "weekly_km_max": week["km"] * (1 if hold else 1 + runs.NOVICE_WEEKLY_INCREASE)
+        if (novice or hold) and week["km"] and week["long_run_cap_km"] is not None
+        else None,
+        "easy_share_min": runs.EASY_SHARE_MIN,
+        "paused": week["paused"],
+        "notes": [
+            f"{runs.LOAD_RULE}: lengthen the long run in small steps, up to long_run_cap_km",
+            'cardio-health.md: "Keep most running easy: pyramidal or polarized intensity": '
+            f"about {runs.EASY_SHARE_MIN:.0%} or more of the week's running easy",
+        ],
+    }
+    if profile.race_date and profile.race_date >= today:
+        refusal = _taper_refusal(profile, args)
+        out["taper"] = None if refusal else runs.taper(profile.race_date, today, logged)
+        if refusal:
+            out["notes"].append(refusal)
+        elif out["taper"]["in_window"]:
+            # Inside the taper the cut decides weekly km; a growth cap beside it would conflict.
+            out["weekly_km_max"] = None
+    if hold and out["weekly_km_max"] is not None:
+        out["notes"].append("progression is on hold (coach safety): weekly km stay at last_week_km")
+    return out
 
 
 def menu_check(totals: dict, targets: dict, share: float = 1.0) -> dict:
     """'ok', 'under' or 'over' per target: kcal within [target, target + MENU_KCAL_MARGIN], protein
-    at least the low end of its range, fibre at least its target, fat at least its minimum.
+    at least the low end of its range ('over', still passing, above its top), fibre at least its
+    target, fat at least its minimum.
     Carbohydrate fills the rest.
 
     'missing' when an item lacks the value: always for kcal; for a floor only while the known
@@ -426,10 +542,11 @@ def menu_check(totals: dict, targets: dict, share: float = 1.0) -> dict:
         kcal_status = "over"
     else:
         kcal_status = "ok"
-    # Protein passes from the low end of the rule's range (macros `protein_min_g`).
+    # Protein passes from the low end of the rule's range (macros `protein_min_g`) up to its top
+    # (`protein_max_g`, the same rule's range); a free meal only adds, so the full top applies.
     protein = "protein_min_g" if "protein_min_g" in targets else "protein_g"
     floors = {"protein_g": protein, "fat_g": "fat_min_g", "fibre_g": "fibre_g"}
-    return {"kcal": kcal_status} | {
+    status = {"kcal": kcal_status} | {
         key: "ok"
         if totals[key] >= targets[target] * share
         else "missing"
@@ -437,6 +554,9 @@ def menu_check(totals: dict, targets: dict, share: float = 1.0) -> dict:
         else "under"
         for key, target in floors.items()
     }
+    if "protein_max_g" in targets and totals["protein_g"] > targets["protein_max_g"]:
+        status["protein_g"] = "over"
+    return status
 
 
 # nutrition.md: "Dietary fibre": at least 400 g/day of vegetables and fruit.
@@ -452,16 +572,20 @@ def _menu_day(totals: foods.MenuTotals, targets: dict, share: float = 1.0) -> di
     warnings = []
     floor = VEG_FRUIT_MIN_G * share  # a free meal carries its share, as in menu_check
     if totals.veg_fruit_g < floor:
+        # With a free meal the planned meals carry their share of the day's 400 g.
+        of_day = f" of the {VEG_FRUIT_MIN_G} g a day" if share < 1 else " a day"
         warnings.append(
             f"{round(totals.veg_fruit_g, OUTPUT_DECIMALS):g} g of vegetables and fruit, under the "
-            f"{round(floor, OUTPUT_DECIMALS):g} g of the {VEG_FRUIT_MIN_G} g "
-            'a day of nutrition.md "Dietary fibre" for the planned meals'
+            f'{round(floor, OUTPUT_DECIMALS):g} g{of_day} of nutrition.md "Dietary fibre" for '
+            "the planned meals"
         )
     return {
         "totals": totals,
         "targets": targets,
         "check": check,
-        "ok": not totals.unknown and set(check.values()) == {"ok"},
+        # Protein over the rule's top is a warning, not a fail: the range is a target, not a limit.
+        "ok": not totals.unknown
+        and all(v == "ok" or (k, v) == ("protein_g", "over") for k, v in check.items()),
         "warnings": warnings,
         "veg_fruit_note": VEG_FRUIT_NOTE,
     }
@@ -649,7 +773,9 @@ def cmd_shopping(profile: Profile, args: argparse.Namespace) -> dict:
         "note": "amounts are for the form each name gives (raw, cooked, drained); a batch is "
         "bought once at its servings, `left_over` of them are for other days or the freezer; "
         "`units` is about how many of `unit_name` (the source's portion size) the grams make, in "
-        "whole units rounded up",
+        "whole units rounded up; `packs` is whole packs of `pack_size` (the product's g or ml), "
+        "rounded up; a meal for `people` buys their number times your own portion (no "
+        "per-eater portions: the coach has no rule for them)",
     }
 
 
@@ -667,6 +793,8 @@ PROFILE_REQUIRED = [
 ]
 _PROFILE_TYPES = {
     "birth_date": date.fromisoformat,
+    "race_date": date.fromisoformat,
+    "race_km": float,
     "height_cm": float,
     "weight_kg": float,
     "pal_override": float,
@@ -687,6 +815,11 @@ def _missing(profile: Profile, name: str) -> bool:
     return getattr(profile, name) is None
 
 
+def _list_answer(raw: str) -> list[str]:
+    items = [item.strip() for item in raw.split(",") if item.strip()]
+    return [] if len(items) == 1 and fold(items[0]) in NONE_WORDS else items
+
+
 def _parse_profile_value(field: str, raw: str) -> Any:
     if field.startswith("screening."):
         key = field.removeprefix("screening.")
@@ -699,12 +832,17 @@ def _parse_profile_value(field: str, raw: str) -> Any:
             if raw.lower() not in ("true", "false"):
                 raise ValueError(f"{field} must be true or false, not {raw!r}")
             return raw.lower() == "true"
+        if kind is list:
+            # "none" clears the answer (above); "no" and the other none-words are the answer none.
+            return _list_answer(raw)
         if kind is int:
             if not raw.isdigit():
                 raise ValueError(f"{field} must be a whole number, not {raw!r}")
             return int(raw)
         return raw
-    if field in ("pal_override", "hr_max", "hr_rest", "sport") and raw.lower() == "none":
+    if field in ("pal_override", "hr_max", "hr_rest", "sport", "race_date", "race_km") and (
+        raw.lower() == "none"
+    ):
         return None
     if field == "injuries":
         raise ValueError("injuries are set with `coach injury add` and `coach injury clear`")
@@ -724,8 +862,7 @@ def _parse_profile_value(field: str, raw: str) -> Any:
                 "says"
             )
     if field in ("medications", "conditions"):
-        items = [item.strip() for item in raw.split(",") if item.strip()]
-        return [] if len(items) == 1 and fold(items[0]) in NONE_WORDS else items
+        return _list_answer(raw)
     if field in CONDITION_TOKENS:
         raise ValueError(
             f"{field!r} is not a profile field: store it as a condition, e.g. "
@@ -760,6 +897,9 @@ def cmd_profile(profile: Profile, args: argparse.Namespace) -> dict:
             if key in PARQ_ANSWERS and value != old:
                 # A vigorous-work review covered the old answers, not the new ones.
                 profile.screening.pop("vigorous_reviewed", None)
+            if key in CLEARANCE_ANSWERS and value != old:
+                # A medical clearance covered the old diagnoses and symptoms, not the new ones.
+                profile.screening.pop("medically_cleared", None)
         else:
             setattr(profile, args.field, value)
         save_profile(profile, args.data_dir / "profile.yaml")  # validates enums and screening
@@ -768,6 +908,16 @@ def cmd_profile(profile: Profile, args: argparse.Namespace) -> dict:
         if getattr(args, "field", None) == "pal_override"
         else []
     )
+    disease = profile.screening.get("known_disease")
+    if (
+        profile.has_condition(HEART_DISEASE)
+        and disease is not None
+        and "cardiovascular" not in disease
+    ):
+        warnings.append(
+            "conditions lists heart_disease but screening.known_disease has no cardiovascular: "
+            "if a doctor diagnosed it, add cardiovascular"
+        )
     return ({"warnings": warnings} if warnings else {}) | {
         "data_dir": str(args.data_dir.resolve()),  # skills read and write files here by path
         "profile": profile,
@@ -777,6 +927,11 @@ def cmd_profile(profile: Profile, args: argparse.Namespace) -> dict:
             "conditions": [c for c in profile.conditions if c not in CONDITION_TOKENS],
         },
         "unrecognised_note": "recorded as given; no calculation depends on these items",
+        "suggested_tokens": {
+            m: BP_MEDICATION for m in profile.medications if fold(m).endswith(BP_DRUG_ENDINGS)
+        }
+        if not profile.has_medication(BP_MEDICATION)
+        else {},
     }
 
 
@@ -785,6 +940,14 @@ def _find_injury(profile: Profile, area: str) -> dict | None:
 
 
 def cmd_injury(profile: Profile, args: argparse.Namespace) -> dict:
+    # An injury is a safety record: a broken alias file never stops it from being saved; it only
+    # falls back to the built-in names for the `unmatched` hint.
+    warnings = []
+    try:
+        muscle_map = strength.muscle_map_for(args.data_dir)
+    except ValueError as err:
+        muscle_map = strength.load_muscle_map()
+        warnings.append(f"{err}; matched against the built-in exercise names only")
     if args.injury_cmd == "add":
         injury = _find_injury(profile, args.area)
         if injury is not None and injury["status"] == "cleared":
@@ -812,12 +975,16 @@ def cmd_injury(profile: Profile, args: argparse.Namespace) -> dict:
         save_profile(profile, args.data_dir / "profile.yaml")
     # Listed names that match no logged lift pause nothing: the skill asks for the logged name.
     logged = {s.exercise for s in read_sets(args.data_dir / "sessions.csv")}
-    muscle_map = strength.load_muscle_map()
     listed = [e for i in profile.active_injuries() for e in i.get("exercises", [])]
     unmatched = [
-        e for e in listed if not any(strength.named_in(x, [e], muscle_map) for x in logged)
+        e
+        for e in listed
+        if fold(e) not in safety.RUN_NAMES
+        and not any(strength.named_in(x, [e], muscle_map) for x in logged)
     ]
-    return {"injuries": profile.injuries, "unmatched": unmatched}
+    return {"injuries": profile.injuries, "unmatched": unmatched} | (
+        {"warnings": warnings} if warnings else {}
+    )
 
 
 def cmd_tastes(profile: Profile, args: argparse.Namespace) -> dict:
@@ -831,8 +998,9 @@ def cmd_tastes(profile: Profile, args: argparse.Namespace) -> dict:
         when = args.date or today
         if when > today:
             raise ValueError(f"{when} is after today ({today}); rate a dish already eaten")
+        rated_before = any(fold(r.dish) == fold(args.dish) for r in current.ratings)
         known = (
-            any(fold(r.dish) == fold(args.dish) for r in current.ratings)
+            rated_before
             or recipes.find_in_menus(args.data_dir, args.dish)
             or any(
                 fold(r["dish"]) == fold(args.dish) for r in recipes.load_all(args.data_dir, current)
@@ -843,12 +1011,19 @@ def cmd_tastes(profile: Profile, args: argparse.Namespace) -> dict:
                 f"{args.dish!r} is in no saved menu and not in the recipe library: check the "
                 "name, or give its recipe link with --source"
             )
+        # An explicit --date is the client saying when they ate it (off the menu, before it).
+        scheduled = recipes.menu_dates(args.data_dir, args.dish) if args.date is None else []
+        if scheduled and all(d > when for d in scheduled) and not rated_before:
+            raise ValueError(
+                f"{args.dish!r} is first scheduled for {scheduled[0]}, after {when}: rate it once "
+                "it has been eaten (or give --date for the day it was)"
+            )
         rating = tastes.Rating(args.dish.strip(), args.rating, when, args.source, args.note)
         current.rate(rating)
         tastes.save_tastes(current, path)
         # a dish the client likes joins the recipe library (data/recipes/)
         saved = (
-            recipes.save(args.data_dir, args.dish, args.source.strip(), today)
+            recipes.save(args.data_dir, rating.dish, args.source.strip(), today)
             if args.rating in recipes.SAVED_RATINGS
             else None
         )
@@ -894,14 +1069,16 @@ def cmd_recipes(profile: Profile, args: argparse.Namespace) -> dict:
 
 
 def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
-    symptoms = [s.strip() for s in (args.symptoms or "").split(",") if s.strip()]
-    unknown = [s for s in symptoms if s not in safety.SYMPTOMS]
+    said = [s.strip() for s in (args.symptoms or "").split(",") if s.strip()]
+    unknown = [s for s in said if safety.symptom_token(s) is None]
+    symptoms = list(dict.fromkeys(safety.symptom_token(s) for s in said if s not in unknown))
     if unknown:
         raise ValueError(f"unknown symptom {', '.join(unknown)}; use {', '.join(safety.SYMPTOMS)}")
     if symptoms:
         # recovery-habits.md: "Cardiac warning symptoms: stop and refer": any one of them. Saved
         # first, so a refused or invalid field cannot drop the stop.
         profile.screening["cardiac_symptoms"] = True
+        profile.screening.pop("medically_cleared", None)  # it predates these symptoms
         save_profile(profile, args.data_dir / "profile.yaml")
     flags = safety.flags(profile, args.today)
     refused = ["weight"] if flags.no_weight_targets and args.weight is not None else []
@@ -934,12 +1111,20 @@ def cmd_checkin(profile: Profile, args: argparse.Namespace) -> dict:
     past = [c for c in read_checkins(args.data_dir / "checkins.csv") if c.date <= today]
     jump = weight_jump(checkin, past)
     stored = append_checkin(checkin, args.data_dir / "checkins.csv")
-    return dataclasses.asdict(stored) | {
+    possible = [w for w in safety.red_flag_words(args.notes or "") if w not in symptoms]
+    out = dataclasses.asdict(stored) | {
         "warnings": [jump] if jump else [],
         "given": given,
         "symptoms": symptoms,
-        "possible_red_flags": [w for w in safety.red_flag_words(args.notes) if w not in symptoms],
+        "possible_red_flags": possible,
+        "possible_injury": safety.injury_words(args.notes or ""),
     }
+    if possible:
+        # The words never set a flag: the skill asks once, and this records a yes.
+        out["confirm_with"] = f"coach checkin add --date {when} --symptoms {','.join(possible)}"
+    if symptoms:
+        out["deferral_line"], out["emergency_line"] = flags.deferral_line, flags.emergency_line
+    return out
 
 
 def cmd_foods(profile: Profile, args: argparse.Namespace) -> dict:
@@ -1154,6 +1339,40 @@ def _label_product(args: argparse.Namespace) -> dict:
     }
 
 
+def _pack_size(text: str) -> float:
+    if KCAL_THOUSANDS.fullmatch(text.strip()):  # "1.000" on a Spanish pack is 1000, not 1
+        raise ValueError(f"--pack-size {text!r} looks like a thousands number: type it as 1000")
+    try:
+        size = float(text.replace(",", "."))
+    except ValueError:
+        size = math.nan
+    if not (math.isfinite(size) and size > 0):
+        raise ValueError(f"--pack-size {text!r} must be the pack's g or ml, a number above 0")
+    return size
+
+
+def _replaces(
+    name: str, per: str, region: str | None, others: list[catalogue.CatalogueProduct]
+) -> str:
+    """The generic food's name_en this product is bought for in the shopping list ("" clears)."""
+    if not name.strip():
+        return ""
+    food = foods.find(name, foods.load_foods(region))
+    if food is None:
+        raise ValueError(
+            f"--replaces {name!r} is not a food in the food tables (`coach foods search`)"
+        )
+    if food.buy_as:  # shopping turns it into that food before it looks for a product
+        raise ValueError(f"--replaces {name!r}: it is bought as {food.buy_as!r}, replace that")
+    if foods.PER_UNITS[per] != food.unit and not food.g_per_ml:
+        raise ValueError(
+            f"--replaces {name!r}: that food has no density, so its grams cannot become ml"
+        )
+    if taken := next((p for p in others if fold(p.replaces) == fold(food.name_en)), None):
+        raise ValueError(f"{taken.product_name!r} already replaces {food.name_en!r}")
+    return food.name_en
+
+
 def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
     if args.products_cmd == "list":
         return {"products": [_catalogue_entry(p) for p in catalogue.load(args.data_dir)]}
@@ -1230,6 +1449,16 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
     table = regions.menu_table(profile.region) + [p.as_food() for p in others]
     if foods.find(name, table) is not None:
         raise ValueError(f"{name!r} is already a food or product name: choose one with --name")
+    pack_size = _pack_size(args.pack_size) if args.pack_size is not None else None
+    if pack_size is None:  # a size already stored may be the client's own: it wins over OFF's
+        # either size counts only in the unit the values are per (--per may override OFF's)
+        kept = stored.pack_size if stored and stored.per == per else None
+        pack_size = kept or (found.get("pack_size") if found["per"] == per else None)
+    replaces = (
+        _replaces(args.replaces, per, profile.region, others)
+        if args.replaces is not None
+        else (stored.replaces if stored else "")
+    )
     product = catalogue.CatalogueProduct(
         barcode=barcode,
         product_name=name,
@@ -1241,14 +1470,29 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         url=found["url"],
         fetched_on=args.today or date.today(),
         source=catalogue.LABEL_SOURCE if args.label else catalogue.SOURCE,
+        pack_size=pack_size,
+        replaces=replaces,
     )
+    known = None not in (product.kcal, product.protein_g, product.carbs_g, product.fat_g)
+    computed = foods.label_energy(product.to_row()) if known else 0
+    kcal_off = abs(product.kcal - computed) if computed else 0
+    if (
+        args.label
+        and not args.confirm_kcal
+        and kcal_off > max(LABEL_REFUSE_KCAL, LABEL_REFUSE_GAP * computed)
+    ):
+        raise ValueError(
+            f"label kcal is {kcal_off / computed:.0%} from the 4/4/9 factors: more than "
+            f"{LABEL_REFUSE_GAP:.0%} off, so probably a typo or the wrong column (per serving, "
+            "kJ). Read the label again; if it really says so, add --confirm-kcal"
+        )
     catalogue.save([*others, product], args.data_dir)
     warnings = []
     if args.label and found["unrecognised"]:
         warnings.append(UNRECOGNISED_WARNING)
     elif args.label and "unknown" in product.allergens:
         warnings.append("allergens unknown: do not use for anyone with an allergy or intolerance")
-    if None not in (product.kcal, product.protein_g, product.carbs_g, product.fat_g):
+    if known:
         kind, reason = foods.energy_check(product.to_row(), typed=args.label) or ("", "")
         again = (
             ": read the label again, fix it with --replace" if args.label else "; check the pack"
@@ -1259,6 +1503,15 @@ def cmd_products(profile: Profile, args: argparse.Namespace) -> dict:
         elif kind == foods.GAP:
             warnings.append(f"{lead} {reason}{again}")
     return {"added": product, "missing": product.missing(), "warnings": warnings}
+
+
+# convention: a typed label kcal more than 50% away from its 4/4/9 value is refused unless
+# confirmed: nutrition.md "EU label rules and tolerances" allows about 20%, so a gap this size is a
+# typo, a per-serving column or kJ, not a tolerance. Between 10% and 50% it is a warning.
+LABEL_REFUSE_GAP = 0.5
+# nutrition.md: "EU label rules and tolerances": do not argue over 10-20 kcal, so a low-energy
+# product (black coffee, a zero drink) whose rounded figures are far apart in % is not refused.
+LABEL_REFUSE_KCAL = 20
 
 
 # The header lines /plan writes at the top of data/plan.md (.claude/skills/plan/SKILL.md step 6).
@@ -1276,15 +1529,57 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
     path = args.data_dir / "plan.md"
     if not path.exists():
         raise ValueError(f"no plan at {path}: /plan writes it")
+    flags = safety.flags(profile, args.today)
+    stale = (
+        "the plan is stale: safety now stops training ("
+        + "; ".join(safety.stop_reasons(flags))
+        + "); run /plan again once a clinician clears it"
+        if flags.no_training
+        else None
+    )
     if args.plan_cmd == "export":
+        if stale:
+            raise ValueError(stale)
         out = _in_data_dir(args, args.out)
         text = path.read_text(encoding="utf-8")
         exercises = export.write_plan(out, text, profile.language, qr=not args.no_qr)
-        return {"pdf": _shown(args, out), "exercises": exercises, "qr": not args.no_qr}
-    head = path.read_text(encoding="utf-8").splitlines()[:3]
+        return {
+            "pdf": _shown(args, out),
+            "exercises": exercises,
+            # Session parts that name no lift: they are in the PDF's text but get no video link.
+            "unread": export.plan_unread(text),
+            "qr": not args.no_qr,
+        }
+    text = path.read_text(encoding="utf-8")
+    head = text.splitlines()[:3]
     fields = dict(line.split(":", 1) for line in head if ":" in line)
     fields = {k.strip(): v.strip() for k, v in fields.items()}
-    problems = []
+    problems = [stale] if stale else []
+    unread = export.plan_unread(text)
+    if unread:
+        problems.append(
+            "training bullets the export cannot read as lifts (write `Name load`, `Name 3x8` "
+            "or `Name, 3 sets of 8-12`): " + "; ".join(unread)
+        )
+    week_file = args.data_dir / "plan-week.yaml"
+    if week_file.exists():
+        try:
+            week = yaml.safe_load(week_file.read_text(encoding="utf-8")) or {}
+        except yaml.YAMLError:
+            week = None
+        planned = week.get("sessions") if isinstance(week, dict) else None
+        sessions = export.plan_sessions(text)
+        if not isinstance(planned, list):
+            problems.append(
+                "plan-week.yaml needs `sessions:`, a list of {name, exercises}: rewrite it, then "
+                "rerun `coach strength plan-sets`"
+            )
+        elif sessions != len(planned):
+            problems.append(
+                f"plan.md lists {sessions} sessions with lifts but plan-week.yaml has "
+                f"{len(planned)}: write the same week in both, then rerun "
+                "`coach strength plan-sets`"
+            )
     if not any(k in fields for k in PLAN_DATE_KEYS):
         problems.append("line 1 must be `Date: YYYY-MM-DD` (es: `Fecha:`)")
     problems += [
@@ -1325,6 +1620,7 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
     return {
         "ok": not problems,
         "problems": problems,
+        "unread": unread,
         "notes": notes,
         "fresh_estimate": {"target_kcal": fresh["kcal"], "in_deficit": fresh["in_deficit"]},
     }
@@ -1362,6 +1658,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--today", type=date.fromisoformat, default=None, help="for tests")
     json_flag = argparse.ArgumentParser(add_help=False)
     json_flag.add_argument("--json", action="store_true", help="one compact JSON line")
+    # Also after the subcommand (`coach menu ... --today D`); it overrides the global one.
+    json_flag.add_argument(
+        "--today", type=date.fromisoformat, default=argparse.SUPPRESS, help=argparse.SUPPRESS
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     def add(name: str, func, help_text: str) -> argparse.ArgumentParser:
@@ -1390,6 +1690,7 @@ def build_parser() -> argparse.ArgumentParser:
     zones_cmd.add_argument("--hr-rest", type=int, default=None, help="default: profile hr_rest")
     zones_cmd.add_argument("--hr-max", type=int, default=None, help="default: profile hr_max")
     add("safety", cmd_safety, "screening flags and the rules behind them")
+    add("doctor", cmd_doctor, "first-run checks: Python, the pdf extra, data folder, claude")
 
     strength_cmd = add("strength", cmd_strength, "e1RM, weekly sets, progression, deload")
     strength_sub = strength_cmd.add_subparsers(dest="strength_cmd", required=True)
@@ -1407,6 +1708,14 @@ def build_parser() -> argparse.ArgumentParser:
         "plan-sets", parents=[json_flag], help="weekly hard sets of a planned week (YAML)"
     )
     plan_sets_cmd.add_argument("file", type=Path, help="relative to the data dir")
+    alias_cmd = strength_sub.add_parser(
+        "alias", parents=[json_flag], help="the client's own exercise names (muscle_aliases.yaml)"
+    )
+    alias_sub = alias_cmd.add_subparsers(dest="alias_cmd", required=True)
+    alias_add = alias_sub.add_parser("add", parents=[json_flag], help="NAME EXERCISE")
+    alias_add.add_argument("name", help="the name as the client logs it")
+    alias_add.add_argument("exercise", help="a lift the muscle map knows, e.g. bent over row")
+    alias_sub.add_parser("list", parents=[json_flag])
     sets_cmd = strength_sub.add_parser("sets", parents=[json_flag], help="weekly hard sets")
     sets_cmd.add_argument("--week-ending", type=date.fromisoformat, default=None)
     progress_cmd = strength_sub.add_parser("progress", parents=[json_flag], help="next session")
@@ -1441,7 +1750,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--week-ending", type=date.fromisoformat, default=None, help="default: last logged run"
     )
     runs_taper = runs_sub.add_parser("taper", parents=[json_flag], help="taper before a race")
-    runs_taper.add_argument("--race-date", type=date.fromisoformat, required=True)
+    runs_taper.add_argument(
+        "--race-date", type=date.fromisoformat, default=None, help="default: profile race_date"
+    )
+    runs_sub.add_parser(
+        "plan", parents=[json_flag], help="next week's limits: long run, weekly km, easy share"
+    )
 
     menu_cmd = add("menu", cmd_menu, "macro totals for foods and grams")
     menu_cmd.add_argument("--item", action="append", required=True, help='"NAME=GRAMS", repeat')
@@ -1517,6 +1831,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="keep --per although the pack unit says otherwise (after reading the label)",
     )
+    off_add.add_argument(
+        "--confirm-kcal",
+        action="store_true",
+        help="keep a label kcal far from its macros (after reading the label again)",
+    )
     off_add.add_argument("--replace", action="store_true", help="refresh a product already added")
     off_add.add_argument(
         "--label", action="store_true", help="type the values from the pack: no Open Food Facts"
@@ -1526,6 +1845,14 @@ def build_parser() -> argparse.ArgumentParser:
     off_add.add_argument("--barcode", dest="label_barcode", default=None, help="--label only")
     off_add.add_argument(
         "--allergens", default=None, help='--label (required): "soja, leche", none, or unknown'
+    )
+    off_add.add_argument(
+        "--pack-size", default=None, help="one pack's g or ml (default: Open Food Facts')"
+    )
+    off_add.add_argument(
+        "--replaces",
+        default=None,
+        help='a generic food the shopping list buys this product for ("" clears it)',
     )
     products_sub.add_parser("list", parents=[json_flag])
 
@@ -1637,7 +1964,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     compact = getattr(args, "json", False)
     try:
-        profile = load_profile(args.data_dir / "profile.yaml")
+        # doctor reports a broken profile instead of failing on it
+        doctor_cmd = args.func is cmd_doctor
+        profile = Profile() if doctor_cmd else load_profile(args.data_dir / "profile.yaml")
         _print(args.func(profile, args), compact)
     except ProfileIncomplete as err:
         _print({"error": "profile_incomplete", "field": err.field}, compact)

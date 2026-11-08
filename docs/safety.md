@@ -44,11 +44,12 @@ as question text. `coach profile set screening.KEY none` clears an answer (an ol
 
 | Screen | How | Stored as | Rule | Asked again |
 |---|---|---|---|---|
-| PAR-Q+ 2023 | The client fills in the official form (eparmedx.com) in their language; the coach then asks only the two outcomes, in its own words. The form's terms forbid putting its questions into a chat or app, translating them or redistributing them without written permission from the PAR-Q+ Collaboration, so the coach never quotes them | `parq_any_yes`, `parq_followup_yes` | recovery-habits.md "PAR-Q+ 2023 as the default entry screen", "PAR-Q+ specific thresholds" | at /setup redo, e.g. after a new diagnosis, medication or pregnancy |
+| ACSM 2015 preparticipation screen (the default) | Three questions in the coach's own words, one per message: regular exercise (30+ min of planned moderate exercise, 3+ days a week, for the last 3 months), a doctor's diagnosis of cardiovascular, metabolic (type 1 or 2 diabetes) or renal disease, and the warning symptoms. It is a published method, not a form, so it can be asked in the chat; the PAR-Q+ cannot (below) | `regular_exercise`, `known_disease` (list of `cardiovascular`, `metabolic`, `renal`; `no` stores none), `symptoms` (list of the symptom tokens; `no` stores none), `medically_cleared` | recovery-habits.md "ACSM 2015 screening algorithm", "Cardiac warning symptoms: stop and refer" | at /setup redo; `coach profile set` drops `medically_cleared` whenever `known_disease`, `symptoms` or `cardiac_symptoms` changes, and `checkin add --symptoms` drops it too |
+| PAR-Q+ 2023 (optional) | Offered by link, never required. The client fills in the official form (eparmedx.com) in their language; the coach then asks only the two outcomes, in its own words. The form's terms forbid putting its questions into a chat or app, translating them or redistributing them without written permission from the PAR-Q+ Collaboration, so the coach never quotes them | `parq_any_yes`, `parq_followup_yes` | recovery-habits.md "PAR-Q+ 2023 as an optional extra screen", "PAR-Q+ specific thresholds" | at /setup redo, e.g. after a new diagnosis, medication or pregnancy |
 | Review before vigorous work | Asked when `review_before_vigorous` is set and the client wants vigorous or maximal work: has a qualified exercise professional or clinician reviewed it? | `vigorous_reviewed` | recovery-habits.md "PAR-Q+ specific thresholds" | at /setup redo; `coach profile set` drops it whenever `parq_any_yes` or `parq_followup_yes` changes, since the review covered the old answers |
 | Injuries | Any current injury or pain in an area: where, since when, who assessed it, which logged exercises it affects | `injuries` (not under `screening`; set with `coach injury add` and `coach injury clear`) | recovery-habits.md "Some pain during exercise is acceptable in chronic, assessed pain" | at /setup, /plan, and whenever the client reports pain or a clearance at /checkin |
 | Eating-disorder prompt | The five SCOFF-style questions in the coach's own words, as a prompt for a conversation, never a diagnosis; one follow-up for a partial answer | `scoff_yes_count` (clear yes answers, 0 to 5), `scoff_positive` (a warning sign) | nutrition.md "Eating-disorder screening: brief questions as a prompt" | set again if warning signs appear (Red flags) |
-| Cardiac warning symptoms | Asked directly | `cardiac_symptoms` | recovery-habits.md "Cardiac warning symptoms: stop and refer" | every /checkin |
+| Cardiac warning symptoms | Part of the ACSM screen at /setup (`symptoms`); at /checkin `checkin add --symptoms` | `symptoms`, `cardiac_symptoms` | recovery-habits.md "Cardiac warning symptoms: stop and refer" | every /checkin |
 | Menstrual cycle (women) | Regular, new irregular, or absent | `menstrual` | nutrition.md "Menstrual dysfunction: stop and refer" | weekly at /checkin |
 | Resting blood pressure | Latest seated reading after 5 min rest; asked of anyone with hypertension | `bp_systolic`, `bp_diastolic` | recovery-habits.md "Resting BP thresholds to defer or refer" | weekly at /checkin |
 | Medications and conditions | Mapped to tokens (table below) | `medications`, `conditions` | see the flags table | at /setup redo |
@@ -69,6 +70,7 @@ store the name as given and tell the client the coach cannot classify it.
 | `glp1` | semaglutide (Ozempic, Wegovy, Rybelsus), liraglutide (Saxenda, Victoza), dulaglutide (Trulicity), tirzepatide (Mounjaro) | nutrition.md "GLP-1 users: protein, training and red flags" |
 | `pregnant` | pregnant | nutrition.md "Pregnancy"; recovery-habits.md "Default is to be active" |
 | `planning_pregnancy` | trying to conceive | nutrition.md "Pregnancy" |
+| `bp_medication` | any blood-pressure medicine: enalapril, ramipril (-pril), losartan, valsartan (-sartan), amlodipine (-dipine), a diuretic for BP; `profile set` suggests it for -pril, -sartan and -dipine names. Never change or question it | cardio-health.md "Blood pressure medicines and exercise"; counts as known hypertension for the BP bands (recovery-habits.md "Resting BP thresholds to defer or refer") |
 | `hypertension` | high blood pressure, on BP medication | recovery-habits.md "Resting BP thresholds to defer or refer" |
 | `heart_disease` | diagnosed heart condition | cardio-health.md "ACSM intensity bands" (cardiac team sets zones) |
 | `weight_related_condition` | type 2 diabetes, sleep apnoea, fatty liver, or another condition a doctor links to weight | nutrition.md "Resistance training during any diet, especially for older adults" |
@@ -87,12 +89,15 @@ Computed by `coach safety` from the profile; the calculators obey them.
 | Pregnancy | `no_deficit`, `no_weight_targets`, `prescriber_owns_weight`, `use_rpe_not_hr`, `refer_gp` | no weigh-ins in the coach (weight is the midwife's); RPE zones with moderate 13-14, never RPE 18 (recovery-habits.md "Gauge intensity by talk test and RPE, not a heart-rate cap") |
 | New irregular periods | `hold_deficit`, `refer_gp` | no new or deeper deficit |
 | Periods absent 3+ months (or fewer than 6 a year) | `no_deficit`, `refer_gp` | maintenance calories |
+| ACSM: not exercising regularly (or `regular_exercise` not answered), known disease, no symptoms, not cleared | `clearance_before_exercise`, `no_training`, `hold_progression`, `refer_gp` | no programme until a clinician clears exercise: no zones, no loads; calories follow the normal rules (no `no_deficit`). Once `medically_cleared`: start light-to-moderate (`review_before_vigorous` until `vigorous_reviewed`) |
+| ACSM: exercising regularly, known disease, no symptoms, not cleared | `review_before_vigorous`, `refer_gp` | continue moderate work; no vigorous or near-maximal work before medical clearance (`medically_cleared`) |
+| ACSM: no known disease and no symptoms (either activity level) | none | no clearance needed; a sedentary client starts light-to-moderate and builds up (skill text, recovery-habits.md "Acute cardiac risk is concentrated in the unaccustomed") |
 | PAR-Q+ follow-up YES | `refer_gp`, `hold_progression` | `strength progress` says `hold`: same load and reps |
-| PAR-Q+ not answered; or any PAR-Q+ YES (a follow-up YES counts), or aged 45 or more (from `birth_date`), until `vigorous_reviewed` is true | `review_before_vigorous` | no vigorous or near-maximal zone (the zones note says why, even when the zones are RPE only); the skills prescribe no vigorous or maximal work (HIIT, 1RM tests, all-out sprints, jump rope, plyometric jumps) until a qualified exercise professional or clinician has reviewed it. It does not set `refer_gp`: the plan itself needs no review, so the skills name the professional when vigorous work comes up instead of ending every answer with the deferral line |
+| No entry screen answered (neither a complete ACSM screen nor the PAR-Q+); or any PAR-Q+ YES (a follow-up YES counts), or aged 45 or more (from `birth_date`), until `vigorous_reviewed` is true | `review_before_vigorous` | no vigorous or near-maximal zone (the zones note says why, even when the zones are RPE only); the skills prescribe no vigorous or maximal work (HIIT, 1RM tests, all-out sprints, jump rope, plyometric jumps) until a qualified exercise professional or clinician has reviewed it. It does not set `refer_gp`: the plan itself needs no review, so the skills name the professional when vigorous work comes up instead of ending every answer with the deferral line |
 | Any PAR-Q+ YES, reviewed or not, or PAR-Q+ not answered | `no_all_out_sprints` | no SIT or REHIT: they need every PAR-Q+ answer NO. With every answer NO, /plan also requires 4+ weeks of regular moderate cardio without symptoms and never gives them to sedentary beginners (skill text) |
 | Active injury with `exercises` listed | `paused_exercises` (exercise: its reasons and whether a professional assessed it) | `strength progress` says `paused`: no progression, no stall, no added sets. Unassessed: no load at all. Assessed: at most the last load, or the lower restart load after a break; the professional's limits decide the rest. Names match logged lifts by case, accents, "(Equipment)" and muscle-map aliases; `coach injury add` lists names that match no logged lift as `unmatched`. A new injury in a cleared area starts unassessed. Sessions up to its `cleared_on` never count as a stall afterwards |
 | Active injury with no `professional` | `refer_gp` | a GP or physiotherapist assesses it before it is loaded; sharp or worsening pain: stop and refer |
-| Cardiac warning symptoms | `no_training`, `hold_progression`, `refer_gp`, `no_deficit` | stop exercising until a clinician clears it: no zones, no loads, calories at maintenance (energy: see "`no_training` and the energy estimate"); `emergency_line` says when to call the number now |
+| Cardiac warning symptoms (`symptoms` at /setup or `cardiac_symptoms`; the ACSM symptom cells, either activity level) | `no_training`, `hold_progression`, `refer_gp`, `no_deficit` | stop exercising until a clinician clears it: no zones, no loads, calories at maintenance (energy: see "`no_training` and the energy estimate"); `emergency_line` says when to call the number now |
 | Resting BP 180+ systolic or 110+ diastolic | `no_training`, `hold_progression`, `refer_gp`, `no_deficit` | no zones, no training until a doctor reviews it (200/110+: no exercise, see a doctor promptly) (energy: see "`no_training` and the energy estimate") |
 | Resting BP 160-179 systolic or 90-109 diastolic, or hypertension with BP unknown | `cap_moderate`, `hold_progression`, `refer_gp` | no vigorous or near-maximal zone; GP review before starting or progressing |
 | Resting BP 140-159 systolic with diastolic below 90 | `cap_moderate`, `refer_gp` | moderate intensity; GP check |
@@ -110,10 +115,12 @@ first one, the thing to do above all else. With `no_training`, the intensity cap
 the line above in the profile language, and `emergency_line` (with cardiac symptoms) says when to
 call `emergency_number` now; skills quote both fields instead of copying text.
 
-`no_training` also sets `no_deficit` (convention, `safety.NO_TRAINING_NO_DEFICIT` in
+`no_training` from cardiac symptoms or a very high BP also sets `no_deficit` (convention, `safety.NO_TRAINING_NO_DEFICIT` in
 docs/conventions.md): no rule covers dieting while symptoms or a very high BP await a
 clinician, so calories stay at maintenance until training is cleared. `refer_gp` alone (a PAR-Q+
-follow-up YES, an unassessed injury) keeps the deficit.
+follow-up YES, an unassessed injury) keeps the deficit, and so does the ACSM
+"clearance before any exercise" stop (`clearance_before_exercise`): a known, stable diagnosis is
+not a symptom awaiting a clinician.
 
 ### Symptoms at check-in
 
@@ -122,7 +129,23 @@ follow-up YES, an unassessed injury) keeps the deficit.
 `unusual_fatigue`, from recovery-habits.md "Cardiac warning symptoms: stop and refer"); any one
 sets `screening.cardiac_symptoms true`. Free-text `--notes` are scanned for symptom words in
 Spanish and English (`safety.SYMPTOM_WORDS`); hits come back as `possible_red_flags`, a prompt
-for the skill to ask, never a flag on their own.
+for the skill to ask, never a flag on their own, with `confirm_with`: the exact `checkin add
+--symptoms` command that records a yes. `--symptoms` also takes synonyms
+(`safety.SYMPTOM_SYNONYMS`, e.g. `chest_tightness` is `chest_pain`). Swollen-joint words come back
+as `possible_injury` (recovery-habits.md "Knee injury: signs of ligament or meniscus damage"):
+the skill asks about an injury and records it with `coach injury add`. When symptoms are
+recorded, `checkin add` returns `deferral_line` and `emergency_line` to quote.
+
+### A stale plan
+
+With `no_training` (cardiac symptoms, BP 180+, or the ACSM clearance cell), `coach plan check`
+is not ok ("the plan is stale") and `coach plan export` refuses: an old plan.md or PDF that
+prescribes training never outlives a stop. /plan runs again once a clinician clears it. An
+injury whose `exercises` list running (`running`, `correr`, ...) makes `runs add` and `runs
+week` report `paused` with the injury's reason. Unassessed, `runs week` gives no next-run cap
+and `runs taper` refuses; managed by a professional, the cap stays at the longest run (no
+progression) and the professional's limits decide the rest. Under a training stop the BP cap is moot, but a
+reason stays asking the clinician to check blood pressure at the same visit.
 
 ### `no_training` and the energy estimate
 

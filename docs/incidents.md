@@ -45,3 +45,34 @@ One line per bug that reached main: what broke, and which review layer should ha
 - 2026-11-08 (audit, #46): a run log with a `notes` column matched no importer. Layer: tests
   (the fixtures had only the required and numeric columns).
 - 2026-11-08 (audit, #46): re-sending the same check-in notes stored them twice. Layer: tests.
+- 2026-11-08 (beta2 p1-lucia-I2): `coach plan export` printed a training PDF and `plan check`
+  stayed ok after `no_training` stopped training. Layer: design review of docs/safety.md "What
+  protects what" (the saved plan was not listed as something a stop must reach).
+- 2026-11-08 (beta2 p6-james-I4, p3-antonio-I1): check-in notes missed "unusually tired" and
+  `--symptoms chest_tightness` was refused. Layer: tests (the word list was never checked
+  against every token in the rule's symptom list).
+- 2026-11-08 (beta2 p2-marcus-I2, p7-nuevo-I4): Hevy names ("Hack Squat (Machine)"), dumbbell
+  and goblet variants were unmapped, so weekly sets were undercounted. Layer: tests (no fixture
+  used equipment-prefixed or Hevy names in plan-sets).
+- 2026-11-08 (beta2 p1-lucia-I1, p2-marcus-I1, p6-james-I3): `coach plan export` silently dropped
+  exercises with 5+ word names, a "(Barbell)" part or no load, and `plan check` stayed ok.
+  Layer: tests (fixtures used only short, loaded Spanish names).
+- 2026-11-08 (beta2 p5-elena-I3, p4-sara-I5): the protein note rounded 70.56 kg to "71 kg", so
+  its figures did not reproduce, and the veg-and-fruit warning said "400 g of the 400 g". Layer:
+  code review (note text was never checked against the numbers next to it).
+- 2026-11-08 (beta2 p5-elena-I1): `mealplan check` computed `protein_max_g` but never compared a
+  day with it, so a 202 g day read ok against a 155 g top. Layer: code review (a target computed
+  and never read).
+- 2026-11-08 (beta2 p4-sara-I6): rating a dish in another case renamed it. Layer: tests.
+- 2026-11-08 (beta2 p6-james-I2): the taper reference was the single week before the taper, so
+  it moved with the race date onto a spike week. Layer: tests (one race date only).
+- 2026-11-08 (beta2, a panel opinion confirmed): printed HR zones left 1-2 bpm in no zone.
+  Layer: tests (zone tops were checked one by one, never against the next floor).
+- 2026-11-08 (beta2 p7-nuevo-I3): the README's install line ran `uv sync` without the pdf extra
+  that /plan's export needs, and asked to clone a private copy before saying how to make one.
+  Layer: skill dry run from a clean clone (no dry run started from the README alone).
+- 2026-11-08 (beta2 p4-sara-I2): a catalogue product and the generic food it stands for got two
+  shopping lines in different stores. Layer: tests (no fixture with a product and its generic food
+  in one menu).
+- 2026-11-08 (beta2 p2-marcus-I3): imports in pounds stored kg with 8 or more decimals.
+  Layer: tests (lbs fixtures checked with approx, never the stored text).

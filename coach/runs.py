@@ -32,6 +32,16 @@ SPIKE_LOOKBACK_DAYS = 30
 TAPER_WEEKS = 2
 TAPER_MAX_WEEKS = 3
 TAPER_CUT = (0.41, 0.60)
+# convention: the weekly distance a taper cuts from is the mean of the 4 weeks before it starts
+# (or up to today); the rule gives the cut, not the reference, and one week alone can be a spike
+# week (docs/dropped-claims.md D269).
+TAPER_REFERENCE_WEEKS = 4
+# cardio-health.md: "Keep most running easy: pyramidal or polarized intensity": about 70% or more
+# of the week's running at low intensity.
+EASY_SHARE_MIN = 0.70
+# cardio-health.md: "Running load progression: cap single-run spikes, not just weekly totals":
+# novices keep weekly increases under 30% (over a 2-week period).
+NOVICE_WEEKLY_INCREASE = 0.30
 
 # Plausibility limits for typed-in values (convention: input validation, not coaching). Heart
 # rates use the profile's resting floor and HRmax ceiling; RPE is the Borg 6-20 scale of
@@ -44,7 +54,7 @@ RPE_RANGE = (6, 20)
 KEY_DECIMALS = (2, 1)
 
 HR_METHODS = ("hrr", "hrmax")
-NO_HR = "no_hr"  # zone_minutes key for runs logged without an average HR
+NO_HR = "no_hr"  # zone_minutes key for runs logged with neither RPE nor an average HR
 
 
 @dataclass(frozen=True)
@@ -185,11 +195,13 @@ def week(
     every: list[zones.Zone],
     today: date | None = None,
     hold_progression: bool = False,
+    paused: bool = False,
 ) -> dict:
     """The 7 days ending on `end`: totals, the week before, spikes, the next run's cap and,
     with HR zones, minutes per zone. `shown` is `coach zones` (capped); `every` the uncapped
     zones (`zones_to_describe`). The next run's cap counts back from `today` (default `end`);
-    with `hold_progression` (safety) it is the longest run itself, SPIKE_RATIO not applied."""
+    with `hold_progression` (safety) it is the longest run itself, SPIKE_RATIO not applied, and
+    with `paused` (an injury that lists running, `safety.running_paused`) there is none."""
     start = end - timedelta(days=6)
     days = [r for r in runs if start <= r.date <= end]
     before = [r for r in runs if start - timedelta(days=7) <= r.date < start]
@@ -201,20 +213,30 @@ def week(
             f"{LOAD_RULE}: a run more than about {SPIKE_RATIO - 1:.0%} longer than the longest run "
             f"of the previous {SPIKE_LOOKBACK_DAYS} days raised the injury rate"
         )
-    zone_minutes = None
+    zone_minutes, disagree = None, []
     if shown.method in HR_METHODS:
         zone_minutes = {z.name: 0.0 for z in every} | {NO_HR: 0.0}
         for run in days:
-            zone = zones.zone_for(every, run.avg_hr) if run.avg_hr is not None else None
+            by_hr = zones.zone_for(every, run.avg_hr) if run.avg_hr is not None else None
+            by_rpe = next((z for z in every if z.rpe[0] <= (run.rpe or 0) <= z.rpe[1]), None)
+            zone = by_rpe or by_hr
             zone_minutes[zone.name if zone else NO_HR] += run.minutes
+            if by_hr and by_rpe and by_hr.name != by_rpe.name:
+                disagree.append({"date": run.date, "hr_zone": by_hr.name, "rpe_zone": by_rpe.name})
         notes.append(
-            "convention: each run's minutes count in the zone of its average heart rate; "
+            "convention: each run's minutes count in the zone of its RPE when logged (the RPE "
+            'bands of cardio-health.md "ACSM intensity bands"), else of its average heart rate; '
             "intervals inside a run are not split out"
         )
+        if disagree:
+            notes.append(
+                f"{zones.BANDS_RULE}: zones are approximate; on {len(disagree)} run(s) heart rate "
+                "and RPE point to different zones: counted by RPE (hr_rpe_disagree)"
+            )
         hidden = {z.name for z in every} - {z.name for z in shown.zones}
         held = sum(zone_minutes[name] for name in hidden)
         if held:
-            caps = [n for n in shown.notes if n.startswith((safety.BP, safety.PARQ_THRESHOLDS))]
+            caps = [n for n in shown.notes if n.startswith((safety.BP, *safety.VIGOROUS_CAPS))]
             notes.append(
                 f"{held:g} min in zones held back ({', '.join(sorted(hidden))}): " + "; ".join(caps)
             )
@@ -231,8 +253,10 @@ def week(
         notes += shown.notes  # no zones at all (training on hold, or the cardiac team's zones)
     today = today or end
     cap_base = longest(runs, today - timedelta(days=SPIKE_LOOKBACK_DAYS - 1), today)
+    if paused or shown.method == "no_training":
+        cap_base = None  # training on hold or running paused: no next run to cap
     ratio = 1.0 if hold_progression else SPIKE_RATIO
-    if hold_progression and cap_base is not None and shown.method != "no_training":
+    if hold_progression and cap_base is not None:
         notes.append(
             "progression is on hold (coach safety): the next long run stays at or below the "
             f"longest run of the last {SPIKE_LOOKBACK_DAYS} days"
@@ -248,12 +272,10 @@ def week(
         "spikes": found,
         # The next run's cap under the rule: SPIKE_RATIO times the longest run of the last
         # SPIKE_LOOKBACK_DAYS days.
-        # None while training is on hold: no next run to cap.
-        "long_run_cap_km": cap_base * ratio
-        if cap_base is not None and shown.method != "no_training"
-        else None,
+        "long_run_cap_km": cap_base * ratio if cap_base is not None else None,
         "zone_method": shown.method,
         "zone_minutes": zone_minutes,
+        "hr_rpe_disagree": disagree,
         "notes": notes,
     }
 
@@ -282,10 +304,17 @@ def taper(race: date, today: date, runs: list[Run]) -> dict:
             "planned until then"
         )
         return result
-    # The weekly distance the taper cuts from: the 7 days before it starts (or up to today).
+    # The weekly distance the taper cuts from: the mean of the weeks before it starts (or up to
+    # today), TAPER_REFERENCE_WEEKS of them.
+    # Weeks before the first logged run are unknown, so they are left out; the oldest logged week
+    # counts in full when it has at least 4 of its 7 days (nearest whole week), so up to 3 days
+    # before the first run count as zero (convention, docs/conventions.md).
     ref_end = min(today, starts_on - timedelta(days=1))
-    reference = sum(r.km for r in runs if ref_end - timedelta(days=6) <= r.date <= ref_end)
-    result["reference_week"] = {"start": ref_end - timedelta(days=6), "end": ref_end}
+    first = min((r.date for r in runs), default=ref_end)
+    weeks = max(1, min(TAPER_REFERENCE_WEEKS, ((ref_end - first).days + 1 + 3) // 7))
+    ref_start = ref_end - timedelta(weeks=weeks) + timedelta(days=1)
+    reference = sum(r.km for r in runs if ref_start <= r.date <= ref_end) / weeks
+    result["reference_week"] = {"start": ref_start, "end": ref_end}
     result["reference_week_km"] = reference
     # Where the progressive cut ends: the reference week less 60% to less 41%.
     result["taper_week_km"] = (
