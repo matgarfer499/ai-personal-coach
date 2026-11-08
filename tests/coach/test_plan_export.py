@@ -73,6 +73,21 @@ def test_exercises_come_from_the_training_week_bullets_once_each():
     ]
 
 
+def test_bold_session_labels_still_split_label_from_lifts():
+    text = "## Semana de entrenamiento\n- **A (lunes):** Sentadilla 51,0 kg; **Zancadas**\n"
+    assert plan_exercises(text) == ["Sentadilla", "Zancadas"]
+
+
+def test_lines_after_the_rules_are_body_text_not_small_print(capsys, data_dir):
+    """/plan ends with the review line and the deferral line, after Fuentes: never in 7 pt grey."""
+    pytest.importorskip("reportlab")
+    (data_dir / "plan.md").write_text(PLAN + "\nHabla con tu médico.\n", encoding="utf-8")
+    run(capsys, data_dir, "plan", "export", "--no-qr")
+    data = (data_dir / "plan.pdf").read_bytes()
+    assert b"/F1 7 Tf 9 TL ([Target reps in reserve]" in data  # the rules stay small
+    assert b"/F1 8.5 Tf 11 TL (Habla con tu m" in data
+
+
 def test_english_plan_and_prose_lines_are_not_exercises():
     text = (
         "Date: 2026-11-02\n## Training week\nSquat 3 sets.\n- A (Mon): Squat 40 kg\n"
@@ -126,3 +141,15 @@ def test_export_without_the_extra_says_how_to_install_it(capsys, data_dir, monke
     code, out = run(capsys, data_dir, "plan", "export")
     assert code == 2 and "uv sync --extra pdf" in out["message"]
     assert not (data_dir / "plan.pdf").exists()
+
+
+def test_prose_bullets_are_not_exercises():
+    from coach.export import plan_exercises
+
+    text = (
+        "Date: 2026-04-01\ntarget_kcal: 2000\nin_deficit: false\n\n## Training week\n"
+        "- A (lunes): Sentadilla 51,0 kg; Press banca 34 kg\n"
+        "- Progresión: cuando completes 12 repeticiones en todas las series, sube el peso\n"
+        "- Descanso martes y jueves\n"
+    )
+    assert plan_exercises(text) == ["Sentadilla", "Press banca"]

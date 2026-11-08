@@ -29,16 +29,17 @@ the `coach` CLI.
   bpm or ppm, talk test, zones, deficit, TDEE and the others), explain it in one plain sentence
   from the glossary, in the client's language; translate CLI text such as `talk_test` rather
   than quoting it in English. Rule names in brackets, wherever these steps ask for them, go in one
-  short line at the end of the message (`Fuentes: [...]`, en: `Rules used: [...]`), not inline,
-  unless the client asks for them inline. Still cite every rule you use.
+  short line at the end of the message, just before the deferral line when there is one
+  (`Fuentes: [...]`, en: `Rules used: [...]`), not inline, unless the client asks for them inline.
+  Still cite every rule you use.
 - Load knowledge only with `coach knowledge section FILE "HEADING"`; cite the rule when you give
   advice the CLI does not print. Never read `knowledge/sources.md` whole.
 - Give each reason from `coach safety` once per conversation, in plain words with the rule name
-  in brackets in the closing rules line (one short line is enough for a reason unrelated to the task, such as heart-rate
-  zones in /menu), then any CLI note that adds something new. Name the professional the reason
-  names (prescriber, midwife or obstetrician, eating-disorder professional), else the GP. If
-  `refer_gp` is set, end with the `deferral_line` that `coach safety` prints, copied
-  exactly. Give its `instruction` first: it is the most urgent reason. Never give the
+  in brackets in the closing rules line (one short line is enough for a reason unrelated to the
+  task, such as heart-rate zones in /menu), then any CLI note that adds something new. Name the
+  professional the reason names (prescriber, midwife or obstetrician, eating-disorder
+  professional), else the GP. If `refer_gp` is set, end with the `deferral_line` that
+  `coach safety` prints, copied exactly. Give its `instruction` first: it is the most urgent reason. Never give the
   `superseded` lines as advice.
 
 ## When to use

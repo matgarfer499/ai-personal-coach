@@ -724,6 +724,11 @@ def _plan_sections(text: str) -> list[tuple[str, list[str]]]:
     return sections
 
 
+# A plan part that names a lift: up to 6 words, then a number (its load, sets or reps).
+BARE_LIFT = re.compile(r"^((?:[^\W\d_][\w()'/-]*\s+){0,3}[^\W\d_][\w()'/-]*)$")
+LIFT_PART = re.compile(r"^((?:[^\W\d_][\w()'/-]*\s+){0,5}[^\W\d_][\w()'/-]*)\s+\d")
+
+
 def plan_exercises(text: str) -> list[str]:
     """Exercise names from the training week's bullets, once each, in the order they appear.
 
@@ -732,16 +737,24 @@ def plan_exercises(text: str) -> list[str]:
     are skipped. Upgrade to a structured plan file if exercises go missing.
     """
     names: list[str] = []
+    seen: set[str] = set()
     for heading, lines in _plan_sections(text):
         if heading.casefold() not in TRAINING_WEEK:
             continue
         for line in lines:
             if not line.startswith(("- ", "* ")):
                 continue
-            label, _, lifts = RULE_NAME.sub("", line[2:]).partition(": ")  # not 18:30
+            bare = RULE_NAME.sub("", line[2:]).replace("**", "")  # `**A (lunes):**` is a label
+            label, _, lifts = bare.partition(": ")  # not 18:30
             for part in (lifts or label).split(";"):
-                name = re.split(r"\d", part, maxsplit=1)[0].strip(" .,:-")
-                if name and name.casefold() not in {n.casefold() for n in names}:
+                # A lift: a capitalised name, then its load or reps ("Sentadilla 51,0 kg"), or a
+                # bare name inside a session's list ("Zancadas"). Prose such as "cuando completes
+                # 12 repeticiones" or a label-only "Descanso martes y jueves" is not a lift.
+                part = part.strip(" .")
+                match = LIFT_PART.match(part) or (lifts and BARE_LIFT.match(part))
+                name = match.group(1).strip(" .,:-") if match else ""
+                if name and name[0].isupper() and name.casefold() not in seen:
+                    seen.add(name.casefold())
                     names.append(name)
     return names
 
@@ -813,10 +826,12 @@ def write_plan(path: Path, text: str, language: str | None, qr: bool = True) -> 
         for line in lines:
             if not line:
                 continue
-            if sources:
+            bare = RULE_NAME.sub("", line)
+            # only the rule list is small print: the review and deferral lines follow it
+            if sources and not bare.strip(" -*.,;"):
                 story.append(Paragraph(markup(line), tiny))
                 continue
-            line = RULE_NAME.sub("", line)
+            line = bare
             if line.startswith(("- ", "* ")):
                 story.append(Paragraph(markup(line[2:]), bullet, bulletText="\u2022"))
             else:
