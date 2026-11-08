@@ -119,12 +119,24 @@ def test_overweight_uses_the_reference_weight():
     assert result.protein_g == pytest.approx(2.0 * 25 * 1.8**2)
 
 
-# Beta p5-elena-I5: an overweight novice in a deficit gets the beginner band (1.6-2.0).
-def test_overweight_novice_in_a_deficit_gets_the_beginner_band():
+# Beta p5-elena-I5: an overweight beginner in a deficit lands in the rule's 1.6-2.0 g/kg of body
+# weight through the BMI-25 cap, with no extra band (which would add a cliff at BMI 25).
+def test_overweight_novice_lands_in_the_beginner_band():
     novice = lifter(sex="female", height_cm=168, weight_kg=78, experience="novice")
     result = macros(novice, 1700, in_deficit=True)
-    assert result.protein_g_per_kg == pytest.approx(1.8)
-    assert result.protein_g == pytest.approx(1.8 * 25 * 1.68**2)
+    assert 1.6 <= result.protein_g_per_kg_body <= 2.0
+    lighter = lifter(sex="female", height_cm=168, weight_kg=70.5, experience="novice")
+    heavier = lifter(sex="female", height_cm=168, weight_kg=70.6, experience="novice")
+    gap = (
+        macros(lighter, 1700, in_deficit=True).protein_g
+        - macros(heavier, 1700, in_deficit=True).protein_g
+    )
+    assert abs(gap) < 1
+
+
+# The lifter rule adjusts only for obesity: an overweight lifter at maintenance keeps body weight.
+def test_overweight_lifter_at_maintenance_uses_body_weight():
+    assert macros(lifter(weight_kg=90), 2900).protein_g == pytest.approx(1.6 * 90)
 
 
 # Beta p5-elena-I6: the output says the dose per kg of body weight too.

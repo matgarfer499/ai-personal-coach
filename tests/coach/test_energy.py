@@ -367,3 +367,9 @@ def test_energy_ranges():
     low, high = energy.rmr_range(p, TODAY)
     assert (low, high) == pytest.approx((RMR * 0.9, RMR * 1.1))
     assert energy.tdee_range(p, TODAY) == pytest.approx((RMR * 0.9 * 1.4, RMR * 1.1 * 1.5))
+
+
+def test_tdee_range_follows_a_chosen_pal():
+    p = man()
+    low, high = energy.tdee_range(p, TODAY, multiplier=1.9)
+    assert low < energy.tdee(p, multiplier=1.9, today=TODAY) < high

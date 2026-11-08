@@ -102,7 +102,7 @@ def cmd_energy(profile: Profile, args: argparse.Namespace) -> dict:
         "rmr": rmr,
         "rmr_range": energy.rmr_range(profile, args.today),
         "tdee": estimated,
-        "tdee_range": energy.tdee_range(profile, args.today, flags.no_training),
+        "tdee_range": energy.tdee_range(profile, args.today, flags.no_training, args.pal),
         "target": target,
     }
 
@@ -332,7 +332,8 @@ def cmd_import(profile: Profile, args: argparse.Namespace) -> dict:
 
 def menu_check(totals: dict, targets: dict, share: float = 1.0) -> dict:
     """'ok', 'under' or 'over' per target: kcal within [target, target + MENU_KCAL_MARGIN], protein
-    and fibre at least their targets, fat at least its minimum. Carbohydrate fills the rest.
+    at least the low end of its range, fibre at least its target, fat at least its minimum.
+    Carbohydrate fills the rest.
 
     'missing' when an item lacks the value: always for kcal; for a floor only while the known
     total is below it (the true total can only be higher).
@@ -379,7 +380,7 @@ def _free_meal(day: mealplan.Day, totals: foods.MenuTotals, targets: dict) -> di
     the planned meals, using the values the planned items have."""
     left = {
         "kcal": targets["kcal"] - totals.kcal,
-        "protein_g": targets["protein_g"] - totals.protein_g,
+        "protein_g": targets.get("protein_min_g", targets["protein_g"]) - totals.protein_g,
         "fat_g": targets["fat_min_g"] - totals.fat_g,
         "fibre_g": targets["fibre_g"] - totals.fibre_g,
     }

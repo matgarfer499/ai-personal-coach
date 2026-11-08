@@ -112,3 +112,9 @@ def test_fast_loss_gets_a_note():
     assert fast.rate_kg_week < -1.5
     assert any("Upper limit on rate of loss" in n for n in fast.notes)
     assert not weight_trend(daily(28)).notes
+
+
+def test_fast_loss_on_glp1_goes_to_the_prescriber():
+    fast = daily(28, start_kg=100, kg_per_day=-0.3)
+    note = weight_trend(fast, flags(Profile(medications=["glp1"]))).notes[0]
+    assert "tell the prescriber" in note and "reduce the deficit" not in note

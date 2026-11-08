@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from datetime import date
 
 from coach import safety
-from coach.energy import FLOOR_KCAL, OLDER_ADULT_AGE, floor_note
+from coach.energy import FLOOR_KCAL, OBESITY_BMI, OLDER_ADULT_AGE, floor_note
 from coach.profile import GLP1, Profile
 
 # nutrition.md: "EU label rules and tolerances": 4 kcal/g protein and carbohydrate, 9 fat.
@@ -21,17 +21,16 @@ PROTEIN_RANGE = (1.4, 2.2)
 # of 1.8-2.2 is the rule's own labelled convention.
 PROTEIN_DEFICIT = (1.8, 2.2)
 PROTEIN_DEFICIT_RANGE = (1.6, 2.2)
-# nutrition.md: "Protein during fat loss": about 1.6-2.0 for overweight beginners on a modest
-# deficit (the rule labels it a convention).
-PROTEIN_OVERWEIGHT_NOVICE = (1.6, 2.0)
 # nutrition.md: "Older adults: protein targets": 1.2-1.6 for older adults who lift.
 PROTEIN_OLDER = (1.2, 1.6)
 # nutrition.md: "GLP-1 users: protein, training and red flags": 1.2-1.6.
 PROTEIN_GLP1 = (1.2, 1.6)
-# convention: "Protein during fat loss" and "Daily protein target for people who lift" say to use
-# fat-free mass or goal weight for clients with more body fat; without either, the coach uses the
-# weight at BMI 25 for the client's height whenever body weight is above it (so the target never
-# jumps at a BMI boundary).
+# convention: "Protein during fat loss" says to use fat-free mass or goal weight for clients with
+# more body fat, and "Daily protein target for people who lift" says so for obesity. The coach
+# knows neither, so it caps the weight protein is based on at the weight for a reference BMI for
+# the client's height: BMI 25 in a deficit, BMI 30 (energy.OBESITY_BMI) otherwise. A cap, not a
+# switch, so protein never jumps at a BMI boundary. For an overweight beginner in a deficit it
+# lands near "about 1.6-2.0 g/kg" of body weight, the rule's own figure for them.
 REFERENCE_BMI = 25.0
 
 # nutrition.md: "Minimum dietary fat": at least about 20% of energy and 0.5 g/kg; default 20-35%.
@@ -71,18 +70,8 @@ def protein_band(
     if profile.age(today) >= OLDER_ADULT_AGE:
         return _midpoint(PROTEIN_OLDER), PROTEIN_OLDER, "Older adults: protein targets"
     if in_deficit:
-        if profile.experience == "novice" and profile.bmi() >= REFERENCE_BMI:
-            band = PROTEIN_OVERWEIGHT_NOVICE
-            return _midpoint(band), band, "Protein during fat loss"
         return _midpoint(PROTEIN_DEFICIT), PROTEIN_DEFICIT_RANGE, "Protein during fat loss"
     return PROTEIN_DEFAULT, PROTEIN_RANGE, "Daily protein target for people who lift"
-
-
-def protein_per_kg(
-    profile: Profile, in_deficit: bool, today: date | None = None
-) -> tuple[float, str]:
-    per_kg, _, rule = protein_band(profile, in_deficit, today)
-    return per_kg, rule
 
 
 def macro_targets(
@@ -107,12 +96,13 @@ def macro_targets(
         notes += flags.reasons
     per_kg, band, rule = protein_band(profile, in_deficit, today)
     notes.append(f'nutrition.md: "{rule}": {per_kg:g} g/kg/day')
-    protein_weight = min(weight, REFERENCE_BMI * (profile.require("height_cm") / 100) ** 2)
+    cap_bmi = REFERENCE_BMI if in_deficit else OBESITY_BMI
+    protein_weight = min(weight, cap_bmi * (profile.require("height_cm") / 100) ** 2)
     protein_g = per_kg * protein_weight
     if protein_weight < weight:
         notes.append(
             f"convention: protein from {protein_weight:.0f} kg, the weight at BMI "
-            f"{REFERENCE_BMI:g} for this height, instead of body weight: "
+            f"{cap_bmi:g} for this height, instead of body weight: "
             f"{protein_g / weight:.2f} g per kg of body weight"
         )
     fat_min_g = max(kcal * FAT_MIN_FRACTION / KCAL_PER_G["fat"], FAT_MIN_G_PER_KG * weight)

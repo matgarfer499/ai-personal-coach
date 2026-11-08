@@ -38,6 +38,8 @@ WEEK = 7
 # warns tends to drift upward). Callers may pass a lower value.
 ENERGY_DENSITY_KCAL_PER_KG = 7700
 # nutrition.md: "Upper limit on rate of loss: about 1.5 kg per week".
+# convention: the rule gives no window for acting, so the note fires on the trend's own window
+# (MIN_DAYS to MAX_WINDOW_DAYS).
 MAX_LOSS_KG_WEEK = 1.5
 MAX_LOSS_RULE = 'nutrition.md: "Upper limit on rate of loss: about 1.5 kg per week"'
 
@@ -103,7 +105,12 @@ def weight_trend(points: list[tuple[date, float]], flags: SafetyFlags | None = N
     if rate < -MAX_LOSS_KG_WEEK:
         notes.append(
             f"{MAX_LOSS_RULE}: losing {-rate:.2f} kg a week, faster than about "
-            f"{MAX_LOSS_KG_WEEK:g} kg: reduce the deficit"
+            f"{MAX_LOSS_KG_WEEK:g} kg: "
+            + (
+                "tell the prescriber"
+                if flags is not None and flags.prescriber_owns_weight
+                else "reduce the deficit"
+            )
         )
     return Trend(
         notes=notes,

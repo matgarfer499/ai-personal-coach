@@ -74,14 +74,20 @@ def rmr_range(profile: Profile, today: date | None = None) -> tuple[float, float
 
 
 def tdee_range(
-    profile: Profile, today: date | None = None, no_training: bool = False
+    profile: Profile,
+    today: date | None = None,
+    no_training: bool = False,
+    multiplier: float | None = None,
 ) -> tuple[float, float]:
-    """The RMR range times the client's PAL band (nutrition.md "Activity multipliers (PAL)")."""
-    level = profile.require("activity_level")
-    if no_training and level == "desk_training":
-        level = "desk"
+    """The RMR range times the PAL `tdee` used: a chosen multiplier (`--pal` or the stored
+    `pal_override`) or the client's band (nutrition.md "Activity multipliers (PAL)")."""
     low, high = rmr_range(profile, today)
-    return low * PAL_BANDS[level][0], high * PAL_BANDS[level][1]
+    if multiplier is None and pal_override_applies(profile, no_training):
+        multiplier = profile.pal_override
+    if multiplier is not None:
+        return low * multiplier, high * multiplier
+    band = PAL_BANDS[_level(profile, training=not no_training)]
+    return low * band[0], high * band[1]
 
 
 def band_midpoint(level: str) -> float:
@@ -106,10 +112,12 @@ def pal(profile: Profile, training: bool = True) -> float:
     Without training (`no_training` flag) desk_training drops to the desk band: desk work with
     little exercise (PAL_RULE). `active` stays: it may come from the job.
     """
+    return band_midpoint(_level(profile, training))
+
+
+def _level(profile: Profile, training: bool = True) -> str:
     level = profile.require("activity_level")
-    if not training and level == "desk_training":
-        level = "desk"
-    return band_midpoint(level)
+    return "desk" if not training and level == "desk_training" else level
 
 
 def tdee(
