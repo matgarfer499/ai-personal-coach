@@ -420,6 +420,15 @@ def _in_data_dir(args: argparse.Namespace, path: Path) -> Path:
     return path if path.is_absolute() else args.data_dir / path
 
 
+def _shown(args: argparse.Namespace, path: Path) -> str:
+    """The path as the JSON output shows it: relative to the data dir when inside it."""
+    return (
+        path.relative_to(args.data_dir).as_posix()
+        if path.is_relative_to(args.data_dir)
+        else str(path)
+    )
+
+
 def _meals(day: mealplan.Day) -> list[dict]:
     return [
         {"meal": m.name, "tupper": m.tupper, "free": m.free, "dishes": [d.name for d in m.dishes]}
@@ -512,12 +521,8 @@ def _export_menu(profile: Profile, args: argparse.Namespace) -> dict:
     out = _in_data_dir(args, args.out) if args.out else path.with_suffix(".pdf")
     export.write(out, document, days, table, listed, profile.language, qr=not args.no_qr)
     return {
-        "pdf": out.relative_to(args.data_dir).as_posix()
-        if out.is_relative_to(args.data_dir)
-        else str(out),
-        "menu": path.relative_to(args.data_dir).as_posix()
-        if path.is_relative_to(args.data_dir)
-        else str(path),
+        "pdf": _shown(args, out),
+        "menu": _shown(args, path),
         "days": len(days),
         "qr": not args.no_qr,
     }
@@ -529,9 +534,7 @@ def cmd_shopping(profile: Profile, args: argparse.Namespace) -> dict:
     pantry = tastes.load_tastes(args.data_dir / "tastes.yaml").pantry or []
     listed = mealplan.shopping(days, _menu_table(profile, args), profile.language, pantry)
     return {
-        "menu": path.relative_to(args.data_dir).as_posix()
-        if path.is_relative_to(args.data_dir)
-        else str(path),
+        "menu": _shown(args, path),
         "days": len(days),
         **listed,
         "note": "amounts are for the form each name gives (raw, cooked, drained); a batch is "
@@ -1144,6 +1147,11 @@ def cmd_plan(profile: Profile, args: argparse.Namespace) -> dict:
     path = args.data_dir / "plan.md"
     if not path.exists():
         raise ValueError(f"no plan at {path}: /plan writes it")
+    if args.plan_cmd == "export":
+        out = _in_data_dir(args, args.out)
+        text = path.read_text(encoding="utf-8")
+        exercises = export.write_plan(out, text, profile.language, qr=not args.no_qr)
+        return {"pdf": _shown(args, out), "exercises": exercises, "qr": not args.no_qr}
     head = path.read_text(encoding="utf-8").splitlines()[:3]
     fields = dict(line.split(":", 1) for line in head if ":" in line)
     fields = {k.strip(): v.strip() for k, v in fields.items()}
@@ -1430,13 +1438,20 @@ def build_parser() -> argparse.ArgumentParser:
         "--symptoms", default="", help=f"comma-separated: {', '.join(safety.SYMPTOMS)}"
     )
 
-    plan_cmd = add("plan", cmd_plan, "check data/plan.md's header against the CLI")
+    plan_cmd = add("plan", cmd_plan, "check data/plan.md's header, or export it as a PDF")
     plan_sub = plan_cmd.add_subparsers(dest="plan_cmd", required=True)
     check_plan = plan_sub.add_parser("check", parents=[json_flag])
     check_plan.add_argument("--goal", default=None, choices=GOALS)
     check_plan.add_argument("--pal", type=float, default=None, help="as given to /plan")
     check_plan.add_argument("--tdee", type=float, default=None, help="as given to /plan")
     check_plan.add_argument("--current-kcal", type=float, default=None, help="as given to /plan")
+    export_plan = plan_sub.add_parser(
+        "export", parents=[json_flag], help="data/plan.md as a PDF (needs the pdf extra)"
+    )
+    export_plan.add_argument(
+        "--out", type=Path, default=Path("plan.pdf"), help="default: plan.pdf in the data dir"
+    )
+    export_plan.add_argument("--no-qr", action="store_true", help="no QR code per video link")
     knowledge_cmd = add("knowledge", cmd_knowledge, "knowledge staleness and sections")
     knowledge_sub = knowledge_cmd.add_subparsers(dest="knowledge_cmd", required=True)
     stale_cmd = knowledge_sub.add_parser("stale", parents=[json_flag])

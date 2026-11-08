@@ -24,14 +24,21 @@ Writes the client's current plan to `data/plan.md`: a training week and daily nu
   `coach profile set`, rerun.
 - Speak to the client in the profile's `language` (es or en, from `coach profile show`); before
   it is set, in the language the client writes in. Keep it short and plain.
+- Plain words: the first time the client meets a term listed in `docs/glossary.md` (RIR, RPE,
+  bpm or ppm, talk test, zones, deficit, TDEE and the others), explain it in one plain sentence
+  from the glossary, in the client's language; translate CLI text such as `talk_test` rather
+  than quoting it in English. Rule names in brackets, wherever these steps ask for them, go in one
+  short line at the end of the message, just before the deferral line when there is one
+  (`Fuentes: [...]`, en: `Rules used: [...]`), not inline, unless the client asks for them inline.
+  Still cite every rule you use.
 - Load knowledge only with `coach knowledge section FILE "HEADING"`; cite the rule when you give
   advice the CLI does not print. Never read `knowledge/sources.md` whole.
 - Give each reason from `coach safety` once per conversation, in plain words with the rule name
-  in brackets (one short line is enough for a reason unrelated to the task, such as heart-rate
-  zones in /menu), then any CLI note that adds something new. Name the professional the reason
-  names (prescriber, midwife or obstetrician, eating-disorder professional), else the GP. If
-  `refer_gp` is set, end with the `deferral_line` that `coach safety` prints, copied
-  exactly. Give its `instruction` first: it is the most urgent reason. Never give the
+  in brackets in the closing rules line (one short line is enough for a reason unrelated to the
+  task, such as heart-rate zones in /menu), then any CLI note that adds something new. Name the
+  professional the reason names (prescriber, midwife or obstetrician, eating-disorder
+  professional), else the GP. If `refer_gp` is set, end with the `deferral_line` that
+  `coach safety` prints, copied exactly. Give its `instruction` first: it is the most urgent reason. Never give the
   `superseded` lines as advice.
 
 ## When to use
@@ -206,9 +213,12 @@ Knowledge, by situation: run only the lines that apply.
    8-12), comes directly after the `training_schedule:` line, or directly after the third
    header line when `training_schedule:` is absent, with no blank line or heading between.
    Then the sections Semana de entrenamiento, Cardio, Nutrición, Notas de seguridad, Fuentes (en:
-   Training week, Cardio, Nutrition, Safety notes, Rules used). Rule names stay as the knowledge
-   headings, in brackets. Then a line on when to run `/review`, and the deferral line last
-   when `refer_gp` is set.
+   Training week, Cardio, Nutrition, Safety notes, Rules used). In the training week, each
+   session is one bullet: `- A (lunes): Sentadilla 51,0 kg; Press banca 34,0 kg` (label, a colon,
+   then the lifts with their loads separated by `;`); `coach plan export` finds the exercises
+   there. Rule names stay as the knowledge headings, in brackets, listed in Fuentes (Rules
+   used). Then a line on when to run `/review`, and the deferral line last when `refer_gp` is
+   set.
 6. Run `coach plan check` (with the same `--pal`, `--tdee` or `--current-kcal` you gave
    `coach energy`). If `ok` is false, fix each line in `problems` and run it again. A line in
    `notes` (the target differs from a fresh estimate) needs no change when the target was agreed
@@ -221,7 +231,10 @@ Knowledge, by situation: run only the lines that apply.
 ## Output
 
 The plan in the profile language, as written to `data/plan.md`, then one line on when to review
-(`/review` weekly).
+(`/review` weekly). Offer a printable copy: `coach plan export` writes `data/plan.pdf` (or
+`--out FILE`), the plan with a video search link and QR code per exercise for checking
+technique (`--no-qr` leaves the codes out). A long plan may run past one page. If it fails
+saying the `pdf` extra is missing, tell the client to run `uv sync --extra pdf`.
 
 ## Safety
 
