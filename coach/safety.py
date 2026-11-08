@@ -151,8 +151,9 @@ INJURY_WORDS = (
 RUN_NAMES = ("running", "run", "runs", "correr", "carrera", "carreras", "trotar")
 
 # convention: reasons are listed most urgent first; `instruction` is the first. The order: stop
-# training (any reason ending in NO_TRAINING_NO_DEFICIT), out-of-scope and eating-disorder blocks,
-# medical hand-offs, referrals, then intensity caps (listed in docs/conventions.md).
+# training (`_is_stop`: cardiac, BP 180+, the ACSM clearance cell), out-of-scope and
+# eating-disorder blocks, medical hand-offs, referrals, then intensity caps (listed in
+# docs/conventions.md).
 PRIORITY = (
     CARDIAC,
     UNDER_18,
@@ -358,6 +359,19 @@ def symptom_token(said: str) -> str | None:
     """A symptom token for what the client said: the token itself or a known synonym."""
     key = fold(said).strip().replace(" ", "_").replace("-", "_")
     return key if key in SYMPTOMS else SYMPTOM_SYNONYMS.get(key)
+
+
+def _running_injuries(profile: Profile) -> list[dict]:
+    return [
+        i
+        for i in profile.active_injuries()
+        if any(fold(e) in RUN_NAMES for e in i.get("exercises", []))
+    ]
+
+
+def running_unassessed(profile: Profile) -> bool:
+    """An injury that lists running and no professional has assessed: no running at all."""
+    return any(not i.get("professional") for i in _running_injuries(profile))
 
 
 def running_paused(profile: Profile) -> list[str]:

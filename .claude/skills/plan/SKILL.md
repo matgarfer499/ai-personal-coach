@@ -210,7 +210,7 @@ Knowledge, by situation: run only the lines that apply.
    most of them in the easier zones; never a zone it did not print (the caps hide vigorous and
    near-maximal). Distance, per "Running load progression": the long run stays at or below
    `long_run_cap_km` from `coach runs week` (quote it; with no logged runs, ask their longest run
-   of the last 30 days and log it with `coach runs add` before planning a longer one); weekly km
+   of the last 30 days and log it with `coach runs add` before planning a longer one); with `paused` set, quote the injury's reason: unassessed, `long_run_cap_km` is null and `coach runs taper` refuses, so no runs; managed by a professional, the cap holds at the longest run within their limits); weekly km
    stay near the last logged week's `km`, built gradually; novices (the highest-risk group per
    "Common running injuries") keep weekly increases under 30% per week over 2 weeks, and the
    "10% weekly rule" is a convention, not a threshold. Quote km figures from the CLI only; when a

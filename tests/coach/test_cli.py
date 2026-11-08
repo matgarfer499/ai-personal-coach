@@ -2036,3 +2036,22 @@ def test_a_running_pause_drops_the_next_run_cap_and_the_taper(capsys, data_dir):
 def test_plain_fatigue_is_not_the_cardiac_token(capsys, data_dir):
     code, out = run(capsys, data_dir, "checkin", "add", "--symptoms", "fatigue")
     assert code == 2 and "unusual_fatigue" in out["message"]
+
+
+def test_a_managed_running_injury_holds_the_cap_and_allows_a_taper(capsys, data_dir):
+    run(capsys, data_dir, "runs", "add", "--km", "8", "--minutes", "48", "--date", "2026-03-30")
+    run(
+        capsys,
+        data_dir,
+        "injury",
+        "add",
+        "rodilla",
+        "--professional",
+        "fisio",
+        "--exercises",
+        "running",
+    )
+    _, week = run(capsys, data_dir, "runs", "week")
+    assert week["paused"] and week["long_run_cap_km"] == 8
+    code, _ = run(capsys, data_dir, "runs", "taper", "--race-date", "2026-05-01")
+    assert code == 0

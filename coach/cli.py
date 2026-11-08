@@ -385,8 +385,8 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
         if flags.no_training:
             stops = safety.stop_reasons(flags)
             raise ValueError("no taper while training is on hold: " + "; ".join(stops))
-        paused = safety.running_paused(profile)
-        if paused:
+        if safety.running_unassessed(profile):
+            paused = safety.running_paused(profile)
             raise ValueError("no taper while running is paused: " + "; ".join(paused))
         return runs.taper(args.race_date, today, logged)
     if args.runs_cmd == "add":
@@ -412,11 +412,11 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
     hr_rest, hr_max = _heart_rates(profile, args)
     shown = zones.hr_zones(profile, flags, hr_rest, hr_max, args.today)
     every = runs.zones_to_describe(profile, flags, hr_rest, hr_max, args.today)
-    week = runs.week(logged, end, shown, every, today, flags.hold_progression)
     paused = safety.running_paused(profile)
-    if paused:
-        # An injury that lists running: no next run to cap until it is assessed or cleared.
-        week = week | {"long_run_cap_km": None}
+    # Unassessed: no next run at all. Managed by a professional: no progression, the cap stays
+    # at the longest run and the professional's limits decide the rest (as for a paused lift).
+    hold = flags.hold_progression or bool(paused)
+    week = runs.week(logged, end, shown, every, today, hold, safety.running_unassessed(profile))
     return week | {"paused": paused}
 
 
@@ -814,10 +814,10 @@ def cmd_profile(profile: Profile, args: argparse.Namespace) -> dict:
         },
         "unrecognised_note": "recorded as given; no calculation depends on these items",
         "suggested_tokens": {
-            m: BP_MEDICATION
-            for m in profile.medications
-            if fold(m).endswith(BP_DRUG_ENDINGS) and BP_MEDICATION not in profile.medications
-        },
+            m: BP_MEDICATION for m in profile.medications if fold(m).endswith(BP_DRUG_ENDINGS)
+        }
+        if not profile.has_medication(BP_MEDICATION)
+        else {},
     }
 
 
