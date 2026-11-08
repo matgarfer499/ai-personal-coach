@@ -17,6 +17,9 @@ from coach.sessions.model import ExerciseSet
 
 # Exact unit definitions (international pound and mile), not coaching numbers.
 KG_PER_LB = 0.45359237
+# convention: values converted from pounds or miles keep 2 decimals (0.01 kg, 10 m), finer than
+# any plate or GPS reading; the float product carries 8 or more meaningless digits.
+IMPERIAL_DECIMALS = 2
 KM_PER_MILE = 1.609344
 
 
@@ -112,7 +115,7 @@ def metric(
     """A value from the metric column, or the imperial one converted."""
     value = number(row, metric_name, line)
     if value is None and (imperial := number(row, imperial_name, line)) is not None:
-        value = imperial * factor
+        value = round(imperial * factor, IMPERIAL_DECIMALS)
     return value
 
 

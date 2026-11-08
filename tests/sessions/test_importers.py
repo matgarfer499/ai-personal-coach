@@ -50,8 +50,8 @@ def test_hevy_bom():
 # Review Focus 2: kg vs lbs exports
 def test_hevy_lbs_and_miles_convert_to_metric():
     sets = hevy_csv.HevyCsv().read(HEVY / "lbs.csv")
-    assert sets[0].weight_kg == pytest.approx(135 * 0.45359237)
-    assert sets[1].distance_km == pytest.approx(2 * 1.609344)
+    assert sets[0].weight_kg == round(135 * 0.45359237, 2) == 61.23  # stored to 0.01 kg
+    assert sets[1].distance_km == round(2 * 1.609344, 2)
 
 
 # Review Focus 2: duplicate rows across overlapping exports
@@ -178,7 +178,7 @@ def test_generic_bad_values_name_the_problem(tmp_path, row, message):
 
 def test_generic_lbs():
     sets = generic_csv.GenericCsv().read(GENERIC / "lbs.csv")
-    assert sets[0].weight_kg == pytest.approx(225 * 0.45359237)
+    assert sets[0].weight_kg == round(225 * 0.45359237, 2) == 102.06
 
 
 def test_registry_detects_and_refuses_unknown(tmp_path):
@@ -235,7 +235,7 @@ def test_generic_runs_csv_converts_miles_and_seconds():
     from coach.sessions.importers import generic_runs_csv
 
     (run,) = generic_runs_csv.GenericRunsCsv().read(RUNS / "miles_seconds.csv")
-    assert run.km == pytest.approx(5 * 1.609344)
+    assert run.km == round(5 * 1.609344, 2) == 8.05
     assert run.minutes == 45
 
 

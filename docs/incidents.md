@@ -74,3 +74,5 @@ One line per bug that reached main: what broke, and which review layer should ha
 - 2026-11-08 (beta2 p4-sara-I2): a catalogue product and the generic food it stands for got two
   shopping lines in different stores. Layer: tests (no fixture with a product and its generic food
   in one menu).
+- 2026-11-08 (beta2 p2-marcus-I3): imports in pounds stored kg with 8 or more decimals.
+  Layer: tests (lbs fixtures checked with approx, never the stored text).

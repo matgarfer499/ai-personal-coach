@@ -17,7 +17,7 @@ from typing import Any
 
 import yaml
 
-from coach.safety import Pause, SafetyFlags
+from coach.safety import SPRINT_FORMATS, Pause, SafetyFlags
 from coach.text import fold
 
 MUSCLE_MAP_PATH = Path(__file__).with_name("muscle_map.yaml")
@@ -312,7 +312,10 @@ def progression(
             "hold",
             _held_load(history),
             rep_range,
-            ["same load and reps as last session until a clinician reviews", *flags.reasons],
+            [
+                "same load and reps as last session until a clinician reviews",
+                *(r for r in flags.reasons if SPRINT_FORMATS not in r),
+            ],
         )
     return suggestion
 

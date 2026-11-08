@@ -2287,3 +2287,14 @@ def test_runs_plan_hold_note_is_dropped_inside_the_taper(capsys, data_dir):
     _, plan = run(capsys, data_dir, "runs", "plan")
     assert plan["taper"]["in_window"] is True and plan["weekly_km_max"] is None
     assert not any("weekly km stay at last_week_km" in n for n in plan["notes"])
+
+
+# Beta2 p2-marcus-I3: a load in pounds is stored in kg to 2 decimals, not 8.
+def test_import_in_pounds_stores_two_decimals(capsys, data_dir, tmp_path):
+    lbs = tmp_path / "lbs.csv"
+    lbs.write_text(
+        "date,exercise,weight_lbs,reps\n2025-07-24 11:25,Bench Press,140,8\n", encoding="utf-8"
+    )
+    run(capsys, data_dir, "import", str(lbs))
+    stored = next(data_dir.rglob("*.csv")).read_text(encoding="utf-8")
+    assert "63.5," in stored and "63.50293" not in stored
