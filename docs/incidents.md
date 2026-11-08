@@ -88,3 +88,7 @@ One line per bug that reached main: what broke, and which review layer should ha
 - 2026-11-08 (beta3 p3-antonio-N6, p6-james-N11, p1-lucia-N10, p1-lucia-N11): a symptom stop had
   no documented exit; `medically_cleared` did not lift it and an undocumented `profile set`
   cleared it with no clinician. Layer: plan review (a stop shipped without its exit).
+- 2026-11-08 (beta3 p5-elena-N1, p5-elena-N2, p5-elena-N4, p2-marcus-N2, p6-james-N15): `plan
+  check` compared session counts and kcal only, so content errors passed. Layer: code review
+  (a check named for the plan that read only its header).
+- 2026-11-08 (beta3 p6-james-N13): Push-up unmapped. Layer: tests.
