@@ -791,10 +791,18 @@ def plan_exercises(text: str) -> list[str]:
     return names
 
 
+SETS_X_REPS = re.compile(r"\d\s*[x×]\s*\d")
+
+
 def _session_bullets(parts: list) -> set[int]:
-    """Bullets that list at least one lift after a label (`- A: Squat 40 kg`): the sessions.
-    A prose or rest bullet with a colon ("Progresión: cuando completes...") names no lift."""
-    return {bullet for bullet, _, name, in_session in parts if in_session and name}
+    """Bullets that list a lift, or a part with sets x reps, after a label (`- A: Squat 3x8`): the
+    sessions, so a session whose lifts are all unread is still checked. A prose or rest bullet
+    with a colon ("Progresión: cuando completes...") has neither."""
+    return {
+        bullet
+        for bullet, part, name, in_session in parts
+        if in_session and (name or SETS_X_REPS.search(part))
+    }
 
 
 def plan_unread(text: str) -> list[str]:

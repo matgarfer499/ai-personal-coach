@@ -196,3 +196,16 @@ def test_prose_and_rest_bullets_with_a_colon_are_neither_unread_nor_sessions():
         "- Miércoles: descanso\n"
     )
     assert plan_unread(text) == [] and plan_sessions(text) == 1
+
+
+def test_a_session_whose_lifts_are_all_unread_is_still_a_session():
+    text = (
+        "## Training week\n"
+        "- A (lunes): Press militar con mancuernas sentado en banco 3x10\n"
+        "- B: sentadilla 3x8\n"
+    )
+    assert plan_unread(text) == [
+        "Press militar con mancuernas sentado en banco 3x10",
+        "sentadilla 3x8",
+    ]
+    assert plan_sessions(text) == 2
