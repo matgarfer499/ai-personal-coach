@@ -137,7 +137,11 @@ Ask about one step per message. Store each answer as soon as you have it with
 6. **Medications and conditions.** Ask what they take and any diagnoses. Map to tokens with the
    table in `docs/safety.md` and store them as `medications` and `conditions`, each list in one
    `coach profile set` (it replaces the list, so give every item, comma-separated). Store unknown
-   names as given and say the coach cannot classify them. Women: pregnant or planning? (`pregnant`, `planning_pregnancy`; no token means no). With
+   names as given; `coach profile show` lists them under `unrecognised`: say they are recorded
+   and no calculation depends on them (a blood-pressure medicine such as enalapril also means
+   asking whether they have `hypertension`). No medications or no diagnoses: store `none`
+   (an empty list). Women: pregnant or planning? Add `pregnant` or `planning_pregnancy` to the
+   `conditions` list (they are condition tokens, not fields); neither means no. With
    `hypertension`, or if they know their blood pressure: latest seated reading after 5 min rest,
    stored as `screening.bp_systolic` and `screening.bp_diastolic`. With hypertension and no
    reading (also when they only say it is "controlled"), store nothing: the CLI then applies the
@@ -177,7 +181,7 @@ Ask about one step per message. Store each answer as soon as you have it with
    the lower plausible multiplier when unsure"). Say so in one line: the weight trend corrects
    it after 2-4 weeks.
 9. **Check.** `coach profile show`: `missing` must be empty. Ask as in step 1 only if
-   `emergency_number` is listed; if the client declines, store `none` and do not ask again. Go on
+   `emergency_number` is listed (it is not when the region supplies one); if the client declines, store `none` and do not ask again. Go on
    to step 10 when `missing` is empty. Mention any `unrecognised` items.
 10. **Targets.** Run `coach safety`, then `coach energy`, `coach macros` and `coach zones`.
     Only when `use_rpe_not_hr` is false, ask for a morning resting pulse (`--hr-rest N`) and an

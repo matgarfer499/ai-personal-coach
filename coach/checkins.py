@@ -17,6 +17,27 @@ RANGES = {
 }
 
 
+# convention: a typo check, not coaching: nutrition.md "Read the scale with weekly averages"
+# puts normal within-week swings near 0.35% of body weight, so a change of more than 1 kg per
+# day from the nearest other weigh-in is flagged for the client to confirm.
+JUMP_KG_PER_DAY = 1.0
+
+
+def weight_jump(checkin: Checkin, earlier: list[Checkin]) -> str | None:
+    """A warning when the new weight is implausibly far from the nearest other weigh-in."""
+    others = [c for c in earlier if c.weight_kg is not None and c.date != checkin.date]
+    if checkin.weight_kg is None or not others:
+        return None
+    near = min(others, key=lambda c: abs((c.date - checkin.date).days))
+    change, days = checkin.weight_kg - near.weight_kg, abs((near.date - checkin.date).days)
+    if abs(change) <= JUMP_KG_PER_DAY * days:
+        return None
+    return (
+        f"weight {checkin.weight_kg:g} kg is {abs(change):g} kg away from {near.weight_kg:g} kg on "
+        f"{near.date} ({days} day{'s' if days > 1 else ''}): stored; confirm it is not a typo"
+    )
+
+
 @dataclass
 class Checkin:
     date: date
@@ -56,7 +77,8 @@ def read_checkins(path: Path) -> list[Checkin]:
         return [_parse(row) for row in reader]
 
 
-def append_checkin(checkin: Checkin, path: Path) -> None:
+def append_checkin(checkin: Checkin, path: Path) -> Checkin:
+    """Stores the day's check-in, merged with any earlier one that day; returns the stored row."""
     for name, (low, high) in RANGES.items():
         value = getattr(checkin, name)
         if value is not None and not low <= value <= high:
@@ -76,6 +98,7 @@ def append_checkin(checkin: Checkin, path: Path) -> None:
         writer.writerow(FIELDS)
         for row in rows:
             writer.writerow(["" if v is None else v for v in astuple(row)])
+    return checkin
 
 
 def weigh_ins(checkins: list[Checkin]) -> list[tuple[date, float]]:

@@ -52,7 +52,9 @@ Records one day in `data/checkins.csv` and watches for red flags. Short and freq
 2. Collect, in one short message if possible: weight (this morning, after the toilet, before
    eating, per `coach knowledge section nutrition "Read the scale with weekly averages"`), waist
    (once a week is enough), logged kcal for yesterday if they track, hours slept last night,
-   anything notable. Missed days are not filled in afterwards.
+   anything notable. Missed days are not filled in afterwards, unless the client
+   gives the figures they noted on those days: then one `coach checkin add --date D` per day,
+   oldest first. A date after today is refused: ask which day they meant.
 3. Red flags, every check-in. When an answer to one of these is "not sure", describe the sign
    once more in plain words; if still unsure, treat it as absent and tell them to act as below
    if it appears.

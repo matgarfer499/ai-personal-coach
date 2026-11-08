@@ -1460,3 +1460,55 @@ def test_checkin_symptoms_are_kept_when_another_field_is_refused(capsys, data_di
 def test_checkin_records_neck_jaw_or_arm_pain(capsys, data_dir):
     code, out = run(capsys, data_dir, "checkin", "add", "--symptoms", "neck_jaw_arm_pain")
     assert code == 0 and out["symptoms"] == ["neck_jaw_arm_pain"]
+
+
+# Beta p1-lucia-I1, p6-james-I1: no check-ins dated after today.
+def test_checkin_refuses_a_future_date(capsys, data_dir):
+    code, out = run(capsys, data_dir, "checkin", "add", "--date", "2026-04-02", "--weight", "80")
+    assert code == 2 and "after today" in out["message"]
+    assert not (data_dir / "checkins.csv").exists()
+    code, _ = run(capsys, data_dir, "checkin", "add", "--date", TODAY, "--weight", "80")
+    assert code == 0
+
+
+# Beta p1-lucia-I2: the echo is the row as stored, plus the fields just given.
+def test_checkin_echo_shows_the_merged_row(capsys, data_dir):
+    run(capsys, data_dir, "checkin", "add", "--weight", "81", "--intake", "1700", "--sleep", "6.5")
+    _, out = run(capsys, data_dir, "checkin", "add", "--weight", "81.7")
+    assert out["weight_kg"] == 81.7 and out["intake_kcal"] == 1700 and out["sleep_hours"] == 6.5
+    assert out["given"] == ["weight_kg"]
+
+
+# Beta p1-lucia-I4, p4-sara-I5, p5-elena-I12: "none" means an empty list.
+@pytest.mark.parametrize("value", ["none", "None", "no", "ninguno", "ninguna", "nada"])
+def test_profile_none_medications_is_an_empty_list(capsys, data_dir, value):
+    _, out = run(capsys, data_dir, "profile", "set", "medications", value)
+    assert out["profile"]["medications"] == [] and out["unrecognised"]["medications"] == []
+
+
+# Beta p1-lucia-I3, p4-sara-I4: pregnancy is a condition token, not a field.
+def test_profile_set_pregnant_points_to_conditions(capsys, data_dir):
+    code, out = run(capsys, data_dir, "profile", "set", "pregnant", "true")
+    assert code == 2 and "conditions pregnant" in out["message"]
+
+
+# Beta p3-antonio-I7: an unknown medication is recorded, and the output says so plainly.
+def test_unrecognised_items_are_explained(capsys, data_dir):
+    _, out = run(capsys, data_dir, "profile", "set", "medications", "enalapril")
+    assert out["unrecognised"]["medications"] == ["enalapril"]
+    assert "no calculation depends on" in out["unrecognised_note"]
+
+
+# Beta p3-antonio-I6: the region's number counts, so it is not asked for again.
+def test_region_emergency_number_is_not_missing(capsys, data_dir):
+    _, out = run(capsys, data_dir, "profile", "set", "region", "es")
+    assert "emergency_number" not in out["missing"]
+
+
+# Beta p6-james-I1: a typo such as 99 for 72 kg is flagged, not silently stored.
+def test_checkin_warns_on_an_implausible_weight_jump(capsys, data_dir):
+    run(capsys, data_dir, "checkin", "add", "--date", "2026-03-30", "--weight", "72")
+    _, out = run(capsys, data_dir, "checkin", "add", "--weight", "99")
+    assert any("27" in w and "2026-03-30" in w for w in out["warnings"])
+    _, calm = run(capsys, data_dir, "checkin", "add", "--date", "2026-03-31", "--weight", "72.4")
+    assert calm["warnings"] == []
