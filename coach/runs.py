@@ -152,6 +152,38 @@ def append_runs(new: list[Run], path: Path) -> AppendResult:
     return AppendResult(added=len(added), duplicates=len(new) - len(added))
 
 
+# cardio-health.md: "Half-marathon goal pace from a recent race": Riegel's formula with k = 1.07,
+# from a recent shorter race, calibrated for races up to the half marathon; not for a marathon.
+RIEGEL_RULE = 'cardio-health.md: "Half-marathon goal pace from a recent race"'
+RIEGEL_K = 1.07
+RIEGEL_MAX_KM = 21.1
+# recovery-habits.md: "Overreaching warning signs and the response": the reactive deload cuts
+# training volume by about 30-50% for a week (strength.DELOAD_VOLUME_CUT; for a runner, weekly
+# km), intensity kept.
+RUN_DELOAD_RULE = 'recovery-habits.md: "Overreaching warning signs and the response"'
+
+
+def riegel(known_s: float, known_km: float, race_km: float) -> float:
+    """Predicted seconds for race_km from a known result (Riegel, k = RIEGEL_K)."""
+    return known_s * (race_km / known_km) ** RIEGEL_K
+
+
+def longest_within_cap(runs: list[Run], start: date, end: date) -> float | None:
+    """The longest run from start to end, each run counting at most at its own cap (SPIKE_RATIO
+    times the longest capped run of the 30 days before it), in date order, so a chain of spikes
+    never lifts the next cap: under a hold the next long run never repeats a spike (convention,
+    docs/conventions.md)."""
+    counted: list[tuple[date, float]] = []
+    for run in sorted(runs, key=lambda r: r.date):
+        before = [
+            km
+            for day, km in counted
+            if run.date - timedelta(days=SPIKE_LOOKBACK_DAYS) <= day < run.date
+        ]
+        counted.append((run.date, min(run.km, max(before) * SPIKE_RATIO) if before else run.km))
+    return max((km for day, km in counted if start <= day <= end), default=None)
+
+
 def longest(runs: list[Run], start: date, end: date) -> float | None:
     """The longest run from start to end, both included."""
     return max((r.km for r in runs if start <= r.date <= end), default=None)
@@ -200,7 +232,8 @@ def week(
     """The 7 days ending on `end`: totals, the week before, spikes, the next run's cap and,
     with HR zones, minutes per zone. `shown` is `coach zones` (capped); `every` the uncapped
     zones (`zones_to_describe`). The next run's cap counts back from `today` (default `end`);
-    with `hold_progression` (safety) it is the longest run itself, SPIKE_RATIO not applied, and
+    with `hold_progression` (safety or a managed injury) it is the longest run itself, a spike
+    counting at its own cap (`longest_within_cap`), SPIKE_RATIO not applied, and
     with `paused` (an injury that lists running, `safety.running_paused`) there is none."""
     start = end - timedelta(days=6)
     days = [r for r in runs if start <= r.date <= end]
@@ -252,14 +285,16 @@ def week(
     else:
         notes += shown.notes  # no zones at all (training on hold, or the cardiac team's zones)
     today = today or end
-    cap_base = longest(runs, today - timedelta(days=SPIKE_LOOKBACK_DAYS - 1), today)
+    lookback = today - timedelta(days=SPIKE_LOOKBACK_DAYS - 1)
+    cap_base = (longest_within_cap if hold_progression else longest)(runs, lookback, today)
     if paused or shown.method == "no_training":
         cap_base = None  # training on hold or running paused: no next run to cap
     ratio = 1.0 if hold_progression else SPIKE_RATIO
     if hold_progression and cap_base is not None:
         notes.append(
-            "progression is on hold (coach safety): the next long run stays at or below the "
-            f"longest run of the last {SPIKE_LOOKBACK_DAYS} days"
+            "progression is on hold (coach safety or a managed injury): the next long run stays "
+            f"at or below the longest run of the last {SPIKE_LOOKBACK_DAYS} days, a spike run "
+            "counting at its own cap"
         )
     return {
         "week": {"start": start, "end": end},
