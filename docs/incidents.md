@@ -54,3 +54,6 @@ One line per bug that reached main: what broke, and which review layer should ha
 - 2026-11-08 (beta2 p2-marcus-I2, p7-nuevo-I4): Hevy names ("Hack Squat (Machine)"), dumbbell
   and goblet variants were unmapped, so weekly sets were undercounted. Layer: tests (no fixture
   used equipment-prefixed or Hevy names in plan-sets).
+- 2026-11-08 (beta2 p1-lucia-I1, p2-marcus-I1, p6-james-I3): `coach plan export` silently dropped
+  exercises with 5+ word names, a "(Barbell)" part or no load, and `plan check` stayed ok.
+  Layer: tests (fixtures used only short, loaded Spanish names).
