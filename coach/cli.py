@@ -343,7 +343,16 @@ def _strength_alias(args: argparse.Namespace) -> dict:
                 + ", ".join(list(muscle_map)[:6])
             )
         name = args.name.strip()
-        aliases[name] = next(k for k, v in muscle_map.items() if v is entry)
+        if not name:
+            raise ValueError("give the name as the client logs it")
+        key = next(k for k, v in muscle_map.items() if v is entry)
+        # A name the map already gives to another lift keeps that lift: refuse a dead alias.
+        merged = strength.with_aliases({**aliases, name: key})
+        found = strength.lookup(name, merged)
+        if found is not merged[key]:
+            other = next(k for k, v in merged.items() if v is found)
+            raise ValueError(f"{name!r} already names {other!r} in the muscle map")
+        aliases[name] = key
         path = args.data_dir / strength.PERSONAL_ALIASES
         path.write_text(yaml.safe_dump(aliases, allow_unicode=True), encoding="utf-8")
     return {"aliases": aliases}
@@ -362,6 +371,7 @@ def cmd_import(profile: Profile, args: argparse.Namespace) -> dict:
     future = [s for s in read if not s.is_empty and s.date > today]
     sets = [s for s in read if not s.is_empty and s.date <= today]
     store = args.data_dir / "sessions.csv"
+    muscle_map = strength.muscle_map_for(args.data_dir)  # before storing: a bad file stops here
     # The same workout imported through two importers is stored twice (the key includes the
     # source) and would double-count weekly sets, so say so.
     other_starts = {s.start_time for s in read_sets(store) if s.source != importer.name}
@@ -390,7 +400,7 @@ def cmd_import(profile: Profile, args: argparse.Namespace) -> dict:
         "skipped_future": len(future),
         "skipped_empty": len(leftovers),
         # Names the muscle map does not know: their sets count towards no muscle until mapped.
-        "unmapped": strength.unmapped_exercises(sets, strength.muscle_map_for(args.data_dir)),
+        "unmapped": strength.unmapped_exercises(sets, muscle_map),
         "first_day": days[0] if days else None,
         "last_day": days[-1] if days else None,
         "warnings": warnings,
@@ -847,6 +857,7 @@ def _find_injury(profile: Profile, area: str) -> dict | None:
 
 
 def cmd_injury(profile: Profile, args: argparse.Namespace) -> dict:
+    muscle_map = strength.muscle_map_for(args.data_dir)  # before saving: a bad file stops here
     if args.injury_cmd == "add":
         injury = _find_injury(profile, args.area)
         if injury is not None and injury["status"] == "cleared":
@@ -874,7 +885,6 @@ def cmd_injury(profile: Profile, args: argparse.Namespace) -> dict:
         save_profile(profile, args.data_dir / "profile.yaml")
     # Listed names that match no logged lift pause nothing: the skill asks for the logged name.
     logged = {s.exercise for s in read_sets(args.data_dir / "sessions.csv")}
-    muscle_map = strength.muscle_map_for(args.data_dir)
     listed = [e for i in profile.active_injuries() for e in i.get("exercises", [])]
     unmatched = [
         e

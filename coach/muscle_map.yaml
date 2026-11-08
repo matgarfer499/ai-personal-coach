@@ -146,7 +146,18 @@ plank:
     russian twist, pallof press]
 # Cardio logged in a lifting app (Hevy logs runs and rides) is not resistance training, so it adds
 # no hard sets to any muscle ("Default counting rule: direct 1, indirect 0.5" counts lifting sets).
+# One entry per kind, so an injury that pauses running does not pause cycling or walking.
 running:
   muscles: {}
-  aliases: [run, treadmill, cycling, bike, stationary bike, elliptical, walking, rowing machine,
-    correr, carrera, cinta, bicicleta, bicicleta estática, elíptica, caminar]
+  aliases: [run, treadmill, correr, carrera, cinta]
+cycling:
+  muscles: {}
+  aliases: [bike, stationary bike, bicicleta, bicicleta estática]
+elliptical:
+  muscles: {}
+  aliases: [elíptica]
+walking:
+  muscles: {}
+  aliases: [caminar]
+rowing machine:
+  muscles: {}

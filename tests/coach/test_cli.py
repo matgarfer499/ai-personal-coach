@@ -2074,3 +2074,9 @@ def test_strength_alias_add_stores_a_personal_alias(capsys, data_dir):
     assert code == 0 and out["aliases"] == {"Zercher Carry Thing": "squat"}
     code, out = run(capsys, data_dir, "strength", "alias", "add", "Otra", "no such lift")
     assert code == 2 and "no such lift" in out["message"]
+    code, out = run(capsys, data_dir, "strength", "alias", "add", "  ", "squat")
+    assert code == 2
+    # "Fly" already names the chest fly: a personal alias for it would never be used.
+    code, out = run(capsys, data_dir, "strength", "alias", "add", "Fly", "rear delt fly")
+    assert code == 2 and "chest fly" in out["message"]
+    assert not (data_dir / "muscle_aliases.yaml").read_text(encoding="utf-8").count("Fly")

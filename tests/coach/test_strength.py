@@ -505,6 +505,10 @@ def test_injury_pause_matches_a_spanish_name():
         ("Rear Delt Reverse Fly (Dumbbell)", "rear delt fly"),
         ("Pájaros con mancuernas", "rear delt fly"),
         ("Curl de bíceps con mancuernas", "bicep curl"),
+        ("Sentadilla en Smith", "squat"),
+        ("Curl con cable", "bicep curl"),
+        ("Press de hombro con máquina", "shoulder press"),
+        ("Press inclinado mancuernas", "incline bench press"),
     ],
 )
 def test_common_exercise_names_map(logged, expected):
@@ -524,3 +528,17 @@ def test_personal_aliases_extend_the_map(tmp_path):
     muscle_map = muscle_map_for(tmp_path)
     assert lookup("mi remo raro", muscle_map) is muscle_map["bent over row"]
     assert lookup("mi remo raro", load_muscle_map()) is None  # the built-in map is untouched
+
+
+@pytest.mark.parametrize("text", ["Mi remo: renamed lift\n", "Mi remo: [\n", "- a list\n"])
+def test_a_broken_personal_alias_file_is_a_clear_error(tmp_path, text):
+    (tmp_path / "muscle_aliases.yaml").write_text(text, encoding="utf-8")
+    with pytest.raises(ValueError, match="muscle_aliases.yaml"):
+        muscle_map_for(tmp_path)
+
+
+def test_cardio_kinds_are_not_one_lift():
+    # A running injury must not pause cycling or walking logged in a lifting app.
+    mm = load_muscle_map()
+    assert not named_in("Cycling", ["running"], mm)
+    assert not named_in("Walking", ["Running"], mm)

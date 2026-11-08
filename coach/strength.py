@@ -127,19 +127,20 @@ EQUIPMENT_WORDS = (
     "one-arm",
     "single arm",
     "single-arm",
-    "con barra",
-    "con mancuernas",
-    "con mancuerna",
-    "con kettlebell",
-    "con polea",
-    "en polea",
-    "en maquina",
-    "en multipower",
+    "barra",
+    "mancuernas",
+    "mancuerna",
+    "polea",
+    "maquina",
+    "multipower",
     "a una mano",
     "a un brazo",
     "en copa",
 )
-_EQUIPMENT_RE = re.compile(r"\b(?:" + "|".join(map(re.escape, EQUIPMENT_WORDS)) + r")\b")
+# A Spanish "con" or "en" before the word goes with it ("en Smith", "con cable").
+_EQUIPMENT_RE = re.compile(
+    r"\b(?:(?:con|en)\s+)?(?:" + "|".join(map(re.escape, EQUIPMENT_WORDS)) + r")\b"
+)
 
 
 def _plain(folded: str) -> str:
@@ -206,19 +207,35 @@ PERSONAL_ALIASES = "muscle_aliases.yaml"  # in the data dir: logged name -> map 
 
 def personal_aliases(data_dir: Path) -> dict[str, str]:
     path = Path(data_dir) / PERSONAL_ALIASES
-    return (yaml.safe_load(path.read_text(encoding="utf-8")) or {}) if path.exists() else {}
+    if not path.exists():
+        return {}
+    try:
+        aliases = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError as err:
+        raise ValueError(f"{path} is not valid YAML: {err}") from err
+    if not isinstance(aliases, dict):
+        raise ValueError(f"{path} must map each logged name to a lift in the muscle map")
+    return {str(k): v for k, v in aliases.items()}
 
 
-def muscle_map_for(data_dir: Path) -> dict[str, dict]:
-    """The built-in map plus the client's aliases (a new dict; the built-in one is untouched)."""
-    extra = personal_aliases(data_dir)
+def with_aliases(extra: dict[str, str]) -> dict[str, dict]:
+    """The built-in map plus extra aliases (a new dict; the built-in one is untouched)."""
     if not extra:
         return load_muscle_map()
     merged = {k: dict(v) for k, v in load_muscle_map().items()}
     for name, target in extra.items():
-        entry = merged[target]
-        entry["aliases"] = [*entry.get("aliases", []), name]
+        if target not in merged:
+            raise ValueError(
+                f"{PERSONAL_ALIASES}: {name!r} points to {target!r}, which is not in the muscle "
+                "map; fix it with `coach strength alias add`"
+            )
+        merged[target]["aliases"] = [*merged[target].get("aliases", []), name]
     return merged
+
+
+def muscle_map_for(data_dir: Path) -> dict[str, dict]:
+    """The built-in map plus the client's aliases in the data dir."""
+    return with_aliases(personal_aliases(data_dir))
 
 
 def weekly_hard_sets(sets: list[Any], muscle_map: dict[str, dict]) -> dict[str, float]:
