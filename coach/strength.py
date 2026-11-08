@@ -294,7 +294,7 @@ def progression(
     towards a stall.
     """
     if flags and flags.no_training:
-        return Suggestion("no_training", None, rep_range, list(flags.reasons))
+        return Suggestion("no_training", None, rep_range, _lift_reasons(flags))
     suggestion = _progression(history, today, rep_range, muscle_map, stall_after)
     paused = flags.paused_exercises if flags else {}
     mapped = muscle_map or load_muscle_map()
@@ -312,12 +312,14 @@ def progression(
             "hold",
             _held_load(history),
             rep_range,
-            [
-                "same load and reps as last session until a clinician reviews",
-                *(r for r in flags.reasons if SPRINT_FORMATS not in r),
-            ],
+            ["same load and reps as last session until a clinician reviews", *_lift_reasons(flags)],
         )
     return suggestion
+
+
+def _lift_reasons(flags: SafetyFlags) -> list[str]:
+    """The safety reasons that concern a lift (the sprint-formats line does not)."""
+    return [r for r in flags.reasons if SPRINT_FORMATS not in r]
 
 
 def named_in(

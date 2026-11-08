@@ -382,3 +382,10 @@ def test_a_surplus_says_its_percent_and_the_expected_gain():
     assert result.expected_gain_kg_week == (0.2, 0.4)  # 80 kg x 0.25% and 0.5%
     held = target(man(goal="maintenance"))
     assert held.surplus_pct == 0 and held.expected_gain_kg_week is None
+
+
+def test_a_floor_raise_is_no_expected_gain():
+    """A target raised to the floor above maintenance is not a muscle-gain surplus."""
+    result = target(woman(goal="maintenance"), tdee_kcal=1100)
+    assert result.clamped and result.surplus == 100
+    assert result.expected_gain_kg_week is None

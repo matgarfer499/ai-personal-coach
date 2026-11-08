@@ -2296,5 +2296,5 @@ def test_import_in_pounds_stores_two_decimals(capsys, data_dir, tmp_path):
         "date,exercise,weight_lbs,reps\n2025-07-24 11:25,Bench Press,140,8\n", encoding="utf-8"
     )
     run(capsys, data_dir, "import", str(lbs))
-    stored = next(data_dir.rglob("*.csv")).read_text(encoding="utf-8")
+    stored = (data_dir / "sessions.csv").read_text(encoding="utf-8")
     assert "63.5," in stored and "63.50293" not in stored

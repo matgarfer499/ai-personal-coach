@@ -148,7 +148,7 @@ class Target:
     clamped: bool = False
     surplus: int = 0  # kcal above maintenance
     surplus_pct: float = 0.0  # the surplus as a percent of maintenance
-    expected_gain_kg_week: tuple[float, float] | None = None  # with a surplus only
+    expected_gain_kg_week: tuple[float, float] | None = None  # muscle_gain surplus only
     notes: list[str] = field(default_factory=list)
 
 
@@ -269,7 +269,7 @@ def calorie_target(
         )
     surplus = max(0, kcal - round(maintenance))
     gain = None
-    if surplus:
+    if surplus and goal == "muscle_gain":  # a raise to the floor is not a gain surplus
         weight = profile.require("weight_kg")
         gain = tuple(round(weight * share, 2) for share in GAIN_SHARE_PER_WEEK)
     return Target(
@@ -277,7 +277,7 @@ def calorie_target(
         maintenance=maintenance,
         deficit=max(0, round(maintenance) - kcal),
         surplus=surplus,
-        surplus_pct=round(100 * surplus / maintenance, 1) if surplus else 0.0,
+        surplus_pct=round(100 * surplus / maintenance, 1),
         expected_gain_kg_week=gain,
         clamped=clamped,
         notes=notes,

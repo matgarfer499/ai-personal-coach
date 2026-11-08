@@ -141,9 +141,9 @@ Knowledge, by situation: run only the lines that apply.
 - Goal fat_loss:
   - `coach knowledge section nutrition "Deficit size when keeping or building muscle"`
   - `coach knowledge section nutrition "Resistance training during any diet, especially for older adults"`
-- Goal muscle_gain: `coach knowledge section nutrition "Surplus size for muscle gain"`; say the
-  target's `surplus_pct` and `expected_gain_kg_week` (from `coach energy`) as the weekly gain to
-  expect, judged on the weekly average weight
+- Goal muscle_gain: `coach knowledge section nutrition "Surplus size for muscle gain"`; when the
+  target has a surplus, say its `surplus_pct` and `expected_gain_kg_week` (from `coach energy`)
+  as the weekly gain to expect, judged on the weekly average weight
 - Goal recomposition: `coach knowledge section nutrition "Body recomposition"`
 - Runners (`sport` running or both):
   - `coach knowledge section cardio-health "Running load progression: cap single-run spikes, not just weekly totals"`
@@ -297,9 +297,10 @@ saying the `pdf` extra is missing, tell the client to run `uv sync --extra pdf`.
   a clinician's review comes first.
 - `cap_moderate` or `review_before_vigorous`: no vigorous or maximal work (HIIT, 1RM tests,
   all-out sprints, jump rope, plyometric jumps, near-maximal lifts, runs in a vigorous or
-  near-maximal zone, race efforts). Near-maximal lifts are the 1RM tests that
+  near-maximal zone, race efforts). Near-maximal lifts include the 1RM tests that
   "PAR-Q+ specific thresholds" names as maximal work; the knowledge base has no rep or %1RM
-  cut-off, so do not invent one. With
+  cut-off, so (convention, the cautious side) also count any max attempt and any heavy single,
+  double or triple as near-maximal. With
   `review_before_vigorous`, say a qualified exercise professional or clinician reviews it first
   if the client wants it; record that review with `coach profile set
   screening.vigorous_reviewed true` only when the client says it happened.

@@ -102,6 +102,9 @@ Every one is labelled where it lives: `# convention:` in code, "convention", "he
 
 ### In the skills (`.claude/skills/`)
 
+- /plan: "near-maximal lifts" under `cap_moderate` or `review_before_vigorous` are 1RM tests
+  (recovery-habits.md "PAR-Q+ specific thresholds") plus, as the cautious side of a missing
+  cut-off (research dropped it, D272), any max attempt and any heavy single, double or triple.
 - /setup: `desk_training` means about 1 h of training on 4 or more days ("most days" read as 4+);
   conventions: a self-reported range such as "3-4" takes the lower number, and 4 days in most
   weeks is `desk_training` (3-4 days is `desk`). If unsure which, `desk`, per nutrition.md

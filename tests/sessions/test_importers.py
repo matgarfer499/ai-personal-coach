@@ -261,3 +261,13 @@ def test_generic_runs_csv_reads_a_notes_column(tmp_path):
     assert detect(log).name == "generic_runs_csv"
     (run,) = get("generic_runs_csv").read(log)
     assert run.notes == "easy"
+
+
+# Run.key rounds minutes to 1 decimal: a pre-rounded 10.048 (10.05) would key as 10.1, not 10.0.
+def test_generic_runs_csv_keeps_seconds_unrounded(tmp_path):
+    from coach.sessions.importers import generic_runs_csv
+
+    path = tmp_path / "runs.csv"
+    path.write_text("date,distance_km,duration_seconds\n2025-07-24,2,602.9\n", encoding="utf-8")
+    (run,) = generic_runs_csv.GenericRunsCsv().read(path)
+    assert run.minutes == pytest.approx(602.9 / 60) and run.key[2] == 10.0
