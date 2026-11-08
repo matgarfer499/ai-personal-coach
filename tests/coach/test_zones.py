@@ -196,3 +196,16 @@ def test_rpe_only_paths_keep_their_bands():
     assert [z.name for z in pregnant.zones] == ["light", "moderate", "vigorous"]
     beta = zones(person(medications=["beta_blocker"]))
     assert [z.name for z in beta.zones] == ["light", "moderate"]
+
+
+def test_very_light_has_no_zero_floor_without_resting_hr():
+    from coach.profile import Profile
+    from coach.safety import flags
+    from coach.zones import hr_zones
+
+    p = Profile(birth_date=date(1990, 1, 1), screening={"parq_any_yes": False})
+    zones = hr_zones(p, flags(p), hr_max=191)
+    very_light = next(z for z in zones.zones if z.name == "very_light")
+    assert very_light.bpm[0] is None and very_light.bpm[1] > 0
+    with_rest = hr_zones(p, flags(p), hr_rest=48, hr_max=191)
+    assert next(z for z in with_rest.zones if z.name == "very_light").bpm[0] == 48

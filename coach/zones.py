@@ -69,7 +69,7 @@ class Zone:
     name: str
     rpe: tuple[int, int]
     talk_test: str
-    bpm: tuple[int, int] | None = None
+    bpm: tuple[int | None, int] | None = None  # a None floor: no lower limit
 
 
 @dataclass
@@ -161,7 +161,9 @@ def all_zones(
             low, high = (hr_rest + p * (peak - hr_rest) for p in band["hrr"])
         else:
             low, high = (p * peak for p in band["hrmax"])
-        zones.append(Zone(name, band["rpe"], TALK_TEST[name], (round(low), round(high))))
+        # %HRmax has no floor for very light: print only its top ("under 107"), not "0 bpm".
+        floor = None if low == 0 else round(low)
+        zones.append(Zone(name, band["rpe"], TALK_TEST[name], (floor, round(high))))
     return Zones(
         method="hrr" if hr_rest is not None else "hrmax",
         zones=zones,
@@ -175,7 +177,7 @@ def all_zones(
 def zone_for(zones: list[Zone], hr: float) -> Zone | None:
     """The bpm zone a heart rate falls in: the highest zone starting at or below it, so the
     1 bpm gaps rounding leaves between bands, and rates above HRmax, still land in one."""
-    return next((z for z in reversed(zones) if z.bpm and z.bpm[0] <= hr), None)
+    return next((z for z in reversed(zones) if z.bpm and (z.bpm[0] or 0) <= hr), None)
 
 
 def hr_zones(
