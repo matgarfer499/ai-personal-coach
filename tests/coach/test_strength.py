@@ -237,6 +237,25 @@ def test_progression_holds_when_safety_says_so():
     assert "PAR-Q+ follow-up YES" in suggestion.reasons
 
 
+def test_a_held_lift_does_not_list_the_sprint_only_reason():
+    """The PAR-Q+ "no all-out sprints" line is about sprint formats, not about a lift."""
+    sprint = (
+        'recovery-habits.md: "PAR-Q+ specific thresholds": PAR-Q+ not answered, so no all-out '
+        "sprint formats (SIT, REHIT); they need every answer NO"
+    )
+    held = SafetyFlags(hold_progression=True, reasons=["PAR-Q+ follow-up YES", sprint])
+    suggestion = progression(session(D0, 60, 13), today=D0 + timedelta(3), flags=held)
+    assert suggestion.action == "hold" and sprint not in suggestion.reasons
+    assert "PAR-Q+ follow-up YES" in suggestion.reasons
+
+
+def test_a_lift_under_no_training_does_not_list_the_sprint_only_reason():
+    sprint = "PAR-Q+ not answered, so no all-out sprint formats (SIT, REHIT); they need every NO"
+    stop = SafetyFlags(no_training=True, reasons=["chest pain", sprint])
+    suggestion = progression(session(D0, 60, 13), today=D0 + timedelta(3), flags=stop)
+    assert suggestion.reasons == ["chest pain"]
+
+
 def test_progression_still_restarts_lower_when_held():
     held = SafetyFlags(hold_progression=True)
     suggestion = progression(session(D0, 100, 10), today=D0 + timedelta(10), flags=held)

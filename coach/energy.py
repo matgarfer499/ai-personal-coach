@@ -36,6 +36,8 @@ PAL_BANDS = {"desk": (1.4, 1.5), "desk_training": (1.6, 1.75), "active": (1.7, 1
 DEFICIT_KCAL = 500
 # nutrition.md: "Surplus size for muscle gain": 5-20% above maintenance; start at the lower end.
 SURPLUS_FRACTION = 0.05
+# nutrition.md: "Surplus size for muscle gain": aim for about 0.25-0.5% of body weight a week.
+GAIN_SHARE_PER_WEEK = (0.0025, 0.005)
 # nutrition.md: "Recalibrate TDEE from the weight trend": adjust intake in steps of about
 # 100-200 kcal/d. Only cuts are stepped (judgment call: eating more is the cautious direction).
 RECALIBRATE_STEP_KCAL = 200
@@ -145,6 +147,8 @@ class Target:
     deficit: int  # kcal below maintenance (0 for a surplus)
     clamped: bool = False
     surplus: int = 0  # kcal above maintenance
+    surplus_pct: float = 0.0  # the surplus as a percent of maintenance
+    expected_gain_kg_week: tuple[float, float] | None = None  # muscle_gain surplus only
     notes: list[str] = field(default_factory=list)
 
 
@@ -263,11 +267,18 @@ def calorie_target(
             f"{GLP1_RULE}: below {GLP1_LOW_INTAKE_KCAL[sex]:,} kcal, favour nutrient-dense "
             "foods and discuss supplements and monitoring with the prescriber"
         )
+    surplus = max(0, kcal - round(maintenance))
+    gain = None
+    if surplus and goal == "muscle_gain":  # a raise to the floor is not a gain surplus
+        weight = profile.require("weight_kg")
+        gain = tuple(round(weight * share, 2) for share in GAIN_SHARE_PER_WEEK)
     return Target(
         kcal=kcal,
         maintenance=maintenance,
         deficit=max(0, round(maintenance) - kcal),
-        surplus=max(0, kcal - round(maintenance)),
+        surplus=surplus,
+        surplus_pct=round(100 * surplus / maintenance, 1),
+        expected_gain_kg_week=gain,
         clamped=clamped,
         notes=notes,
     )

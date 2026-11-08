@@ -45,6 +45,8 @@ UNDER_18 = 'nutrition.md: "Under-18s"'
 ACSM_STOP = (f"{ACSM}: not exercising regularly", f"{ACSM}: regular exercise not answered")
 # The rules whose reasons explain `review_before_vigorous`.
 VIGOROUS_CAPS = (PARQ_THRESHOLDS, ACSM)
+# Marks the reason that only concerns sprint formats, so a lift's hold leaves it out.
+SPRINT_FORMATS = "so no all-out sprint formats (SIT, REHIT)"
 
 # nutrition.md: "Under-18s" and recovery-habits.md "Adolescents: no deficits": under-18s are
 # out of scope (no calorie targets, deficits or weigh-ins).
@@ -429,10 +431,7 @@ def _vigorous_work(profile: Profile, out: SafetyFlags, today: date | None) -> No
     if any_yes or unanswered:
         out.no_all_out_sprints = True
         why = "a PAR-Q+ YES" if any_yes else "PAR-Q+ not answered"
-        out.reasons.append(
-            f"{PARQ_THRESHOLDS}: {why}, so no all-out sprint formats (SIT, REHIT); they need "
-            "every answer NO"
-        )
+        out.reasons.append(f"{PARQ_THRESHOLDS}: {why}, {SPRINT_FORMATS}; they need every answer NO")
     if unanswered and not acsm_complete(profile):
         # "Choosing HIIT vs MICT vs SIT": an unscreened client starts with moderate work.
         out.review_before_vigorous = True

@@ -373,3 +373,19 @@ def test_tdee_range_follows_a_chosen_pal():
     p = man()
     low, high = energy.tdee_range(p, TODAY, multiplier=1.9)
     assert low < energy.tdee(p, multiplier=1.9, today=TODAY) < high
+
+
+# nutrition.md "Surplus size for muscle gain": about 0.25-0.5% of body weight a week.
+def test_a_surplus_says_its_percent_and_the_expected_gain():
+    result = target(man(goal="muscle_gain"))
+    assert result.surplus_pct == 5.0
+    assert result.expected_gain_kg_week == (0.2, 0.4)  # 80 kg x 0.25% and 0.5%
+    held = target(man(goal="maintenance"))
+    assert held.surplus_pct == 0 and held.expected_gain_kg_week is None
+
+
+def test_a_floor_raise_is_no_expected_gain():
+    """A target raised to the floor above maintenance is not a muscle-gain surplus."""
+    result = target(woman(goal="maintenance"), tdee_kcal=1100)
+    assert result.clamped and result.surplus == 100
+    assert result.expected_gain_kg_week is None
