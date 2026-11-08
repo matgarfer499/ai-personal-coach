@@ -451,6 +451,7 @@ def test_import_hevy_twice(capsys, data_dir):
         "first_day": "2025-07-24",
         "last_day": "2025-07-26",
         "skipped_empty": 0,
+        "unmapped": [],
         "conflicts": 0,
         "skipped_future": 0,
         "warnings": [],
@@ -2055,3 +2056,21 @@ def test_a_managed_running_injury_holds_the_cap_and_allows_a_taper(capsys, data_
     assert week["paused"] and week["long_run_cap_km"] == 8
     code, _ = run(capsys, data_dir, "runs", "taper", "--race-date", "2026-05-01")
     assert code == 0
+
+
+def test_import_reports_unmapped_names(capsys, data_dir, tmp_path):
+    csv = tmp_path / "log.csv"
+    csv.write_text(
+        "date,exercise,weight_kg,reps\n2026-03-30 10:00,Barbell Row,60,8\n"
+        "2026-03-30 10:10,Zercher Carry Thing,40,8\n",
+        encoding="utf-8",
+    )
+    _, out = run(capsys, data_dir, "import", str(csv))
+    assert out["unmapped"] == ["Zercher Carry Thing"]
+
+
+def test_strength_alias_add_stores_a_personal_alias(capsys, data_dir):
+    code, out = run(capsys, data_dir, "strength", "alias", "add", "Zercher Carry Thing", "squat")
+    assert code == 0 and out["aliases"] == {"Zercher Carry Thing": "squat"}
+    code, out = run(capsys, data_dir, "strength", "alias", "add", "Otra", "no such lift")
+    assert code == 2 and "no such lift" in out["message"]

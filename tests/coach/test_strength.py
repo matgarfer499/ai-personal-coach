@@ -11,6 +11,7 @@ from coach.strength import (
     hard_set,
     load_muscle_map,
     lookup,
+    muscle_map_for,
     named_in,
     parse_rep_range,
     progression,
@@ -477,3 +478,49 @@ def test_injury_pause_matches_a_spanish_name():
     assert find_pause("Leg Press (Machine)", paused, mm) is not None
     assert find_pause("Prensa de Piernas (Máquina)", paused, mm) is not None
     assert find_pause("Squat (Barbell)", paused, mm) is None
+
+
+# PR 3 (beta 2): common names in English, Spanish and Hevy's "Name (Equipment)" form map, with
+# equipment and one-arm words ignored on both sides.
+@pytest.mark.parametrize(
+    "logged,expected",
+    [
+        ("Barbell Row", "bent over row"),
+        ("One-arm dumbbell row", "bent over row"),
+        ("Seated Row (Cable)", "seated cable row"),
+        ("Dumbbell bench press", "bench press"),
+        ("Incline Dumbbell Press", "incline bench press"),
+        ("Hack Squat (Machine)", "hack squat"),
+        ("Goblet squat", "squat"),
+        ("Sentadilla goblet", "squat"),
+        ("Sentadilla en copa", "squat"),
+        ("Press militar con mancuernas", "overhead press"),
+        ("Puente de glúteo", "hip thrust"),
+        ("Glute Bridge (Barbell)", "hip thrust"),
+        ("Smith Machine Squat", "squat"),
+        ("Cable Fly", "chest fly"),
+        ("Walking Lunge (Dumbbell)", "lunge"),
+        ("Dips", "dip"),
+        ("Fondos en paralelas", "dip"),
+        ("Rear Delt Reverse Fly (Dumbbell)", "rear delt fly"),
+        ("Pájaros con mancuernas", "rear delt fly"),
+        ("Curl de bíceps con mancuernas", "bicep curl"),
+    ],
+)
+def test_common_exercise_names_map(logged, expected):
+    muscle_map = load_muscle_map()
+    assert lookup(logged, muscle_map) is muscle_map[expected]
+
+
+@pytest.mark.parametrize("name", ["Plank", "Plancha", "Side Plank", "Crunch", "Abdominales"])
+def test_core_work_is_known_but_credits_no_muscle(name):
+    muscle_map = load_muscle_map()
+    entry = lookup(name, muscle_map)
+    assert entry is not None and entry["muscles"] == {}
+
+
+def test_personal_aliases_extend_the_map(tmp_path):
+    (tmp_path / "muscle_aliases.yaml").write_text("Mi remo raro: bent over row\n", encoding="utf-8")
+    muscle_map = muscle_map_for(tmp_path)
+    assert lookup("mi remo raro", muscle_map) is muscle_map["bent over row"]
+    assert lookup("mi remo raro", load_muscle_map()) is None  # the built-in map is untouched

@@ -179,11 +179,13 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
     if args.strength_cmd == "deload":
         signs = {s.strip() for s in args.signs.split(",") if s.strip()}
         return {"deload": strength.deload(signs)}
+    if args.strength_cmd == "alias":
+        return _strength_alias(args)
     if args.strength_cmd == "plan-sets":
-        return _plan_sets(args.data_dir / args.file)
+        return _plan_sets(args.data_dir / args.file, args.data_dir)
     today = args.today or date.today()
     logged = [s for s in read_sets(args.data_dir / "sessions.csv") if s.date <= today]
-    muscle_map = strength.load_muscle_map()
+    muscle_map = strength.muscle_map_for(args.data_dir)
     if args.strength_cmd == "sets":
         # Default: the 7 days ending on the last logged session, the latest week with data.
         end = args.week_ending or max((s.date for s in logged), default=today)
@@ -251,7 +253,7 @@ def cmd_strength(profile: Profile, args: argparse.Namespace) -> dict:
     }
 
 
-def _plan_sets(path: Path) -> dict:
+def _plan_sets(path: Path, data_dir: Path) -> dict:
     """Weekly hard sets per muscle for a planned week (each listed session happens once)."""
     try:
         plan = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
@@ -283,7 +285,7 @@ def _plan_sets(path: Path) -> dict:
             ] * sets
     if not planned:
         raise ValueError("the plan lists no sessions with exercises")
-    muscle_map = strength.load_muscle_map()
+    muscle_map = strength.muscle_map_for(data_dir)
     totals = strength.weekly_hard_sets(planned, muscle_map)
     return {
         "sets": totals,
@@ -330,6 +332,23 @@ def _import_runs(importer: importers.Importer, args: argparse.Namespace) -> dict
     }
 
 
+def _strength_alias(args: argparse.Namespace) -> dict:
+    aliases = strength.personal_aliases(args.data_dir)
+    if args.alias_cmd == "add":
+        muscle_map = strength.load_muscle_map()
+        entry = strength.lookup(args.exercise, muscle_map)
+        if entry is None:
+            raise ValueError(
+                f"{args.exercise!r} is not in the muscle map: give a lift it knows, e.g. "
+                + ", ".join(list(muscle_map)[:6])
+            )
+        name = args.name.strip()
+        aliases[name] = next(k for k, v in muscle_map.items() if v is entry)
+        path = args.data_dir / strength.PERSONAL_ALIASES
+        path.write_text(yaml.safe_dump(aliases, allow_unicode=True), encoding="utf-8")
+    return {"aliases": aliases}
+
+
 def cmd_import(profile: Profile, args: argparse.Namespace) -> dict:
     importer = importers.get(args.importer) if args.importer else importers.detect(args.path)
     if getattr(importer, "target", "sessions") == "runs":
@@ -370,6 +389,8 @@ def cmd_import(profile: Profile, args: argparse.Namespace) -> dict:
         "conflicts": result.conflicts,
         "skipped_future": len(future),
         "skipped_empty": len(leftovers),
+        # Names the muscle map does not know: their sets count towards no muscle until mapped.
+        "unmapped": strength.unmapped_exercises(sets, strength.muscle_map_for(args.data_dir)),
         "first_day": days[0] if days else None,
         "last_day": days[-1] if days else None,
         "warnings": warnings,
@@ -853,7 +874,7 @@ def cmd_injury(profile: Profile, args: argparse.Namespace) -> dict:
         save_profile(profile, args.data_dir / "profile.yaml")
     # Listed names that match no logged lift pause nothing: the skill asks for the logged name.
     logged = {s.exercise for s in read_sets(args.data_dir / "sessions.csv")}
-    muscle_map = strength.load_muscle_map()
+    muscle_map = strength.muscle_map_for(args.data_dir)
     listed = [e for i in profile.active_injuries() for e in i.get("exercises", [])]
     unmatched = [
         e
@@ -1471,6 +1492,14 @@ def build_parser() -> argparse.ArgumentParser:
         "plan-sets", parents=[json_flag], help="weekly hard sets of a planned week (YAML)"
     )
     plan_sets_cmd.add_argument("file", type=Path, help="relative to the data dir")
+    alias_cmd = strength_sub.add_parser(
+        "alias", parents=[json_flag], help="the client's own exercise names (muscle_aliases.yaml)"
+    )
+    alias_sub = alias_cmd.add_subparsers(dest="alias_cmd", required=True)
+    alias_add = alias_sub.add_parser("add", parents=[json_flag], help="NAME EXERCISE")
+    alias_add.add_argument("name", help="the name as the client logs it")
+    alias_add.add_argument("exercise", help="a lift the muscle map knows, e.g. bent over row")
+    alias_sub.add_parser("list", parents=[json_flag])
     sets_cmd = strength_sub.add_parser("sets", parents=[json_flag], help="weekly hard sets")
     sets_cmd.add_argument("--week-ending", type=date.fromisoformat, default=None)
     progress_cmd = strength_sub.add_parser("progress", parents=[json_flag], help="next session")

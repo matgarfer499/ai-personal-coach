@@ -14,7 +14,7 @@ bench press:
   aliases: [press banca, press de banca]
 incline bench press:
   muscles: {chest: 1, triceps: 0.5, front_delts: 0.5}
-  aliases: [press inclinado, press banca inclinado]
+  aliases: [press inclinado, press banca inclinado, incline press, incline chest press]
 decline bench press:
   muscles: {chest: 1, triceps: 0.5, front_delts: 0.5}
 chest press:
@@ -25,40 +25,46 @@ push up:
   aliases: [flexiones]
 chest fly:
   muscles: {chest: 1}
-  aliases: [aperturas]
+  aliases: [aperturas, fly, flyes, pec deck, contractor de pecho]
 overhead press:
   muscles: {front_delts: 1, triceps: 0.5}
   aliases: [press militar]
 shoulder press:
   muscles: {front_delts: 1, triceps: 0.5}
   aliases: [press de hombro]
+dip:
+  muscles: {chest: 1, triceps: 0.5, front_delts: 0.5}
+  aliases: [dips, chest dip, triceps dip, fondos, fondos en paralelas]
 lateral raise:
   muscles: {side_delts: 1}
   aliases: [elevaciones laterales]
 bent over row:
   muscles: {back: 1, biceps: 0.5, rear_delts: 0.5}
-  aliases: [remo con barra]
+  aliases: [remo con barra, row, barbell row, pendlay row, t bar row, remo]
 seated cable row:
   muscles: {back: 1, biceps: 0.5, rear_delts: 0.5}
-  aliases: [remo en polea, remo sentado en polea, remo sentado con cable]
+  aliases: [remo en polea, remo sentado en polea, remo sentado con cable, seated row, remo sentado]
 dumbbell row:
   muscles: {back: 1, biceps: 0.5, rear_delts: 0.5}
   aliases: [remo con mancuerna]
 lat pulldown:
   muscles: {back: 1, biceps: 0.5, rear_delts: 0.5}
-  aliases: [jalón al pecho, jalón dorsal]
+  aliases: [jalón al pecho, jalón dorsal, pulldown, jalón]
 pull up:
   muscles: {back: 1, biceps: 0.5, rear_delts: 0.5}
   aliases: [dominadas]
 chin up:
   muscles: {back: 1, biceps: 0.5, rear_delts: 0.5}
   aliases: [dominadas supinas]
+rear delt fly:
+  muscles: {rear_delts: 1}
+  aliases: [reverse fly, rear delt reverse fly, pájaros, aperturas inversas]
 face pull:
   muscles: {rear_delts: 1}
   aliases: [face pull en polea, tirón a la cara]
 bicep curl:
   muscles: {biceps: 1}
-  aliases: [curl de bíceps, ez bar biceps curl]  # Hevy's name for the EZ-bar curl
+  aliases: [curl de bíceps, ez bar biceps curl, biceps curl, curl]  # Hevy's name for the EZ-bar curl
 hammer curl:
   muscles: {biceps: 1}
   aliases: [curl martillo]
@@ -73,6 +79,10 @@ squat:
   muscles: {quads: 1, glutes: 0.5, adductors: 0.5}
   aliases: [sentadilla]
   lower_body: true
+hack squat:
+  muscles: {quads: 1, glutes: 0.5, adductors: 0.5}
+  aliases: [sentadilla hack]
+  lower_body: true
 front squat:
   muscles: {quads: 1, glutes: 0.5, adductors: 0.5}
   aliases: [sentadilla frontal]
@@ -83,15 +93,15 @@ leg press:
   lower_body: true
 hip thrust:
   muscles: {glutes: 1}
-  aliases: [empuje de cadera]
+  aliases: [empuje de cadera, glute bridge, puente de glúteo, puente de glúteos]
   lower_body: true
 bulgarian split squat:
   muscles: {quads: 1, glutes: 0.5, adductors: 0.5}
-  aliases: [sentadilla búlgara]
+  aliases: [sentadilla búlgara, split squat, sentadilla dividida]
   lower_body: true
 lunge:
   muscles: {quads: 1, glutes: 0.5, adductors: 0.5}
-  aliases: [zancadas]
+  aliases: [zancadas, zancada, walking lunge, step up, subida al cajón]
   lower_body: true
 romanian deadlift:
   muscles: {hamstrings: 1, glutes: 0.5}
@@ -127,3 +137,16 @@ seated calf raise:
 # would be a number with no rule behind it, so it is known (not "unmapped") but counts nowhere.
 suitcase carry:
   muscles: {}
+# Trunk work (planks, crunches, leg raises) credits none of the 12 muscles for the same reason as
+# the carry: "Trunk (core) training: an add-on for trunk endurance and balance".
+plank:
+  muscles: {}
+  aliases: [plancha, side plank, plancha lateral, crunch, crunches, abdominales, sit up,
+    hanging leg raise, elevación de piernas, ab wheel, rueda abdominal, dead bug, bird dog,
+    russian twist, pallof press]
+# Cardio logged in a lifting app (Hevy logs runs and rides) is not resistance training, so it adds
+# no hard sets to any muscle ("Default counting rule: direct 1, indirect 0.5" counts lifting sets).
+running:
+  muscles: {}
+  aliases: [run, treadmill, cycling, bike, stationary bike, elliptical, walking, rowing machine,
+    correr, carrera, cinta, bicicleta, bicicleta estática, elíptica, caminar]

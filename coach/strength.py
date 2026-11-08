@@ -106,6 +106,48 @@ def load_muscle_map(path: Path = MUSCLE_MAP_PATH) -> dict[str, dict]:
     return yaml.safe_load(Path(path).read_text(encoding="utf-8"))
 
 
+# convention: equipment and one-sided words ignored when matching a name (es and en, folded), so
+# "Dumbbell bench press" and "Press militar con mancuernas" reach their lift. The credits of a lift
+# do not depend on the tool, so dropping these words never moves a set to another muscle.
+EQUIPMENT_WORDS = (
+    "smith machine",
+    "ez bar",
+    "ez-bar",
+    "barbell",
+    "dumbbells",
+    "dumbbell",
+    "kettlebell",
+    "cable",
+    "machine",
+    "smith",
+    "band",
+    "banded",
+    "goblet",
+    "one arm",
+    "one-arm",
+    "single arm",
+    "single-arm",
+    "con barra",
+    "con mancuernas",
+    "con mancuerna",
+    "con kettlebell",
+    "con polea",
+    "en polea",
+    "en maquina",
+    "en multipower",
+    "a una mano",
+    "a un brazo",
+    "en copa",
+)
+_EQUIPMENT_RE = re.compile(r"\b(?:" + "|".join(map(re.escape, EQUIPMENT_WORDS)) + r")\b")
+
+
+def _plain(folded: str) -> str:
+    """A folded name without equipment words; the name itself if nothing else is left."""
+    plain = " ".join(_EQUIPMENT_RE.sub(" ", folded).split())
+    return plain or folded
+
+
 def _strip_equipment(name: str) -> str:
     return re.sub(r"\s*\([^)]*\)\s*$", "", name)
 
@@ -124,7 +166,8 @@ def _candidates(exercise: str) -> list[str]:
     """Names to try, most specific first: as logged, no "(Equipment)", no "- variant" either."""
     no_equipment = _strip_equipment(exercise)
     base = _split_variant(no_equipment)[0]
-    return list(dict.fromkeys(fold(n) for n in (exercise, no_equipment, base)))
+    names = [fold(n) for n in (exercise, no_equipment, base)]
+    return list(dict.fromkeys([*names, *map(_plain, names)]))
 
 
 def _as_logged(exercise: str) -> set[str]:
@@ -141,9 +184,11 @@ def _index(muscle_map: dict[str, dict]) -> dict[str, dict]:
     held = _INDEXES.get(id(muscle_map))
     if held is None or held[0] is not muscle_map:
         index: dict[str, dict] = {}
-        for key, entry in muscle_map.items():
-            for name in (key, *entry.get("aliases", [])):
-                index.setdefault(fold(name), entry)  # the first entry in map order wins
+        names = [(n, e) for k, e in muscle_map.items() for n in (k, *e.get("aliases", []))]
+        for name, entry in names:
+            index.setdefault(fold(name), entry)  # the first entry in map order wins
+        for name, entry in names:  # then the same names without equipment words
+            index.setdefault(_plain(fold(name)), entry)
         held = _INDEXES[id(muscle_map)] = (muscle_map, index)
     return held[1]
 
@@ -154,6 +199,26 @@ def lookup(exercise: str, muscle_map: dict[str, dict]) -> dict | None:
     (The map is read once: edit it only before the first lookup.)"""
     index = _index(muscle_map)
     return next((index[n] for n in _candidates(exercise) if n in index), None)
+
+
+PERSONAL_ALIASES = "muscle_aliases.yaml"  # in the data dir: logged name -> map entry
+
+
+def personal_aliases(data_dir: Path) -> dict[str, str]:
+    path = Path(data_dir) / PERSONAL_ALIASES
+    return (yaml.safe_load(path.read_text(encoding="utf-8")) or {}) if path.exists() else {}
+
+
+def muscle_map_for(data_dir: Path) -> dict[str, dict]:
+    """The built-in map plus the client's aliases (a new dict; the built-in one is untouched)."""
+    extra = personal_aliases(data_dir)
+    if not extra:
+        return load_muscle_map()
+    merged = {k: dict(v) for k, v in load_muscle_map().items()}
+    for name, target in extra.items():
+        entry = merged[target]
+        entry["aliases"] = [*entry.get("aliases", []), name]
+    return merged
 
 
 def weekly_hard_sets(sets: list[Any], muscle_map: dict[str, dict]) -> dict[str, float]:
