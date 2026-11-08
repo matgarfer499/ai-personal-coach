@@ -291,6 +291,9 @@ saying the `pdf` extra is missing, tell the client to run `uv sync --extra pdf`.
   `no_all_out_sprints`: no SIT or REHIT at all. Even without it, SIT or REHIT only for a client
   with every PAR-Q+ answer NO and 4+ weeks of regular moderate cardio without symptoms, never
   for a sedentary beginner ("PAR-Q+ specific thresholds").
+- `screening.regular_exercise false` and no ACSM reason in `coach safety`: start at
+  light-to-moderate intensity and build up over the block
+  (`coach knowledge section recovery-habits "ACSM 2015 screening algorithm"`).
 - `paused` in `coach strength progress`: the lift does not progress. With no `load_kg`, it is not
   loaded until a GP or physiotherapist has assessed the injury; otherwise `load_kg` is a ceiling:
   reduce or swap the lift within the professional's limits. Clear it with `coach injury clear

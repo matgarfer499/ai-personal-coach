@@ -111,7 +111,7 @@ def all_zones(
         return Zones(
             method="no_training",
             zones=[],
-            notes=[r for r in flags.reasons if r.startswith((safety.CARDIAC, safety.BP))],
+            notes=[r for r in flags.reasons if r.startswith(safety.TRAINING_STOPS)],
         )
 
     if profile.has_condition(HEART_DISEASE):
@@ -191,8 +191,9 @@ def hr_zones(
 ) -> Zones:
     result = all_zones(profile, flags, hr_rest, hr_max, today)
     # Each cap removes the vigorous and near-maximal zones and says which rule did it.
-    caps = {safety.BP: flags.cap_moderate, safety.PARQ_THRESHOLDS: flags.review_before_vigorous}
-    rules = tuple(rule for rule, on in caps.items() if on)
+    rules = ((safety.BP,) if flags.cap_moderate else ()) + (
+        safety.VIGOROUS_CAPS if flags.review_before_vigorous else ()
+    )
     if rules and result.zones:
         result.zones = [z for z in result.zones if z.name not in ABOVE_MODERATE]
         result.notes += [r for r in flags.reasons if r.startswith(rules)]

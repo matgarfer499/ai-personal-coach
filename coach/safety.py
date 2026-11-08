@@ -40,6 +40,10 @@ INJURY = 'recovery-habits.md: "Some pain during exercise is acceptable in chroni
 CARDIAC = 'recovery-habits.md: "Cardiac warning symptoms: stop and refer"'
 BP = 'recovery-habits.md: "Resting BP thresholds to defer or refer"'
 UNDER_18 = 'nutrition.md: "Under-18s"'
+ACSM_STOP = f"{ACSM}: not exercising regularly"  # the "clearance before any exercise" cell
+# The rules whose reasons explain `no_training` and `review_before_vigorous` (zones, runs, taper).
+TRAINING_STOPS = (CARDIAC, BP, ACSM)
+VIGOROUS_CAPS = (PARQ_THRESHOLDS, ACSM)
 
 # nutrition.md: "Under-18s" and recovery-habits.md "Adolescents: no deficits": under-18s are
 # out of scope (no calorie targets, deficits or weigh-ins).
@@ -240,8 +244,12 @@ def flags(profile: Profile, today: date | None = None) -> SafetyFlags:
         out.hold_progression = True
         # Only a stop for symptoms or a very high BP holds the deficit (the convention says why).
         out.no_deficit = out.no_deficit or any(NO_TRAINING_NO_DEFICIT in r for r in out.reasons)
-        # "light-to-moderate work only" contradicts "no training": keep it out of the reasons.
-        moot = [r for r in out.reasons if r.startswith(PARQ_THRESHOLDS)]
+        # "light-to-moderate" or "moderate" work contradicts "no training": keep it out.
+        moot = [
+            r
+            for r in out.reasons
+            if r.startswith(PARQ_THRESHOLDS) or (r.startswith(ACSM) and not r.startswith(ACSM_STOP))
+        ]
         if out.cap_moderate:
             moot += [r for r in out.reasons if r.startswith(BP)]
         out.superseded = moot
@@ -258,9 +266,10 @@ def flags(profile: Profile, today: date | None = None) -> SafetyFlags:
 
 
 def _priority(reason: str) -> tuple[bool, int]:
-    # A training stop (cardiac, or BP 180+) goes first whatever rule set it.
+    # A training stop (cardiac, BP 180+ or the ACSM clearance cell) goes first whatever rule set it.
     rank = next((i for i, rule in enumerate(PRIORITY) if reason.startswith(rule)), len(PRIORITY))
-    return NO_TRAINING_NO_DEFICIT not in reason, rank
+    stop = NO_TRAINING_NO_DEFICIT in reason or reason.startswith(ACSM_STOP)
+    return not stop, rank
 
 
 def red_flag_words(text: str) -> list[str]:
@@ -362,13 +371,14 @@ def _acsm(profile: Profile, out: SafetyFlags) -> None:
             f"{ACSM}: exercising regularly with known {named} disease: continue moderate work; "
             "medical clearance before vigorous work"
         )
-    elif active is False and not cleared:
+    elif not active and not cleared:  # unanswered takes the cautious cell
+        unanswered = "" if active is False else " (not answered)"
         out.clearance_before_exercise = out.no_training = out.refer_gp = True
         out.reasons.append(
-            f"{ACSM}: not exercising regularly, with known {named} disease: medical clearance "
+            f"{ACSM_STOP}{unanswered}, with known {named} disease: medical clearance "
             "before any exercise, then start at light-to-moderate intensity"
         )
-    elif active is False and not screening.get("vigorous_reviewed"):
+    elif not active and not screening.get("vigorous_reviewed"):
         out.review_before_vigorous = True
         out.reasons.append(
             f"{ACSM}: cleared after known {named} disease: start at light-to-moderate intensity "

@@ -498,3 +498,21 @@ def test_a_stricter_parq_answer_still_wins_over_a_clear_acsm_cell():
 def test_parq_all_no_and_a_clear_acsm_screen_allow_sprints():
     result = flags(_acsm(True, [], [], parq_any_yes=False), today=date(2026, 1, 1))
     assert not (result.review_before_vigorous or result.no_all_out_sprints)
+
+
+def test_known_disease_with_regular_exercise_unanswered_takes_the_cautious_cell():
+    profile = _acsm(False, ["renal"], [])
+    del profile.screening["regular_exercise"]
+    result = flags(profile, today=date(2026, 1, 1))
+    assert result.clearance_before_exercise and result.no_training
+
+
+def test_the_acsm_clearance_stop_is_the_instruction():
+    result = flags(_acsm(False, ["metabolic"], [], scoff_positive=True), today=date(2026, 1, 1))
+    assert result.instruction.startswith(ACSM)
+
+
+def test_a_bp_stop_drops_the_acsm_moderate_work_reason():
+    profile = _acsm(True, ["cardiovascular"], [], bp_systolic=185, bp_diastolic=85)
+    result = flags(profile, today=date(2026, 1, 1))
+    assert result.no_training and not any(r.startswith(ACSM) for r in result.reasons)

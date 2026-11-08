@@ -91,8 +91,8 @@ SCREENING_KEYS = {
 }
 # The PAR-Q+ answers a vigorous-work review covers; changing one drops `vigorous_reviewed`.
 PARQ_ANSWERS = ("parq_any_yes", "parq_followup_yes")
-# The disease answer a medical clearance covers; changing it drops `medically_cleared`.
-CLEARANCE_ANSWERS = ("known_disease",)
+# The answers a medical clearance covers; changing one drops `medically_cleared`.
+CLEARANCE_ANSWERS = ("known_disease", "symptoms")
 # recovery-habits.md: "ACSM 2015 screening algorithm": the diseases that change the cell.
 # Hypertension is not one of them (ACSM 2015 dropped risk-factor counting).
 DISEASE_TOKENS = ("cardiovascular", "metabolic", "renal")

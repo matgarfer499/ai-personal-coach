@@ -378,7 +378,7 @@ def cmd_runs(profile: Profile, args: argparse.Namespace) -> dict:
     if args.runs_cmd == "taper":
         flags = safety.flags(profile, args.today)
         if flags.no_training:
-            stops = [r for r in flags.reasons if r.startswith((safety.CARDIAC, safety.BP))]
+            stops = [r for r in flags.reasons if r.startswith(safety.TRAINING_STOPS)]
             raise ValueError("no taper while training is on hold: " + "; ".join(stops))
         return runs.taper(args.race_date, today, logged)
     if args.runs_cmd == "add":
@@ -689,6 +689,11 @@ def _missing(profile: Profile, name: str) -> bool:
     return getattr(profile, name) is None
 
 
+def _list_answer(raw: str) -> list[str]:
+    items = [item.strip() for item in raw.split(",") if item.strip()]
+    return [] if len(items) == 1 and fold(items[0]) in NONE_WORDS else items
+
+
 def _parse_profile_value(field: str, raw: str) -> Any:
     if field.startswith("screening."):
         key = field.removeprefix("screening.")
@@ -702,9 +707,8 @@ def _parse_profile_value(field: str, raw: str) -> Any:
                 raise ValueError(f"{field} must be true or false, not {raw!r}")
             return raw.lower() == "true"
         if kind is list:
-            items = [item.strip() for item in raw.split(",") if item.strip()]
             # "none" clears the answer (above); "no" and the other none-words are the answer none.
-            return [] if len(items) == 1 and fold(items[0]) in NONE_WORDS else items
+            return _list_answer(raw)
         if kind is int:
             if not raw.isdigit():
                 raise ValueError(f"{field} must be a whole number, not {raw!r}")
@@ -730,8 +734,7 @@ def _parse_profile_value(field: str, raw: str) -> Any:
                 "says"
             )
     if field in ("medications", "conditions"):
-        items = [item.strip() for item in raw.split(",") if item.strip()]
-        return [] if len(items) == 1 and fold(items[0]) in NONE_WORDS else items
+        return _list_answer(raw)
     if field in CONDITION_TOKENS:
         raise ValueError(
             f"{field!r} is not a profile field: store it as a condition, e.g. "
